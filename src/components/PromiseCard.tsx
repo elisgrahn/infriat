@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Users, RefreshCw } from "lucide-react";
+import { Calendar, Users, RefreshCw, ExternalLink, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
 
 type PromiseStatus = "kept" | "broken" | "in-progress" | "pending-analysis";
 
@@ -15,6 +16,9 @@ interface PromiseCardProps {
   date: string;
   status: PromiseStatus;
   description?: string;
+  statusExplanation?: string;
+  statusSources?: string[];
+  directQuote?: string;
   onStatusUpdate?: () => void;
 }
 
@@ -41,7 +45,7 @@ const statusConfig = {
   },
 };
 
-export const PromiseCard = ({ promiseId, promise, party, date, status, description, onStatusUpdate }: PromiseCardProps) => {
+export const PromiseCard = ({ promiseId, promise, party, date, status, description, statusExplanation, statusSources, directQuote, onStatusUpdate }: PromiseCardProps) => {
   const config = statusConfig[status];
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -86,6 +90,46 @@ export const PromiseCard = ({ promiseId, promise, party, date, status, descripti
             <p className="text-muted-foreground text-sm leading-relaxed">
               {description}
             </p>
+          )}
+
+          {directQuote && (
+            <div className="bg-muted/50 border-l-2 border-primary pl-4 py-2 rounded-r">
+              <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-1">
+                <FileText className="w-3 h-3" />
+                <span>Ursprungligt citat från valmanifest:</span>
+              </div>
+              <p className="text-sm italic text-foreground">"{directQuote}"</p>
+            </div>
+          )}
+
+          {statusExplanation && status !== 'pending-analysis' && (
+            <div className="space-y-2 pt-2 border-t">
+              <div className="text-sm text-foreground">
+                <span className="font-medium">Statusbedömning: </span>
+                {statusExplanation}
+              </div>
+              
+              {statusSources && statusSources.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground">Källor:</p>
+                  <ul className="space-y-1">
+                    {statusSources.map((source, idx) => (
+                      <li key={idx} className="text-xs">
+                        <a 
+                          href={source} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline inline-flex items-center gap-1"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          {source}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
           )}
           
           <div className="flex items-center gap-2 text-xs text-muted-foreground">

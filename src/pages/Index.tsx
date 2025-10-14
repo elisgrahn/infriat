@@ -184,6 +184,9 @@ const Index = () => {
                     date={new Date(promise.created_at).toLocaleDateString('sv-SE')}
                     status={promise.status}
                     description={promise.summary || undefined}
+                    statusExplanation={promise.status_explanation || undefined}
+                    statusSources={promise.status_sources || undefined}
+                    directQuote={promise.direct_quote || undefined}
                     onStatusUpdate={fetchPromises}
                   />
                 ))}
