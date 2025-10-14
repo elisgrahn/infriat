@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar, Users, RefreshCw, ExternalLink, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 
 type PromiseStatus = "kept" | "broken" | "in-progress" | "pending-analysis";
@@ -48,6 +49,7 @@ const statusConfig = {
 export const PromiseCard = ({ promiseId, promise, party, date, status, description, statusExplanation, statusSources, directQuote, onStatusUpdate }: PromiseCardProps) => {
   const config = statusConfig[status];
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const { isAdmin, loading } = useAuth();
 
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
@@ -138,7 +140,7 @@ export const PromiseCard = ({ promiseId, promise, party, date, status, descripti
           </div>
         </div>
 
-        {status === 'pending-analysis' && (
+        {status === 'pending-analysis' && isAdmin && !loading && (
           <Button
             onClick={handleAnalyze}
             disabled={isAnalyzing}

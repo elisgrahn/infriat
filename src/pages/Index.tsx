@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { PromiseCard } from "@/components/PromiseCard";
 import { PromiseFilters } from "@/components/PromiseFilters";
-import { ShieldCheck, Scale, TrendingUp, Settings } from "lucide-react";
+import { ShieldCheck, Scale, TrendingUp, Settings, LogIn, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Promise {
   id: string;
@@ -26,11 +27,20 @@ interface Promise {
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user, isAdmin, signOut } = useAuth();
   const [selectedParty, setSelectedParty] = useState("Alla");
   const [selectedStatus, setSelectedStatus] = useState("Alla");
   const [searchQuery, setSearchQuery] = useState("");
   const [promises, setPromises] = useState<Promise[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const handleAuthClick = async () => {
+    if (user) {
+      await signOut();
+    } else {
+      navigate('/auth');
+    }
+  };
 
   useEffect(() => {
     fetchPromises();
@@ -89,14 +99,28 @@ const Index = () => {
               <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
                 Politiska Löften
               </h1>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate("/admin")}
-                className="text-primary-foreground hover:bg-primary-foreground/10"
-              >
-                <Settings className="w-6 h-6" />
-              </Button>
+              <div className="flex gap-2">
+                {isAdmin && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => navigate("/admin")}
+                    className="text-primary-foreground hover:bg-primary-foreground/10"
+                    title="Admin"
+                  >
+                    <Settings className="w-6 h-6" />
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleAuthClick}
+                  className="text-primary-foreground hover:bg-primary-foreground/10"
+                  title={user ? 'Logga ut' : 'Logga in'}
+                >
+                  {user ? <LogOut className="w-6 h-6" /> : <LogIn className="w-6 h-6" />}
+                </Button>
+              </div>
             </div>
             
             <p className="text-lg md:text-xl text-primary-foreground/90 max-w-2xl mx-auto leading-relaxed">
