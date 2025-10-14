@@ -39,14 +39,25 @@ serve(async (req) => {
           {
             role: 'system',
             content: `Du är en expert på att analysera politiska valmanifest och extrahera mätbara vallöften. 
-            
+
 Din uppgift är att:
 1. Identifiera konkreta, mätbara vallöften i texten
 2. För varje vallöfte, ge en kort sammanfattning
 3. Inkludera ett direkt citat från manifestet
 4. Förklara varför löftet är mätbart
 
-Fokusera på löften som kan verifieras objektivt, inte vaga mål eller principer.`
+ETT LÖFTE ÄR MÄTBART om det uppfyller minst ett av dessa kriterier:
+- Innehåller specifika siffror eller mål (t.ex. "sänka skatten med 10%")
+- Beskriver konkreta lagändringar eller politiska reformer (t.ex. "avskaffa strandskyddet", "ändra lagen om X")
+- Lovar att införa eller avskaffa en specifik policy eller myndighet
+- Beskriver en tydlig åtgärd som kan verifieras genom offentliga handlingar (riksdagsmotion, proposition, lagändringar)
+
+INTE MÄTBART:
+- Vaga mål utan konkret åtgärd (t.ex. "förbättra välfärden", "stärka Sverige")
+- Värderingar och principer utan specifik handling
+- Allmänna visioner utan tydlig leverans
+
+Inkludera löften även om de inte har specifika siffror, så länge åtgärden är konkret och kan verifieras.`
           },
           {
             role: 'user',
