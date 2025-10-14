@@ -19,9 +19,9 @@ serve(async (req) => {
       throw new Error('Missing promise ID');
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
+    const GOOGLE_AI_API_KEY = Deno.env.get('GOOGLE_AI_API_KEY');
+    if (!GOOGLE_AI_API_KEY) {
+      throw new Error('GOOGLE_AI_API_KEY not configured');
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -41,41 +41,12 @@ serve(async (req) => {
 
     console.log(`Analyzing status for promise: ${promise.promise_text}`);
 
-    // Call Lovable AI to analyze the status
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          {
-            role: 'system',
-            content: `Du är en expert på svensk politik och faktakontroll av vallöften.
+    // Call Google Gemini with grounding for real sources
+    const prompt = `Du är en expert på svensk politik och faktakontroll av vallöften.
 
-Din uppgift är att analysera om ett vallöfte har hållits, brutits eller är pågående.
+Analysera följande vallöfte och bedöm om det har hållits, brutits eller är pågående.
 
-Bedöm baserat på:
-- Konkreta åtgärder som vidtagits
-- Lagförslag och beslut
-- Officiella uttalanden och dokument
-- Aktuella nyheter och rapporter
-
-KRITISKT VIKTIGT om källor:
-- Du har INTE tillgång till internet eller externa källor
-- Du kan ENDAST basera din analys på din träningsdata
-- Inkludera ENDAST "sources" fältet om du är HELT SÄKER på att källan existerar och är korrekt
-- Om du inte är säker på exakta URL:er, lämna sources som en tom array []
-- UPPFINN ALDRIG URL:er eller påhittade källor
-- Det är BÄTTRE att ha inga källor än felaktiga källor
-
-Ge en tydlig bedömning och förklaring.`
-          },
-          {
-            role: 'user',
-            content: `Parti: ${promise.parties.name}
+Parti: ${promise.parties.name}
 Valår: ${promise.election_year}
 Vallöfte: ${promise.promise_text}
 Sammanfattning: ${promise.summary}
@@ -83,67 +54,77 @@ Original citat: "${promise.direct_quote}"
 
 ${context ? `Ytterligare kontext: ${context}` : ''}
 
-Analysera om detta vallöfte har hållits, brutits eller är pågående.`
-          }
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "analyze_status",
-              description: "Analysera statusen för ett vallöfte",
-              parameters: {
-                type: "object",
-                properties: {
-                  status: {
-                    type: "string",
-                    enum: ["kept", "broken", "in-progress"],
-                    description: "Status för vallöftet"
-                  },
-                  explanation: {
-                    type: "string",
-                    description: "Detaljerad förklaring av bedömningen (3-5 meningar)"
-                  },
-                  sources: {
-                    type: "array",
-                    items: { type: "string" },
-                    description: "Referenser till källor som stödjer bedömningen"
-                  }
-                },
-                required: ["status", "explanation", "sources"],
-                additionalProperties: false
+Basera din analys på:
+- Konkreta åtgärder som vidtagits
+- Lagförslag och beslut
+- Officiella uttalanden och dokument
+- Aktuella nyheter och rapporter
+
+Ge din bedömning i följande JSON-format:
+{
+  "status": "kept" | "broken" | "in-progress",
+  "explanation": "Detaljerad förklaring av bedömningen (3-5 meningar)",
+  "sources": ["URL1", "URL2", ...]
+}`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GOOGLE_AI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }],
+          tools: [{
+            google_search_retrieval: {
+              dynamic_retrieval_config: {
+                mode: "MODE_DYNAMIC",
+                dynamic_threshold: 0.7
               }
             }
+          }],
+          generationConfig: {
+            temperature: 0.3,
+            topK: 40,
+            topP: 0.95,
+            responseMimeType: "application/json"
           }
-        ],
-        tool_choice: { type: "function", function: { name: "analyze_status" } }
-      }),
-    });
+        }),
+      }
+    );
 
     if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: 'AI rate limit exceeded' }), {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: 'AI credits depleted' }), {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      throw new Error('AI API error');
+      const errorText = await response.text();
+      console.error('Google AI API error:', response.status, errorText);
+      throw new Error(`Google AI API error: ${response.status}`);
     }
 
     const aiData = await response.json();
-    const toolCall = aiData.choices[0]?.message?.tool_calls?.[0];
+    console.log('AI response:', JSON.stringify(aiData, null, 2));
     
-    if (!toolCall) {
-      throw new Error('No tool call in AI response');
+    const content = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!content) {
+      throw new Error('No content in AI response');
     }
 
-    const analysis = JSON.parse(toolCall.function.arguments);
+    const analysis = JSON.parse(content);
+    
+    // Extract grounding metadata (sources from Google Search)
+    const groundingMetadata = aiData.candidates?.[0]?.groundingMetadata;
+    if (groundingMetadata?.groundingChunks) {
+      const extractedSources = groundingMetadata.groundingChunks
+        .filter((chunk: any) => chunk.web?.uri)
+        .map((chunk: any) => chunk.web.uri);
+      
+      if (extractedSources.length > 0) {
+        analysis.sources = extractedSources;
+      }
+    }
 
     // Update promise with analysis
     const { error: updateError } = await supabase
