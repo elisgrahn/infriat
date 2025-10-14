@@ -63,6 +63,14 @@ Bedöm baserat på:
 - Officiella uttalanden och dokument
 - Aktuella nyheter och rapporter
 
+KRITISKT VIKTIGT om källor:
+- Du har INTE tillgång till internet eller externa källor
+- Du kan ENDAST basera din analys på din träningsdata
+- Inkludera ENDAST "sources" fältet om du är HELT SÄKER på att källan existerar och är korrekt
+- Om du inte är säker på exakta URL:er, lämna sources som en tom array []
+- UPPFINN ALDRIG URL:er eller påhittade källor
+- Det är BÄTTRE att ha inga källor än felaktiga källor
+
 Ge en tydlig bedömning och förklaring.`
           },
           {
