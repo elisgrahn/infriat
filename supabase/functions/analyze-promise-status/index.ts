@@ -81,12 +81,7 @@ Svara i ett strukturerat format.`;
             }]
           }],
           tools: [{
-            google_search_retrieval: {
-              dynamic_retrieval_config: {
-                mode: "MODE_DYNAMIC",
-                dynamic_threshold: 0.7
-              }
-            }
+            googleSearch: {}
           }],
           generationConfig: {
             temperature: 0.3,
@@ -124,10 +119,20 @@ Svara i ett strukturerat format.`;
     // Extract grounding metadata (sources from Google Search)
     const sources: string[] = [];
     const groundingMetadata = aiData.candidates?.[0]?.groundingMetadata;
-    if (groundingMetadata?.groundingChunks) {
-      const extractedSources = groundingMetadata.groundingChunks
-        .filter((chunk: any) => chunk.web?.uri)
-        .map((chunk: any) => chunk.web.uri);
+    if (groundingMetadata?.searchEntryPoint?.renderedContent) {
+      // Extract URLs from search results
+      const webSearchQueries = groundingMetadata.webSearchQueries || [];
+      console.log('Search queries used:', webSearchQueries);
+    }
+    
+    if (groundingMetadata?.groundingSupports) {
+      const extractedSources = groundingMetadata.groundingSupports
+        .filter((support: any) => support.groundingChunkIndices)
+        .flatMap((support: any) => {
+          return (groundingMetadata.retrievalMetadata?.webDynamicRetrievalScore || [])
+            .map((meta: any) => meta.uri)
+            .filter((uri: any) => uri);
+        });
       
       if (extractedSources.length > 0) {
         sources.push(...extractedSources);
