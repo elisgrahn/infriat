@@ -60,12 +60,12 @@ Basera din analys på:
 - Officiella uttalanden och dokument
 - Aktuella nyheter och rapporter
 
-Ge din bedömning i följande JSON-format:
-{
-  "status": "kept" | "broken" | "in-progress",
-  "explanation": "Detaljerad förklaring av bedömningen (3-5 meningar)",
-  "sources": ["URL1", "URL2", ...]
-}`;
+Ge din bedömning med:
+1. Status: "kept", "broken" eller "in-progress"
+2. En detaljerad förklaring (3-5 meningar)
+3. Källor (URL:er) som stödjer din bedömning
+
+Svara i ett strukturerat format.`;
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GOOGLE_AI_API_KEY}`,
@@ -91,8 +91,7 @@ Ge din bedömning i följande JSON-format:
           generationConfig: {
             temperature: 0.3,
             topK: 40,
-            topP: 0.95,
-            responseMimeType: "application/json"
+            topP: 0.95
           }
         }),
       }
@@ -107,14 +106,23 @@ Ge din bedömning i följande JSON-format:
     const aiData = await response.json();
     console.log('AI response:', JSON.stringify(aiData, null, 2));
     
-    const content = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!content) {
+    const textContent = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!textContent) {
       throw new Error('No content in AI response');
     }
 
-    const analysis = JSON.parse(content);
+    // Extract status from text response
+    let status: 'kept' | 'broken' | 'in-progress' = 'in-progress';
+    let explanation = textContent;
+    
+    if (textContent.toLowerCase().includes('status: kept') || textContent.toLowerCase().includes('status: "kept"')) {
+      status = 'kept';
+    } else if (textContent.toLowerCase().includes('status: broken') || textContent.toLowerCase().includes('status: "broken"')) {
+      status = 'broken';
+    }
     
     // Extract grounding metadata (sources from Google Search)
+    const sources: string[] = [];
     const groundingMetadata = aiData.candidates?.[0]?.groundingMetadata;
     if (groundingMetadata?.groundingChunks) {
       const extractedSources = groundingMetadata.groundingChunks
@@ -122,9 +130,15 @@ Ge din bedömning i följande JSON-format:
         .map((chunk: any) => chunk.web.uri);
       
       if (extractedSources.length > 0) {
-        analysis.sources = extractedSources;
+        sources.push(...extractedSources);
       }
     }
+
+    const analysis = {
+      status,
+      explanation: explanation.trim(),
+      sources
+    };
 
     // Update promise with analysis
     const { error: updateError } = await supabase
