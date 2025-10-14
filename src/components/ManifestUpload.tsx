@@ -122,8 +122,7 @@ export const ManifestUpload = () => {
             placeholder="Klistra in manifesttexten här..."
             value={manifestText}
             onChange={(e) => setManifestText(e.target.value)}
-            rows={10}
-            className="font-mono text-sm"
+            className="font-mono text-sm min-h-[400px] max-h-[600px]"
           />
         </div>
 

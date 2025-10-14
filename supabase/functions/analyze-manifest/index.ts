@@ -155,8 +155,44 @@ Inkludera löften även om de inte har specifika siffror, så länge åtgärden 
       throw new Error(`Party not found: ${partyAbbreviation}`);
     }
 
-    // Insert promises
-    const promisesToInsert = extractedPromises.promises.map((p: any) => ({
+    // Check for existing promises from same party and election year
+    const { data: existingPromises, error: existingError } = await supabase
+      .from('promises')
+      .select('promise_text, summary')
+      .eq('party_id', party.id)
+      .eq('election_year', electionYear);
+
+    if (existingError) {
+      console.error('Error fetching existing promises:', existingError);
+    }
+
+    // Filter out duplicates based on similar promise_text or summary
+    const existingTexts = new Set(existingPromises?.map(p => p.promise_text.toLowerCase().trim()) || []);
+    const existingSummaries = new Set(existingPromises?.map(p => p.summary?.toLowerCase().trim()) || []);
+
+    const uniquePromises = extractedPromises.promises.filter((p: any) => {
+      const textMatch = existingTexts.has(p.promise_text.toLowerCase().trim());
+      const summaryMatch = p.summary && existingSummaries.has(p.summary.toLowerCase().trim());
+      return !textMatch && !summaryMatch;
+    });
+
+    console.log(`Extracted ${extractedPromises.promises.length} promises, ${uniquePromises.length} are unique`);
+
+    if (uniquePromises.length === 0) {
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          count: 0,
+          message: 'Inga nya unika löften hittades (alla verkar redan finnas i databasen)'
+        }), 
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Insert only unique promises
+    const promisesToInsert = uniquePromises.map((p: any) => ({
       party_id: party.id,
       election_year: electionYear,
       promise_text: p.promise_text,
@@ -176,7 +212,7 @@ Inkludera löften även om de inte har specifika siffror, så länge åtgärden 
       throw new Error('Failed to insert promises');
     }
 
-    console.log(`Inserted ${insertedPromises.length} promises`);
+    console.log(`Inserted ${insertedPromises.length} unique promises`);
 
     return new Response(
       JSON.stringify({ 
