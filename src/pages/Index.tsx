@@ -178,11 +178,13 @@ const Index = () => {
                 {filteredPromises.map((promise) => (
                   <PromiseCard
                     key={promise.id}
+                    promiseId={promise.id}
                     promise={promise.promise_text}
                     party={promise.parties.name}
                     date={new Date(promise.created_at).toLocaleDateString('sv-SE')}
                     status={promise.status}
                     description={promise.summary || undefined}
+                    onStatusUpdate={fetchPromises}
                   />
                 ))}
               </div>

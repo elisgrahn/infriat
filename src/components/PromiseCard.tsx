@@ -1,15 +1,21 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar, Users, RefreshCw } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 type PromiseStatus = "kept" | "broken" | "in-progress" | "pending-analysis";
 
 interface PromiseCardProps {
+  promiseId: string;
   promise: string;
   party: string;
   date: string;
   status: PromiseStatus;
   description?: string;
+  onStatusUpdate?: () => void;
 }
 
 const statusConfig = {
@@ -35,8 +41,28 @@ const statusConfig = {
   },
 };
 
-export const PromiseCard = ({ promise, party, date, status, description }: PromiseCardProps) => {
+export const PromiseCard = ({ promiseId, promise, party, date, status, description, onStatusUpdate }: PromiseCardProps) => {
   const config = statusConfig[status];
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  const handleAnalyze = async () => {
+    setIsAnalyzing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-promise-status', {
+        body: { promiseId }
+      });
+
+      if (error) throw error;
+
+      toast.success('Status analyserad!');
+      onStatusUpdate?.();
+    } catch (error) {
+      console.error('Error analyzing promise:', error);
+      toast.error('Kunde inte analysera status');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   return (
     <Card className="p-6 hover:shadow-lg transition-all duration-300 border-l-4 border-l-primary">
@@ -67,6 +93,19 @@ export const PromiseCard = ({ promise, party, date, status, description }: Promi
             <span>{date}</span>
           </div>
         </div>
+
+        {status === 'pending-analysis' && (
+          <Button
+            onClick={handleAnalyze}
+            disabled={isAnalyzing}
+            variant="outline"
+            size="sm"
+            className="shrink-0"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${isAnalyzing ? 'animate-spin' : ''}`} />
+            {isAnalyzing ? 'Analyserar...' : 'Analysera status'}
+          </Button>
+        )}
       </div>
     </Card>
   );
