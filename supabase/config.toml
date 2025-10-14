@@ -1,4 +1,1 @@
 project_id = "turijymricwxtdrslcuz"
-
-[functions.analyze-promise-status]
-verify_jwt = false

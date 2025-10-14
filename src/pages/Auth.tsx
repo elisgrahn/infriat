@@ -7,6 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { z } from 'zod';
+
+const authSchema = z.object({
+  email: z.string().trim().email({ message: 'Ogiltig e-postadress' }).max(255, { message: 'E-post får vara max 255 tecken' }),
+  password: z.string().min(8, { message: 'Lösenord måste vara minst 8 tecken' }).max(128, { message: 'Lösenord får vara max 128 tecken' })
+});
 
 export default function Auth() {
   const [email, setEmail] = useState('');
@@ -26,24 +32,43 @@ export default function Auth() {
     e.preventDefault();
     setIsLoading(true);
 
-    const { error } = await signIn(email, password);
+    try {
+      // Validate input
+      const validatedData = authSchema.parse({ email, password });
 
-    if (error) {
-      toast({
-        title: 'Fel vid inloggning',
-        description: error.message === 'Invalid login credentials' 
-          ? 'Felaktigt email eller lösenord' 
-          : error.message,
-        variant: 'destructive',
-      });
-    } else {
-      toast({
-        title: 'Välkommen!',
-        description: 'Du är nu inloggad',
-      });
+      const { error } = await signIn(validatedData.email, validatedData.password);
+
+      if (error) {
+        toast({
+          title: 'Fel vid inloggning',
+          description: error.message === 'Invalid login credentials' 
+            ? 'Felaktigt email eller lösenord' 
+            : 'Ett fel uppstod vid inloggning',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Välkommen!',
+          description: 'Du är nu inloggad',
+        });
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: 'Ogiltig inmatning',
+          description: error.errors[0].message,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Fel vid inloggning',
+          description: 'Ett oväntat fel uppstod',
+          variant: 'destructive',
+        });
+      }
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   return (

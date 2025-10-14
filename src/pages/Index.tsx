@@ -56,7 +56,7 @@ const Index = () => {
       if (error) throw error;
       setPromises(data || []);
     } catch (error) {
-      console.error('Error fetching promises:', error);
+      // Silently handle error - data already initialized to empty array
     } finally {
       setLoading(false);
     }

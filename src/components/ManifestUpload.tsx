@@ -59,10 +59,9 @@ export const ManifestUpload = () => {
       setSelectedParty("");
       setSelectedYear("");
     } catch (error: any) {
-      console.error('Analysis error:', error);
       toast({
         title: "Fel vid analys",
-        description: error.message || "Kunde inte analysera manifestet",
+        description: "Kunde inte analysera manifestet",
         variant: "destructive"
       });
     } finally {

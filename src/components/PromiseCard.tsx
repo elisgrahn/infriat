@@ -63,7 +63,6 @@ export const PromiseCard = ({ promiseId, promise, party, date, status, descripti
       toast.success('Status analyserad!');
       onStatusUpdate?.();
     } catch (error) {
-      console.error('Error analyzing promise:', error);
       toast.error('Kunde inte analysera status');
     } finally {
       setIsAnalyzing(false);
