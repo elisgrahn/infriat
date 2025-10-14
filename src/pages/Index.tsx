@@ -41,7 +41,6 @@ const Index = () => {
       const { data, error } = await supabase
         .from('promises')
         .select('*, parties(*)')
-        .neq('status', 'pending-analysis')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
