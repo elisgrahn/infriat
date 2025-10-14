@@ -101,48 +101,60 @@ Svara i ett strukturerat format.`;
     const aiData = await response.json();
     console.log('AI response:', JSON.stringify(aiData, null, 2));
     
-    const textContent = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
+    // Combine all text parts from the response
+    const parts = aiData.candidates?.[0]?.content?.parts || [];
+    const textContent = parts
+      .filter((part: any) => part.text)
+      .map((part: any) => part.text)
+      .join('\n')
+      .trim();
+      
     if (!textContent) {
       throw new Error('No content in AI response');
     }
 
     // Extract status from text response
     let status: 'kept' | 'broken' | 'in-progress' = 'in-progress';
-    let explanation = textContent;
     
-    if (textContent.toLowerCase().includes('status: kept') || textContent.toLowerCase().includes('status: "kept"')) {
-      status = 'kept';
-    } else if (textContent.toLowerCase().includes('status: broken') || textContent.toLowerCase().includes('status: "broken"')) {
-      status = 'broken';
+    const statusMatch = textContent.match(/\*\*Status:\*\*\s*(kept|broken|in-progress)/i) || 
+                       textContent.match(/Status:\s*(kept|broken|in-progress)/i);
+    
+    if (statusMatch) {
+      status = statusMatch[1].toLowerCase() as 'kept' | 'broken' | 'in-progress';
     }
     
-    // Extract grounding metadata (sources from Google Search)
+    // Extract explanation from text
+    const explanationMatch = textContent.match(/\*\*Förklaring:\*\*\s*([^*]+)/i) ||
+                            textContent.match(/Förklaring:\s*([^*]+)/i);
+    
+    const explanation = explanationMatch ? explanationMatch[1].trim() : textContent;
+    
+    // Extract real URLs from grounding metadata
     const sources: string[] = [];
     const groundingMetadata = aiData.candidates?.[0]?.groundingMetadata;
-    if (groundingMetadata?.searchEntryPoint?.renderedContent) {
-      // Extract URLs from search results
-      const webSearchQueries = groundingMetadata.webSearchQueries || [];
-      console.log('Search queries used:', webSearchQueries);
-    }
     
     if (groundingMetadata?.groundingSupports) {
-      const extractedSources = groundingMetadata.groundingSupports
-        .filter((support: any) => support.groundingChunkIndices)
-        .flatMap((support: any) => {
-          return (groundingMetadata.retrievalMetadata?.webDynamicRetrievalScore || [])
-            .map((meta: any) => meta.uri)
-            .filter((uri: any) => uri);
-        });
-      
-      if (extractedSources.length > 0) {
-        sources.push(...extractedSources);
+      for (const support of groundingMetadata.groundingSupports) {
+        if (support.segment?.text && support.groundingChunkIndices) {
+          for (const chunkIndex of support.groundingChunkIndices) {
+            const chunk = groundingMetadata.retrievalMetadata?.[chunkIndex];
+            if (chunk?.webChunk?.uri) {
+              sources.push(chunk.webChunk.uri);
+            }
+          }
+        }
       }
+    }
+    
+    // Also try to extract from webSearchQueries metadata
+    if (groundingMetadata?.webSearchQueries && sources.length === 0) {
+      console.log('No direct URIs found in grounding metadata');
     }
 
     const analysis = {
       status,
-      explanation: explanation.trim(),
-      sources
+      explanation: explanation.substring(0, 500), // Limit length
+      sources: [...new Set(sources)] // Remove duplicates
     };
 
     // Update promise with analysis
