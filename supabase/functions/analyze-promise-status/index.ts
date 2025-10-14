@@ -42,30 +42,22 @@ serve(async (req) => {
     console.log(`Analyzing status for promise: ${promise.promise_text}`);
 
     // Call Google Gemini with grounding for real sources
-    const prompt = `Du är en expert på svensk politik och faktakontroll av vallöften.
-
-Analysera följande vallöfte och bedöm om det har hållits, brutits eller är pågående.
+    const prompt = `Analysera detta svenska politiska vallöfte:
 
 Parti: ${promise.parties.name}
 Valår: ${promise.election_year}
 Vallöfte: ${promise.promise_text}
 Sammanfattning: ${promise.summary}
-Original citat: "${promise.direct_quote}"
 
 ${context ? `Ytterligare kontext: ${context}` : ''}
 
-Basera din analys på:
-- Konkreta åtgärder som vidtagits
-- Lagförslag och beslut
-- Officiella uttalanden och dokument
-- Aktuella nyheter och rapporter
+Ge en strukturerad bedömning enligt detta format:
 
-Ge din bedömning med:
-1. Status: "kept", "broken" eller "in-progress"
-2. En detaljerad förklaring (3-5 meningar)
-3. Källor (URL:er) som stödjer din bedömning
+**Status:** [välj: kept, broken, eller in-progress]
 
-Svara i ett strukturerat format.`;
+**Förklaring:** [3-5 meningar som förklarar statusen baserat på konkreta åtgärder, lagförslag, beslut och aktuella nyheter]
+
+**Källor:** [lista med relevanta källor]`;
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GOOGLE_AI_API_KEY}`,
@@ -113,47 +105,58 @@ Svara i ett strukturerat format.`;
       throw new Error('No content in AI response');
     }
 
-    // Extract status from text response
+    // Extract status from text response - look for the exact pattern
     let status: 'kept' | 'broken' | 'in-progress' = 'in-progress';
     
-    const statusMatch = textContent.match(/\*\*Status:\*\*\s*(kept|broken|in-progress)/i) || 
-                       textContent.match(/Status:\s*(kept|broken|in-progress)/i);
-    
-    if (statusMatch) {
-      status = statusMatch[1].toLowerCase() as 'kept' | 'broken' | 'in-progress';
+    const lowerText = textContent.toLowerCase();
+    if (lowerText.includes('status:** kept') || lowerText.includes('status: kept')) {
+      status = 'kept';
+    } else if (lowerText.includes('status:** broken') || lowerText.includes('status: broken')) {
+      status = 'broken';
     }
     
-    // Extract explanation from text
-    const explanationMatch = textContent.match(/\*\*Förklaring:\*\*\s*([^*]+)/i) ||
-                            textContent.match(/Förklaring:\s*([^*]+)/i);
+    // Extract explanation - get text between Status and Källor sections
+    const explanationMatch = textContent.match(/\*\*Förklaring:\*\*\s*([^*]+?)(?=\n\n\*\*Källor|\n\*\*Källor|$)/is) ||
+                            textContent.match(/Förklaring:\s*([^*]+?)(?=Källor|$)/is);
     
-    const explanation = explanationMatch ? explanationMatch[1].trim() : textContent;
+    let explanation = explanationMatch ? explanationMatch[1].trim() : textContent;
     
     // Extract real URLs from grounding metadata
     const sources: string[] = [];
     const groundingMetadata = aiData.candidates?.[0]?.groundingMetadata;
     
+    // Try to extract from groundingSupports which contains the actual web URIs
     if (groundingMetadata?.groundingSupports) {
       for (const support of groundingMetadata.groundingSupports) {
-        if (support.segment?.text && support.groundingChunkIndices) {
+        // Each support references chunks which should contain web URIs
+        if (support.groundingChunkIndices) {
           for (const chunkIndex of support.groundingChunkIndices) {
-            const chunk = groundingMetadata.retrievalMetadata?.[chunkIndex];
-            if (chunk?.webChunk?.uri) {
-              sources.push(chunk.webChunk.uri);
+            const webChunks = groundingMetadata.webSearchQueries || groundingMetadata.groundingChunks;
+            if (webChunks && webChunks[chunkIndex]) {
+              const chunk = webChunks[chunkIndex];
+              if (chunk.uri) {
+                sources.push(chunk.uri);
+              } else if (chunk.web?.uri) {
+                sources.push(chunk.web.uri);
+              }
             }
           }
         }
       }
     }
     
-    // Also try to extract from webSearchQueries metadata
-    if (groundingMetadata?.webSearchQueries && sources.length === 0) {
-      console.log('No direct URIs found in grounding metadata');
+    // Fallback: Parse URLs from the text content itself (avoid redirect links)
+    if (sources.length === 0) {
+      // Extract real URLs from text, avoiding the grounding-api-redirect links
+      const urlMatches = textContent.matchAll(/https?:\/\/(?!vertexaisearch\.cloud\.google\.com)[^\s\)]+/g);
+      for (const match of urlMatches) {
+        sources.push(match[0]);
+      }
     }
 
     const analysis = {
       status,
-      explanation: explanation.substring(0, 500), // Limit length
+      explanation: explanation,
       sources: [...new Set(sources)] // Remove duplicates
     };
 
