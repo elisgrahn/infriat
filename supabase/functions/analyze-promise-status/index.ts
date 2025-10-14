@@ -125,39 +125,22 @@ Ge en strukturerad bedömning enligt detta format:
     const sources: string[] = [];
     const groundingMetadata = aiData.candidates?.[0]?.groundingMetadata;
     
-    // Try to extract from groundingSupports which contains the actual web URIs
-    if (groundingMetadata?.groundingSupports) {
-      for (const support of groundingMetadata.groundingSupports) {
-        // Each support references chunks which should contain web URIs
-        if (support.groundingChunkIndices) {
-          for (const chunkIndex of support.groundingChunkIndices) {
-            const webChunks = groundingMetadata.webSearchQueries || groundingMetadata.groundingChunks;
-            if (webChunks && webChunks[chunkIndex]) {
-              const chunk = webChunks[chunkIndex];
-              if (chunk.uri) {
-                sources.push(chunk.uri);
-              } else if (chunk.web?.uri) {
-                sources.push(chunk.web.uri);
-              }
-            }
-          }
+    // Extract from groundingChunks which contains web URIs
+    if (groundingMetadata?.groundingChunks) {
+      console.log(`Found ${groundingMetadata.groundingChunks.length} grounding chunks`);
+      for (const chunk of groundingMetadata.groundingChunks) {
+        if (chunk.web?.uri) {
+          sources.push(chunk.web.uri);
         }
       }
     }
     
-    // Fallback: Parse URLs from the text content itself (avoid redirect links)
-    if (sources.length === 0) {
-      // Extract real URLs from text, avoiding the grounding-api-redirect links
-      const urlMatches = textContent.matchAll(/https?:\/\/(?!vertexaisearch\.cloud\.google\.com)[^\s\)]+/g);
-      for (const match of urlMatches) {
-        sources.push(match[0]);
-      }
-    }
+    console.log(`Extracted ${sources.length} sources from metadata`);
 
     const analysis = {
       status,
       explanation: explanation,
-      sources: [...new Set(sources)] // Remove duplicates
+      sources: [...new Set(sources)].slice(0, 5) // Remove duplicates and limit to 5 sources
     };
 
     // Update promise with analysis
