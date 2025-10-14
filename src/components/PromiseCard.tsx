@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Users } from "lucide-react";
 
-type PromiseStatus = "kept" | "broken" | "in-progress";
+type PromiseStatus = "kept" | "broken" | "in-progress" | "pending-analysis";
 
 interface PromiseCardProps {
   promise: string;
@@ -27,6 +27,11 @@ const statusConfig = {
     label: "Pågående",
     variant: "secondary" as const,
     className: "bg-warning text-warning-foreground hover:bg-warning/90",
+  },
+  "pending-analysis": {
+    label: "Under analys",
+    variant: "secondary" as const,
+    className: "bg-muted text-muted-foreground hover:bg-muted/90",
   },
 };
 

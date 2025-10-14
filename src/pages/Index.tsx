@@ -1,16 +1,60 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PromiseCard } from "@/components/PromiseCard";
 import { PromiseFilters } from "@/components/PromiseFilters";
-import { mockPromises } from "@/data/mockPromises";
-import { ShieldCheck, Scale, TrendingUp } from "lucide-react";
+import { ShieldCheck, Scale, TrendingUp, Settings } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Promise {
+  id: string;
+  party_id: string;
+  election_year: number;
+  promise_text: string;
+  summary: string | null;
+  direct_quote: string | null;
+  measurability_reason: string | null;
+  status: 'kept' | 'broken' | 'in-progress' | 'pending-analysis';
+  status_explanation: string | null;
+  status_sources: string[] | null;
+  parties: {
+    name: string;
+    abbreviation: string;
+  };
+  created_at: string;
+}
 
 const Index = () => {
+  const navigate = useNavigate();
   const [selectedParty, setSelectedParty] = useState("Alla");
   const [selectedStatus, setSelectedStatus] = useState("Alla");
   const [searchQuery, setSearchQuery] = useState("");
+  const [promises, setPromises] = useState<Promise[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredPromises = mockPromises.filter((promise) => {
-    const matchesParty = selectedParty === "Alla" || promise.party === selectedParty;
+  useEffect(() => {
+    fetchPromises();
+  }, []);
+
+  const fetchPromises = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('promises')
+        .select('*, parties(*)')
+        .neq('status', 'pending-analysis')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setPromises(data || []);
+    } catch (error) {
+      console.error('Error fetching promises:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredPromises = promises.filter((promise) => {
+    const matchesParty = selectedParty === "Alla" || promise.parties.name === selectedParty;
     const matchesStatus =
       selectedStatus === "Alla" ||
       (selectedStatus === "Uppfyllt" && promise.status === "kept") ||
@@ -18,17 +62,17 @@ const Index = () => {
       (selectedStatus === "Pågående" && promise.status === "in-progress");
     const matchesSearch =
       searchQuery === "" ||
-      promise.promise.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      promise.party.toLowerCase().includes(searchQuery.toLowerCase());
+      promise.promise_text.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      promise.parties.name.toLowerCase().includes(searchQuery.toLowerCase());
 
     return matchesParty && matchesStatus && matchesSearch;
   });
 
   const stats = {
-    total: mockPromises.length,
-    kept: mockPromises.filter((p) => p.status === "kept").length,
-    broken: mockPromises.filter((p) => p.status === "broken").length,
-    inProgress: mockPromises.filter((p) => p.status === "in-progress").length,
+    total: promises.length,
+    kept: promises.filter((p) => p.status === "kept").length,
+    broken: promises.filter((p) => p.status === "broken").length,
+    inProgress: promises.filter((p) => p.status === "in-progress").length,
   };
 
   return (
@@ -42,9 +86,19 @@ const Index = () => {
               <span className="text-sm font-medium">Politisk transparens</span>
             </div>
             
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-              Politiska Löften
-            </h1>
+            <div className="flex items-center justify-center gap-4">
+              <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
+                Politiska Löften
+              </h1>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate("/admin")}
+                className="text-primary-foreground hover:bg-primary-foreground/10"
+              >
+                <Settings className="w-6 h-6" />
+              </Button>
+            </div>
             
             <p className="text-lg md:text-xl text-primary-foreground/90 max-w-2xl mx-auto leading-relaxed">
               Vi granskar svenska politiska partier och följer upp deras vallöften. 
@@ -108,7 +162,13 @@ const Index = () => {
               </h2>
             </div>
 
-            {filteredPromises.length === 0 ? (
+            {loading ? (
+              <div className="text-center py-16 bg-card rounded-xl border">
+                <p className="text-muted-foreground text-lg">
+                  Laddar löften...
+                </p>
+              </div>
+            ) : filteredPromises.length === 0 ? (
               <div className="text-center py-16 bg-card rounded-xl border">
                 <p className="text-muted-foreground text-lg">
                   Inga löften hittades som matchar dina filter.
@@ -119,11 +179,11 @@ const Index = () => {
                 {filteredPromises.map((promise) => (
                   <PromiseCard
                     key={promise.id}
-                    promise={promise.promise}
-                    party={promise.party}
-                    date={promise.date}
+                    promise={promise.promise_text}
+                    party={promise.parties.name}
+                    date={new Date(promise.created_at).toLocaleDateString('sv-SE')}
                     status={promise.status}
-                    description={promise.description}
+                    description={promise.summary || undefined}
                   />
                 ))}
               </div>

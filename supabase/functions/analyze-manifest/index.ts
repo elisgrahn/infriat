@@ -1,0 +1,191 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { manifestText, partyAbbreviation, electionYear } = await req.json();
+    
+    if (!manifestText || !partyAbbreviation || !electionYear) {
+      throw new Error('Missing required parameters');
+    }
+
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY not configured');
+    }
+
+    console.log(`Analyzing manifest for ${partyAbbreviation} ${electionYear}`);
+
+    // Call Lovable AI to analyze the manifest
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'system',
+            content: `Du är en expert på att analysera politiska valmanifest och extrahera mätbara vallöften. 
+            
+Din uppgift är att:
+1. Identifiera konkreta, mätbara vallöften i texten
+2. För varje vallöfte, ge en kort sammanfattning
+3. Inkludera ett direkt citat från manifestet
+4. Förklara varför löftet är mätbart
+
+Fokusera på löften som kan verifieras objektivt, inte vaga mål eller principer.`
+          },
+          {
+            role: 'user',
+            content: manifestText
+          }
+        ],
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "extract_promises",
+              description: "Extrahera mätbara vallöften från valmanifestet",
+              parameters: {
+                type: "object",
+                properties: {
+                  promises: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        promise_text: { 
+                          type: "string",
+                          description: "En kort, tydlig formulering av vallöftet"
+                        },
+                        summary: { 
+                          type: "string",
+                          description: "En kort sammanfattning (max 2 meningar)"
+                        },
+                        direct_quote: { 
+                          type: "string",
+                          description: "Exakt citat från manifestet som stödjer löftet"
+                        },
+                        measurability_reason: { 
+                          type: "string",
+                          description: "Förklaring av varför löftet är mätbart"
+                        }
+                      },
+                      required: ["promise_text", "summary", "direct_quote", "measurability_reason"],
+                      additionalProperties: false
+                    }
+                  }
+                },
+                required: ["promises"],
+                additionalProperties: false
+              }
+            }
+          }
+        ],
+        tool_choice: { type: "function", function: { name: "extract_promises" } }
+      }),
+    });
+
+    if (!response.ok) {
+      if (response.status === 429) {
+        return new Response(JSON.stringify({ error: 'AI rate limit exceeded, please try again later.' }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      if (response.status === 402) {
+        return new Response(JSON.stringify({ error: 'AI credits depleted, please add funds.' }), {
+          status: 402,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      const errorText = await response.text();
+      console.error('AI API error:', response.status, errorText);
+      throw new Error('AI API error');
+    }
+
+    const aiData = await response.json();
+    console.log('AI response received');
+
+    // Extract the tool call result
+    const toolCall = aiData.choices[0]?.message?.tool_calls?.[0];
+    if (!toolCall) {
+      throw new Error('No tool call in AI response');
+    }
+
+    const extractedPromises = JSON.parse(toolCall.function.arguments);
+    
+    // Store promises in database
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Get party ID
+    const { data: party, error: partyError } = await supabase
+      .from('parties')
+      .select('id')
+      .eq('abbreviation', partyAbbreviation)
+      .single();
+
+    if (partyError || !party) {
+      throw new Error(`Party not found: ${partyAbbreviation}`);
+    }
+
+    // Insert promises
+    const promisesToInsert = extractedPromises.promises.map((p: any) => ({
+      party_id: party.id,
+      election_year: electionYear,
+      promise_text: p.promise_text,
+      summary: p.summary,
+      direct_quote: p.direct_quote,
+      measurability_reason: p.measurability_reason,
+      status: 'pending-analysis'
+    }));
+
+    const { data: insertedPromises, error: insertError } = await supabase
+      .from('promises')
+      .insert(promisesToInsert)
+      .select();
+
+    if (insertError) {
+      console.error('Insert error:', insertError);
+      throw new Error('Failed to insert promises');
+    }
+
+    console.log(`Inserted ${insertedPromises.length} promises`);
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        count: insertedPromises.length,
+        promises: insertedPromises
+      }), 
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+
+  } catch (error) {
+    console.error('Error in analyze-manifest:', error);
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), 
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+  }
+});

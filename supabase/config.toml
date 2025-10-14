@@ -1,1 +1,7 @@
 project_id = "turijymricwxtdrslcuz"
+
+[functions.analyze-manifest]
+verify_jwt = false
+
+[functions.analyze-promise-status]
+verify_jwt = false
