@@ -14,7 +14,156 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      parties: {
+        Row: {
+          abbreviation: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          abbreviation: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          abbreviation?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      promises: {
+        Row: {
+          created_at: string
+          direct_quote: string | null
+          election_year: number
+          id: string
+          measurability_reason: string | null
+          party_id: string
+          promise_text: string
+          status: Database["public"]["Enums"]["promise_status"]
+          status_explanation: string | null
+          status_sources: string[] | null
+          summary: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          direct_quote?: string | null
+          election_year: number
+          id?: string
+          measurability_reason?: string | null
+          party_id: string
+          promise_text: string
+          status?: Database["public"]["Enums"]["promise_status"]
+          status_explanation?: string | null
+          status_sources?: string[] | null
+          summary?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          direct_quote?: string | null
+          election_year?: number
+          id?: string
+          measurability_reason?: string | null
+          party_id?: string
+          promise_text?: string
+          status?: Database["public"]["Enums"]["promise_status"]
+          status_explanation?: string | null
+          status_sources?: string[] | null
+          summary?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promises_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      status_suggestions: {
+        Row: {
+          created_at: string
+          downvotes: number
+          explanation: string
+          id: string
+          promise_id: string
+          sources: string[] | null
+          suggested_status: Database["public"]["Enums"]["promise_status"]
+          upvotes: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          downvotes?: number
+          explanation: string
+          id?: string
+          promise_id: string
+          sources?: string[] | null
+          suggested_status: Database["public"]["Enums"]["promise_status"]
+          upvotes?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          downvotes?: number
+          explanation?: string
+          id?: string
+          promise_id?: string
+          sources?: string[] | null
+          suggested_status?: Database["public"]["Enums"]["promise_status"]
+          upvotes?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "status_suggestions_promise_id_fkey"
+            columns: ["promise_id"]
+            isOneToOne: false
+            referencedRelation: "promises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suggestion_votes: {
+        Row: {
+          created_at: string
+          id: string
+          suggestion_id: string
+          user_id: string
+          vote_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          suggestion_id: string
+          user_id: string
+          vote_type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          suggestion_id?: string
+          user_id?: string
+          vote_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suggestion_votes_suggestion_id_fkey"
+            columns: ["suggestion_id"]
+            isOneToOne: false
+            referencedRelation: "status_suggestions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +172,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      promise_status: "kept" | "broken" | "in-progress" | "pending-analysis"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +299,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      promise_status: ["kept", "broken", "in-progress", "pending-analysis"],
+    },
   },
 } as const
