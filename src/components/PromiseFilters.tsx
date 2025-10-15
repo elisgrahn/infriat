@@ -35,7 +35,7 @@ export const PromiseFilters = ({
   return (
     <div className="space-y-6">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
           placeholder="Sök efter löften..."
           value={searchQuery}
@@ -53,11 +53,7 @@ export const PromiseFilters = ({
           className="flex flex-wrap gap-2 justify-start"
         >
           {parties.map((party) => (
-            <ToggleGroupItem
-              key={party}
-              value={party}
-              className={`transition-all text-sm data-[state=on]:text-gray-900 ${partyColors[party]}`}
-            >
+            <ToggleGroupItem key={party} value={party} className={`transition-all text-sm ${partyColors[party]}`}>
               {party}
             </ToggleGroupItem>
           ))}
@@ -73,11 +69,7 @@ export const PromiseFilters = ({
           className="flex flex-wrap gap-2 justify-start"
         >
           {statuses.map((status) => (
-            <ToggleGroupItem
-              key={status}
-              value={status}
-              className={`transition-all text-sm data-[state=on]:text-gray-900 ${statusColors[status]}`}
-            >
+            <ToggleGroupItem key={status} value={status} className={`transition-all text-sm ${statusColors[status]}`}>
               {status}
             </ToggleGroupItem>
           ))}
