@@ -59,11 +59,32 @@ const Index = () => {
 
   // Update URL when filters change
   useEffect(() => {
-    const params = new URLSearchParams();
-    if (selectedParties.length > 0) params.set('parties', selectedParties.join(','));
-    if (selectedStatuses.length > 0) params.set('statuses', selectedStatuses.join(','));
-    if (searchQuery) params.set('search', searchQuery);
-    if (sortBy !== 'newest') params.set('sort', sortBy);
+    const params = new URLSearchParams(searchParams);
+    
+    // Update or remove filter params
+    if (selectedParties.length > 0) {
+      params.set('parties', selectedParties.join(','));
+    } else {
+      params.delete('parties');
+    }
+    
+    if (selectedStatuses.length > 0) {
+      params.set('statuses', selectedStatuses.join(','));
+    } else {
+      params.delete('statuses');
+    }
+    
+    if (searchQuery) {
+      params.set('search', searchQuery);
+    } else {
+      params.delete('search');
+    }
+    
+    if (sortBy !== 'newest') {
+      params.set('sort', sortBy);
+    } else {
+      params.delete('sort');
+    }
     
     setSearchParams(params, { replace: true });
   }, [selectedParties, selectedStatuses, searchQuery, sortBy]);
