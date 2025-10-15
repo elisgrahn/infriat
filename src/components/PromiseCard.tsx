@@ -169,13 +169,19 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
         if (normalizedQuote.length > 30) {
           const words = normalizedQuote.split(' ').filter(w => w.length > 0);
           
-          // Try matching with 80% of words present
-          const requiredWords = Math.floor(words.length * 0.8);
+          // Try 70% match first
+          let requiredWords = Math.floor(words.length * 0.7);
           const matchedWords = words.filter(word => 
-            word.length > 3 && normalizedPageText.includes(word)
+            word.length > 2 && normalizedPageText.includes(word)
           );
           
           if (matchedWords.length >= requiredWords) {
+            foundPage = i;
+            break;
+          }
+          
+          // If still not found on this page, try even more relaxed (60%)
+          if (matchedWords.length >= Math.floor(words.length * 0.6)) {
             foundPage = i;
             break;
           }

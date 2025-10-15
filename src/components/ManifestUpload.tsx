@@ -116,16 +116,34 @@ export const ManifestUpload = () => {
         // Try fuzzy match for longer quotes
         if (!foundPage && normalizedQuote.length > 30) {
           const words = normalizedQuote.split(' ').filter(w => w.length > 0);
-          const requiredWords = Math.floor(words.length * 0.8);
-
+          
+          // Try 70% match first
+          let requiredWords = Math.floor(words.length * 0.7);
+          
           for (const { pageNum, normalized } of pageTexts) {
             const matchedWords = words.filter(word => 
-              word.length > 3 && normalized.includes(word)
+              word.length > 2 && normalized.includes(word)
             );
-
+            
             if (matchedWords.length >= requiredWords) {
               foundPage = pageNum;
               break;
+            }
+          }
+          
+          // If still not found, try even more relaxed (60%)
+          if (!foundPage) {
+            requiredWords = Math.floor(words.length * 0.6);
+            
+            for (const { pageNum, normalized } of pageTexts) {
+              const matchedWords = words.filter(word => 
+                word.length > 2 && normalized.includes(word)
+              );
+              
+              if (matchedWords.length >= requiredWords) {
+                foundPage = pageNum;
+                break;
+              }
             }
           }
         }
