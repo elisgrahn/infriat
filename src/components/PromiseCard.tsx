@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Calendar, Users, RefreshCw, ExternalLink, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -28,21 +29,25 @@ const statusConfig = {
     label: "Uppfyllt",
     variant: "default" as const,
     className: "bg-success text-success-foreground hover:bg-success/90",
+    borderColor: "border-l-success",
   },
   broken: {
     label: "Brutet",
     variant: "destructive" as const,
     className: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+    borderColor: "border-l-destructive",
   },
   "in-progress": {
     label: "Pågående",
     variant: "secondary" as const,
     className: "bg-warning text-warning-foreground hover:bg-warning/90",
+    borderColor: "border-l-warning",
   },
   "pending-analysis": {
     label: "Under analys",
     variant: "secondary" as const,
     className: "bg-muted text-muted-foreground hover:bg-muted/90",
+    borderColor: "border-l-muted",
   },
 };
 
@@ -70,7 +75,7 @@ export const PromiseCard = ({ promiseId, promise, party, date, status, descripti
   };
 
   return (
-    <Card className="p-6 hover:shadow-lg transition-all duration-300 border-l-4 border-l-primary">
+    <Card className={`p-6 hover:shadow-lg transition-all duration-300 border-l-4 ${config.borderColor}`}>
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
         <div className="flex-1 space-y-3">
           <div className="flex items-start gap-3 flex-wrap">
@@ -93,44 +98,60 @@ export const PromiseCard = ({ promiseId, promise, party, date, status, descripti
             </p>
           )}
 
-          {directQuote && (
-            <div className="bg-muted/50 border-l-2 border-primary pl-4 py-2 rounded-r">
-              <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-1">
-                <FileText className="w-3 h-3" />
-                <span>Ursprungligt citat från valmanifest:</span>
-              </div>
-              <p className="text-sm italic text-foreground">"{directQuote}"</p>
-            </div>
-          )}
-
-          {statusExplanation && status !== 'pending-analysis' && (
-            <div className="space-y-2 pt-2 border-t">
-              <div className="text-sm text-foreground">
-                <span className="font-medium">Statusbedömning: </span>
-                {statusExplanation}
-              </div>
-              
-              {statusSources && statusSources.length > 0 && (
-                <div className="space-y-1">
-                  <p className="text-xs font-medium text-muted-foreground">Källor:</p>
-                  <ul className="space-y-1">
-                    {statusSources.map((source, idx) => (
-                      <li key={idx} className="text-xs">
-                        <a 
-                          href={source} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline inline-flex items-center gap-1"
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                          {source}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+          {(directQuote || (statusExplanation && status !== 'pending-analysis') || (statusSources && statusSources.length > 0)) && (
+            <Accordion type="single" collapsible className="w-full">
+              {directQuote && (
+                <AccordionItem value="quote">
+                  <AccordionTrigger className="text-sm font-medium">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4" />
+                      Ursprungligt citat från valmanifest
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="bg-muted/50 border-l-2 border-primary pl-4 py-2 rounded-r">
+                      <p className="text-sm italic text-foreground">"{directQuote}"</p>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
               )}
-            </div>
+
+              {statusExplanation && status !== 'pending-analysis' && (
+                <AccordionItem value="explanation">
+                  <AccordionTrigger className="text-sm font-medium">
+                    Statusbedömning
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <p className="text-sm text-foreground">{statusExplanation}</p>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+
+              {statusSources && statusSources.length > 0 && (
+                <AccordionItem value="sources">
+                  <AccordionTrigger className="text-sm font-medium">
+                    Källor ({statusSources.length})
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <ul className="space-y-2">
+                      {statusSources.map((source, idx) => (
+                        <li key={idx} className="text-sm">
+                          <a 
+                            href={source} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline inline-flex items-center gap-1"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            {source}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </AccordionContent>
+                </AccordionItem>
+              )}
+            </Accordion>
           )}
           
           <div className="flex items-center gap-2 text-xs text-muted-foreground">

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { PromiseCard } from "@/components/PromiseCard";
 import { PromiseFilters } from "@/components/PromiseFilters";
+import { StatisticsCharts } from "@/components/StatisticsCharts";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { ShieldCheck, Scale, TrendingUp, Settings, LogIn, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -97,9 +99,10 @@ const Index = () => {
             
             <div className="flex items-center justify-center gap-4">
               <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-                Politiska Löften
+                Infriat
               </h1>
               <div className="flex gap-2">
+                <ThemeToggle />
                 {isAdmin && (
                   <Button
                     variant="ghost"
@@ -161,6 +164,8 @@ const Index = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-12">
+        {promises.length > 0 && <StatisticsCharts promises={promises} />}
+        
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Filters Sidebar */}
           <aside className="lg:col-span-1">
