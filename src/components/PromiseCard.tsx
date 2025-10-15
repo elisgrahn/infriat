@@ -3,12 +3,23 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Calendar, Users, RefreshCw, ExternalLink, FileText, Clock, Upload } from "lucide-react";
+import { Calendar, Users, RefreshCw, ExternalLink, FileText, Clock, Upload, Trash2, Search } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { partyColors } from "@/utils/partyColors";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 
 type PromiseStatus = "fulfilled" | "partially-fulfilled" | "in-progress" | "delayed" | "broken" | "unclear" | "pending-analysis";
@@ -85,6 +96,8 @@ const statusConfig = {
 export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt, updatedAt, status, description, statusExplanation, statusSources, directQuote, pageNumber, manifestPdfUrl, onStatusUpdate }: PromiseCardProps) => {
   const config = statusConfig[status];
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isReanalyzingPage, setIsReanalyzingPage] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { isAdmin, loading } = useAuth();
 
   const handleAnalyze = async () => {
@@ -102,6 +115,42 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
       toast.error('Kunde inte analysera status');
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  const handleReanalyzePage = async () => {
+    setIsReanalyzingPage(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('reanalyze-quote-page', {
+        body: { promiseId }
+      });
+
+      if (error) throw error;
+
+      toast.success(data.message || 'Sidnummer uppdaterat!');
+      onStatusUpdate?.();
+    } catch (error) {
+      toast.error('Kunde inte söka efter sidnummer');
+    } finally {
+      setIsReanalyzingPage(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('promises')
+        .delete()
+        .eq('id', promiseId);
+
+      if (error) throw error;
+
+      toast.success('Vallöfte raderat!');
+      onStatusUpdate?.();
+    } catch (error) {
+      toast.error('Kunde inte radera vallöfte');
+      setIsDeleting(false);
     }
   };
 
@@ -238,17 +287,71 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
           </div>
         </div>
 
-        {status === 'pending-analysis' && isAdmin && !loading && (
-          <Button
-            onClick={handleAnalyze}
-            disabled={isAnalyzing}
-            variant="outline"
-            size="sm"
-            className="shrink-0"
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${isAnalyzing ? 'animate-spin' : ''}`} />
-            {isAnalyzing ? 'Analyserar...' : 'Analysera status'}
-          </Button>
+        {isAdmin && !loading && (
+          <div className="flex flex-col gap-2 shrink-0">
+            {status === 'pending-analysis' && (
+              <Button
+                onClick={handleAnalyze}
+                disabled={isAnalyzing}
+                variant="outline"
+                size="sm"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${isAnalyzing ? 'animate-spin' : ''}`} />
+                {isAnalyzing ? 'Analyserar...' : 'Analysera status'}
+              </Button>
+            )}
+            
+            {status !== 'pending-analysis' && (
+              <Button
+                onClick={handleAnalyze}
+                disabled={isAnalyzing}
+                variant="outline"
+                size="sm"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${isAnalyzing ? 'animate-spin' : ''}`} />
+                {isAnalyzing ? 'Analyserar om...' : 'Analysera om status'}
+              </Button>
+            )}
+
+            {manifestPdfUrl && directQuote && (
+              <Button
+                onClick={handleReanalyzePage}
+                disabled={isReanalyzingPage}
+                variant="outline"
+                size="sm"
+              >
+                <Search className={`w-4 h-4 mr-2 ${isReanalyzingPage ? 'animate-spin' : ''}`} />
+                {isReanalyzingPage ? 'Söker...' : 'Sök sidnummer'}
+              </Button>
+            )}
+
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  disabled={isDeleting}
+                  variant="destructive"
+                  size="sm"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Radera
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Är du säker?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Detta kommer att permanent radera vallöftet. Denna åtgärd kan inte ångras.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete}>
+                    Radera
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         )}
       </div>
     </Card>
