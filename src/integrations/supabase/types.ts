@@ -41,7 +41,9 @@ export type Database = {
           direct_quote: string | null
           election_year: number
           id: string
+          manifest_pdf_url: string | null
           measurability_reason: string | null
+          page_number: number | null
           party_id: string
           promise_text: string
           status: Database["public"]["Enums"]["promise_status"]
@@ -55,7 +57,9 @@ export type Database = {
           direct_quote?: string | null
           election_year: number
           id?: string
+          manifest_pdf_url?: string | null
           measurability_reason?: string | null
+          page_number?: number | null
           party_id: string
           promise_text: string
           status?: Database["public"]["Enums"]["promise_status"]
@@ -69,7 +73,9 @@ export type Database = {
           direct_quote?: string | null
           election_year?: number
           id?: string
+          manifest_pdf_url?: string | null
           measurability_reason?: string | null
+          page_number?: number | null
           party_id?: string
           promise_text?: string
           status?: Database["public"]["Enums"]["promise_status"]

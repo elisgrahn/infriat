@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Calendar, Users, RefreshCw, ExternalLink, FileText } from "lucide-react";
+import { Calendar, Users, RefreshCw, ExternalLink, FileText, Clock, Upload } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -16,12 +16,16 @@ interface PromiseCardProps {
   promiseId: string;
   promise: string;
   party: string;
-  date: string;
+  electionYear: number;
+  createdAt: string;
+  updatedAt: string;
   status: PromiseStatus;
   description?: string;
   statusExplanation?: string;
   statusSources?: string[];
   directQuote?: string;
+  pageNumber?: number;
+  manifestPdfUrl?: string;
   onStatusUpdate?: () => void;
 }
 
@@ -77,7 +81,7 @@ const statusConfig = {
   },
 };
 
-export const PromiseCard = ({ promiseId, promise, party, date, status, description, statusExplanation, statusSources, directQuote, onStatusUpdate }: PromiseCardProps) => {
+export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt, updatedAt, status, description, statusExplanation, statusSources, directQuote, pageNumber, manifestPdfUrl, onStatusUpdate }: PromiseCardProps) => {
   const config = statusConfig[status];
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { isAdmin, loading } = useAuth();
@@ -144,8 +148,19 @@ export const PromiseCard = ({ promiseId, promise, party, date, status, descripti
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="bg-muted/50 border-l-2 border-primary pl-4 py-2 rounded-r">
+                    <div className="bg-muted/50 border-l-2 border-primary pl-4 py-2 rounded-r space-y-2">
                       <p className="text-sm italic text-foreground">"{directQuote}"</p>
+                      {manifestPdfUrl && pageNumber && (
+                        <a 
+                          href={`${manifestPdfUrl}#page=${pageNumber}`}
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline inline-flex items-center gap-1 text-sm"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          Visa i valmanifest (sida {pageNumber})
+                        </a>
+                      )}
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -169,19 +184,24 @@ export const PromiseCard = ({ promiseId, promise, party, date, status, descripti
                   </AccordionTrigger>
                   <AccordionContent>
                     <ul className="space-y-2">
-                      {statusSources.map((source, idx) => (
-                        <li key={idx} className="text-sm">
-                          <a 
-                            href={source} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline inline-flex items-center gap-1"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                            {source}
-                          </a>
-                        </li>
-                      ))}
+                      {statusSources.map((source, idx) => {
+                        const url = new URL(source);
+                        const displayText = `${url.hostname}${url.pathname.slice(0, 40)}${url.pathname.length > 40 ? '...' : ''}`;
+                        
+                        return (
+                          <li key={idx} className="text-sm">
+                            <a 
+                              href={source} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline inline-flex items-center gap-1 break-words"
+                            >
+                              <ExternalLink className="w-3 h-3 shrink-0" />
+                              <span className="break-all">{displayText}</span>
+                            </a>
+                          </li>
+                        );
+                      })}
                     </ul>
                   </AccordionContent>
                 </AccordionItem>
@@ -189,9 +209,19 @@ export const PromiseCard = ({ promiseId, promise, party, date, status, descripti
             </Accordion>
           )}
           
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Calendar className="w-3.5 h-3.5" />
-            <span>{date}</span>
+          <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5" />
+              <span>Valår: {electionYear}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Upload className="w-3.5 h-3.5" />
+              <span>Tillagt: {createdAt}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5" />
+              <span>Uppdaterat: {updatedAt}</span>
+            </div>
           </div>
         </div>
 

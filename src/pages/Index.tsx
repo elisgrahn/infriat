@@ -19,18 +19,21 @@ interface Promise {
   status: 'fulfilled' | 'partially-fulfilled' | 'in-progress' | 'delayed' | 'broken' | 'unclear' | 'pending-analysis';
   status_explanation: string | null;
   status_sources: string[] | null;
+  page_number: number | null;
+  manifest_pdf_url: string | null;
   parties: {
     name: string;
     abbreviation: string;
   };
   created_at: string;
+  updated_at: string;
 }
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, isAdmin, signOut } = useAuth();
-  const [selectedParty, setSelectedParty] = useState("Alla");
-  const [selectedStatus, setSelectedStatus] = useState("Alla");
+  const [selectedParties, setSelectedParties] = useState<string[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [promises, setPromises] = useState<Promise[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,15 +67,20 @@ const Index = () => {
   };
 
   const filteredPromises = promises.filter((promise) => {
-    const matchesParty = selectedParty === "Alla" || promise.parties.name === selectedParty;
-    const matchesStatus =
-      selectedStatus === "Alla" ||
-      (selectedStatus === "Infriat" && promise.status === "fulfilled") ||
-      (selectedStatus === "Delvis infriat" && promise.status === "partially-fulfilled") ||
-      (selectedStatus === "Pågående" && promise.status === "in-progress") ||
-      (selectedStatus === "Försenat" && promise.status === "delayed") ||
-      (selectedStatus === "Brutet" && promise.status === "broken") ||
-      (selectedStatus === "Oklart" && promise.status === "unclear");
+    const matchesParty = selectedParties.length === 0 || selectedParties.includes(promise.parties.name);
+    
+    const statusMap: Record<string, string> = {
+      "Infriat": "fulfilled",
+      "Delvis infriat": "partially-fulfilled",
+      "Pågående": "in-progress",
+      "Försenat": "delayed",
+      "Brutet": "broken",
+      "Oklart": "unclear"
+    };
+    
+    const matchesStatus = selectedStatuses.length === 0 || 
+      selectedStatuses.some(status => statusMap[status] === promise.status);
+    
     const matchesSearch =
       searchQuery === "" ||
       promise.promise_text.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -174,11 +182,11 @@ const Index = () => {
             <div className="sticky top-8 bg-card rounded-xl p-6 border shadow-sm">
               <h2 className="text-xl font-bold mb-6 text-foreground">Filtrera</h2>
               <PromiseFilters
-                selectedParty={selectedParty}
-                selectedStatus={selectedStatus}
+                selectedParties={selectedParties}
+                selectedStatuses={selectedStatuses}
                 searchQuery={searchQuery}
-                onPartyChange={setSelectedParty}
-                onStatusChange={setSelectedStatus}
+                onPartiesChange={setSelectedParties}
+                onStatusesChange={setSelectedStatuses}
                 onSearchChange={setSearchQuery}
               />
             </div>
@@ -212,12 +220,16 @@ const Index = () => {
                     promiseId={promise.id}
                     promise={promise.promise_text}
                     party={promise.parties.name}
-                    date={new Date(promise.created_at).toLocaleDateString('sv-SE')}
+                    electionYear={promise.election_year}
+                    createdAt={new Date(promise.created_at).toLocaleDateString('sv-SE')}
+                    updatedAt={new Date(promise.updated_at).toLocaleDateString('sv-SE')}
                     status={promise.status}
                     description={promise.summary || undefined}
                     statusExplanation={promise.status_explanation || undefined}
                     statusSources={promise.status_sources || undefined}
                     directQuote={promise.direct_quote || undefined}
+                    pageNumber={promise.page_number || undefined}
+                    manifestPdfUrl={promise.manifest_pdf_url || undefined}
                     onStatusUpdate={fetchPromises}
                   />
                 ))}

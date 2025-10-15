@@ -121,7 +121,7 @@ Inkludera löften även om de inte har specifika siffror, så länge åtgärden 
                       properties: {
                         promise_text: { 
                           type: "string",
-                          description: "En kort, tydlig formulering av vallöftet"
+                          description: "En mycket kort och koncis sammanfattning av vallöftet (max 10-15 ord). Ska vara så kort som möjligt men ändå fånga kärnan i löftet."
                         },
                         summary: { 
                           type: "string",

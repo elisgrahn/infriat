@@ -1,25 +1,26 @@
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { partyColors, statusColors } from "@/utils/partyColors";
 
 interface PromiseFiltersProps {
-  selectedParty: string;
-  selectedStatus: string;
+  selectedParties: string[];
+  selectedStatuses: string[];
   searchQuery: string;
-  onPartyChange: (party: string) => void;
-  onStatusChange: (status: string) => void;
+  onPartiesChange: (parties: string[]) => void;
+  onStatusesChange: (statuses: string[]) => void;
   onSearchChange: (query: string) => void;
 }
 
-const parties = ["Alla", "Socialdemokraterna", "Moderaterna", "Sverigedemokraterna", "Centerpartiet", "Vänsterpartiet", "Kristdemokraterna", "Liberalerna", "Miljöpartiet"];
-const statuses = ["Alla", "Infriat", "Delvis infriat", "Pågående", "Försenat", "Brutet", "Oklart"];
+const parties = ["Socialdemokraterna", "Moderaterna", "Sverigedemokraterna", "Centerpartiet", "Vänsterpartiet", "Kristdemokraterna", "Liberalerna", "Miljöpartiet"];
+const statuses = ["Infriat", "Delvis infriat", "Pågående", "Försenat", "Brutet", "Oklart"];
 
 export const PromiseFilters = ({
-  selectedParty,
-  selectedStatus,
+  selectedParties,
+  selectedStatuses,
   searchQuery,
-  onPartyChange,
-  onStatusChange,
+  onPartiesChange,
+  onStatusesChange,
   onSearchChange,
 }: PromiseFiltersProps) => {
   return (
@@ -36,36 +37,50 @@ export const PromiseFilters = ({
 
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-foreground">Parti</h3>
-        <div className="flex flex-wrap gap-2">
+        <ToggleGroup
+          type="multiple"
+          value={selectedParties}
+          onValueChange={onPartiesChange}
+          className="flex flex-wrap gap-2 justify-start"
+        >
           {parties.map((party) => (
-            <Button
+            <ToggleGroupItem
               key={party}
-              variant={selectedParty === party ? "default" : "outline"}
-              size="sm"
-              onClick={() => onPartyChange(party)}
-              className="transition-all"
+              value={party}
+              className={`transition-all text-sm ${
+                selectedParties.includes(party)
+                  ? `${partyColors[party]} text-white`
+                  : 'bg-background hover:bg-muted'
+              }`}
             >
               {party}
-            </Button>
+            </ToggleGroupItem>
           ))}
-        </div>
+        </ToggleGroup>
       </div>
 
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-foreground">Status</h3>
-        <div className="flex flex-wrap gap-2">
+        <ToggleGroup
+          type="multiple"
+          value={selectedStatuses}
+          onValueChange={onStatusesChange}
+          className="flex flex-wrap gap-2 justify-start"
+        >
           {statuses.map((status) => (
-            <Button
+            <ToggleGroupItem
               key={status}
-              variant={selectedStatus === status ? "default" : "outline"}
-              size="sm"
-              onClick={() => onStatusChange(status)}
-              className="transition-all"
+              value={status}
+              className={`transition-all text-sm ${
+                selectedStatuses.includes(status)
+                  ? `${statusColors[status]} text-white`
+                  : 'bg-background hover:bg-muted'
+              }`}
             >
               {status}
-            </Button>
+            </ToggleGroupItem>
           ))}
-        </div>
+        </ToggleGroup>
       </div>
     </div>
   );
