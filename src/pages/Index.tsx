@@ -4,7 +4,7 @@ import { PromiseFilters } from "@/components/PromiseFilters";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ShieldCheck, Scale, TrendingUp, Settings, LogIn, LogOut, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -32,11 +32,9 @@ interface Promise {
 
 const Index = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { user, isAdmin, signOut } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const promiseRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-  const [highlightedPromise, setHighlightedPromise] = useState<string | null>(null);
   
   const [selectedParties, setSelectedParties] = useState<string[]>(() => {
     const parties = searchParams.get('parties');
@@ -91,35 +89,23 @@ const Index = () => {
     setSearchParams(params, { replace: true });
   }, [selectedParties, selectedStatuses, searchQuery, sortBy]);
 
-  // Scroll to promise if hash in URL
+  // Scroll to promise if ID in URL - wait until promises are loaded
   useEffect(() => {
     if (loading || promises.length === 0) return;
     
-    const hash = location.hash;
-    if (hash.startsWith('#lofte-')) {
-      const promiseId = hash.replace('#lofte-', '');
+    const promiseId = searchParams.get('promise');
+    if (promiseId && promiseRefs.current[promiseId]) {
+      // Give some time for rendering
+      const timer = setTimeout(() => {
+        promiseRefs.current[promiseId]?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }, 300);
       
-      if (promiseRefs.current[promiseId]) {
-        // Set highlighted state
-        setHighlightedPromise(promiseId);
-        
-        // Scroll to promise
-        const timer = setTimeout(() => {
-          promiseRefs.current[promiseId]?.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'center' 
-          });
-          
-          // Remove highlight after 3 seconds
-          setTimeout(() => {
-            setHighlightedPromise(null);
-          }, 3000);
-        }, 300);
-        
-        return () => clearTimeout(timer);
-      }
+      return () => clearTimeout(timer);
     }
-  }, [loading, promises, location.hash]);
+  }, [loading, promises, searchParams]);
 
   useEffect(() => {
     fetchPromises();
@@ -334,7 +320,6 @@ const Index = () => {
                       manifestPdfUrl={promise.manifest_pdf_url || undefined}
                       measurabilityScore={promise.measurability_score || undefined}
                       onStatusUpdate={fetchPromises}
-                      isHighlighted={highlightedPromise === promise.id}
                     />
                   </div>
                 ))}

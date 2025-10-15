@@ -46,7 +46,6 @@ interface PromiseCardProps {
   manifestPdfUrl?: string;
   measurabilityScore?: number;
   onStatusUpdate?: () => void;
-  isHighlighted?: boolean;
 }
 
 const statusConfig = {
@@ -101,7 +100,7 @@ const statusConfig = {
   },
 };
 
-export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt, updatedAt, status, description, statusExplanation, statusSources, directQuote, pageNumber, manifestPdfUrl, measurabilityScore, onStatusUpdate, isHighlighted }: PromiseCardProps) => {
+export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt, updatedAt, status, description, statusExplanation, statusSources, directQuote, pageNumber, manifestPdfUrl, measurabilityScore, onStatusUpdate }: PromiseCardProps) => {
   const config = statusConfig[status];
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isAnalyzingMeasurability, setIsAnalyzingMeasurability] = useState(false);
@@ -111,17 +110,11 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
   const { isAdmin, loading } = useAuth();
 
   const handleShare = async () => {
-    const hash = `#lofte-${promiseId}`;
-    const url = `${window.location.origin}${window.location.pathname}${window.location.search}${hash}`;
-    
+    const url = `${window.location.origin}/?promise=${promiseId}`;
     try {
       await navigator.clipboard.writeText(url);
-      
-      // Navigate to the hash to trigger scroll
-      window.location.hash = hash;
-      
       setCopied(true);
-      toast.success('Länk kopierad och scrollad!');
+      toast.success('Länk kopierad!');
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       toast.error('Kunde inte kopiera länk');
@@ -276,9 +269,7 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
   };
 
   return (
-    <Card className={`p-6 hover:shadow-lg transition-all duration-300 border-l-4 ${config.borderColor} ${
-      isHighlighted ? 'ring-4 ring-primary ring-offset-4 animate-pulse shadow-2xl shadow-primary/50' : ''
-    }`}>
+    <Card className={`p-6 hover:shadow-lg transition-all duration-300 border-l-4 ${config.borderColor}`}>
       <div className="flex flex-col gap-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 space-y-3">
