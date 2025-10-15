@@ -111,11 +111,17 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
   const { isAdmin, loading } = useAuth();
 
   const handleShare = async () => {
-    const url = `${window.location.origin}${window.location.pathname}${window.location.search}#lofte-${promiseId}`;
+    const hash = `#lofte-${promiseId}`;
+    const url = `${window.location.origin}${window.location.pathname}${window.location.search}${hash}`;
+    
     try {
       await navigator.clipboard.writeText(url);
+      
+      // Navigate to the hash to trigger scroll
+      window.location.hash = hash;
+      
       setCopied(true);
-      toast.success('Länk kopierad!');
+      toast.success('Länk kopierad och scrollad!');
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       toast.error('Kunde inte kopiera länk');
