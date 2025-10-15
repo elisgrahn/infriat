@@ -247,11 +247,12 @@ Exempel på KORREKT citat (exakt som i text):
 OBS: Ange INTE sidnummer eftersom de inte går att härleda från endast texten.
 
 VIKTIGT - VAR GENERÖS: Ett löfte är mätbart om det uppfyller minst ett av dessa kriterier:
-- Innehåller specifika siffror eller mål (t.ex. "sänka skatten med 10%", "höja straffen")
+- Innehåller specifika siffror eller mål (t.ex. "sänka skatten med 10%", "höja straffen till 15 år")
 - Beskriver konkreta lagändringar eller politiska reformer (t.ex. "avskaffa X", "ändra lagen om Y", "införa Z")
 - Lovar att införa, avskaffa, höja, sänka, stärka eller förändra en specifik policy, lag eller åtgärd
 - Beskriver en tydlig åtgärd som kan verifieras (t.ex. "utvisa kriminella", "förbjuda tiggeri")
 - Innehåller ord som "ska", "vill", "föreslår" följt av en konkret åtgärd
+- VIKTIGT: Relativa förändringar utan konkreta siffror ÄR MÄTBARA (t.ex. "sänka straffmyndighetsåldern", "höja straffen", "öka anslagen", "minska byråkratin") - dessa går att mäta genom att jämföra före och efter
 
 VAD SOM INTE ÄR MÄTBART (var restriktiv här):
 - Endast vaga mål utan någon konkret åtgärd (t.ex. "förbättra välfärden" utan att säga hur)
