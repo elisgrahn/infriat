@@ -13,14 +13,14 @@ interface PromiseFiltersProps {
 }
 
 const parties = [
-  "Vänsterpartiet",
   "Socialdemokraterna",
-  "Miljöpartiet",
-  "Centerpartiet",
-  "Liberalerna",
-  "Kristdemokraterna",
   "Moderaterna",
   "Sverigedemokraterna",
+  "Centerpartiet",
+  "Vänsterpartiet",
+  "Kristdemokraterna",
+  "Liberalerna",
+  "Miljöpartiet",
 ];
 const statuses = ["Infriat", "Delvis infriat", "Pågående", "Försenat", "Brutet", "Oklart"];
 
@@ -35,7 +35,7 @@ export const PromiseFilters = ({
   return (
     <div className="space-y-6">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" />
         <Input
           placeholder="Sök efter löften..."
           value={searchQuery}
