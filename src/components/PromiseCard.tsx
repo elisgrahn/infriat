@@ -97,6 +97,7 @@ const statusConfig = {
 export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt, updatedAt, status, description, statusExplanation, statusSources, directQuote, pageNumber, manifestPdfUrl, measurabilityScore, onStatusUpdate }: PromiseCardProps) => {
   const config = statusConfig[status];
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isAnalyzingMeasurability, setIsAnalyzingMeasurability] = useState(false);
   const [isReanalyzingPage, setIsReanalyzingPage] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const { isAdmin, loading } = useAuth();
@@ -116,6 +117,24 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
       toast.error('Kunde inte analysera status');
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  const handleAnalyzeMeasurability = async () => {
+    setIsAnalyzingMeasurability(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-single-measurability', {
+        body: { promiseId }
+      });
+
+      if (error) throw error;
+
+      toast.success(`Mätbarhet analyserad: ${data.score}/5`);
+      onStatusUpdate?.();
+    } catch (error) {
+      toast.error('Kunde inte analysera mätbarhet');
+    } finally {
+      setIsAnalyzingMeasurability(false);
     }
   };
 
@@ -426,6 +445,16 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
                 {isAnalyzing ? 'Analyserar om...' : 'Analysera om status'}
               </Button>
             )}
+
+            <Button
+              onClick={handleAnalyzeMeasurability}
+              disabled={isAnalyzingMeasurability}
+              variant="outline"
+              size="sm"
+            >
+              <Target className={`w-4 h-4 mr-2 ${isAnalyzingMeasurability ? 'animate-spin' : ''}`} />
+              {isAnalyzingMeasurability ? 'Analyserar...' : measurabilityScore ? 'Omanalysera mätbarhet' : 'Analysera mätbarhet'}
+            </Button>
 
             {manifestPdfUrl && directQuote && (
               <Button
