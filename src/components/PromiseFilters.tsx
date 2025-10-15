@@ -47,7 +47,7 @@ export const PromiseFilters = ({
             <ToggleGroupItem
               key={party}
               value={party}
-              className={`transition-all text-sm data-[state=on]:text-white ${partyColors[party]}`}
+              className={`transition-all text-sm data-[state=on]:text-gray-900 ${partyColors[party]}`}
             >
               {party}
             </ToggleGroupItem>
@@ -67,7 +67,7 @@ export const PromiseFilters = ({
             <ToggleGroupItem
               key={status}
               value={status}
-              className={`transition-all text-sm data-[state=on]:text-white ${statusColors[status]}`}
+              className={`transition-all text-sm data-[state=on]:text-gray-900 ${statusColors[status]}`}
             >
               {status}
             </ToggleGroupItem>
