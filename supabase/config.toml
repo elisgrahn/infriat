@@ -3,6 +3,7 @@ project_id = "turijymricwxtdrslcuz"
 [functions.analyze-manifest]
 verify_jwt = true
 timeout = 300
+memory_mb = 512
 
 [functions.analyze-promise-status]
 verify_jwt = true
