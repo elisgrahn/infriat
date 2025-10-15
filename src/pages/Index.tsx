@@ -68,18 +68,23 @@ const Index = () => {
     setSearchParams(params, { replace: true });
   }, [selectedParties, selectedStatuses, searchQuery, sortBy]);
 
-  // Scroll to promise if ID in URL
+  // Scroll to promise if ID in URL - wait until promises are loaded
   useEffect(() => {
+    if (loading || promises.length === 0) return;
+    
     const promiseId = searchParams.get('promise');
     if (promiseId && promiseRefs.current[promiseId]) {
-      setTimeout(() => {
+      // Give some time for rendering
+      const timer = setTimeout(() => {
         promiseRefs.current[promiseId]?.scrollIntoView({ 
           behavior: 'smooth', 
           block: 'center' 
         });
-      }, 500);
+      }, 300);
+      
+      return () => clearTimeout(timer);
     }
-  }, [promises, searchParams]);
+  }, [loading, promises, searchParams]);
 
   useEffect(() => {
     fetchPromises();
@@ -231,13 +236,6 @@ const Index = () => {
               </div>
             </div>
           </div>
-        </div>
-        
-        {/* Bottom wave decoration */}
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg className="w-full h-12 text-background" viewBox="0 0 1440 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 48h1440V0c-157.5 48-315 48-472.5 32C810 16 652.5 0 495 16 337.5 32 180 48 0 16v32z" fill="currentColor"/>
-          </svg>
         </div>
       </header>
 

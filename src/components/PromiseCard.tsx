@@ -3,8 +3,14 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Calendar, Users, RefreshCw, ExternalLink, FileText, Clock, Upload, Trash2, Search, Target, Share2, Check } from "lucide-react";
+import { Calendar, Users, RefreshCw, ExternalLink, FileText, Clock, Upload, Trash2, Search, Target, Share2, Check, MoreVertical } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -287,23 +293,79 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
             </div>
           </div>
           
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleShare}
-                  className="shrink-0"
-                >
-                  {copied ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Dela länk till detta löfte</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <div className="flex gap-2 shrink-0">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleShare}
+                  >
+                    {copied ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Dela länk till detta löfte</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            {isAdmin && !loading && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleAnalyze} disabled={isAnalyzing}>
+                    <RefreshCw className={`w-4 h-4 mr-2 ${isAnalyzing ? 'animate-spin' : ''}`} />
+                    {isAnalyzing ? 'Analyserar...' : status === 'pending-analysis' ? 'Analysera status' : 'Analysera om status'}
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuItem onClick={handleAnalyzeMeasurability} disabled={isAnalyzingMeasurability}>
+                    <Target className={`w-4 h-4 mr-2 ${isAnalyzingMeasurability ? 'animate-spin' : ''}`} />
+                    {isAnalyzingMeasurability ? 'Analyserar...' : measurabilityScore ? 'Analysera om mätbarhet' : 'Analysera mätbarhet'}
+                  </DropdownMenuItem>
+                  
+                  {directQuote && manifestPdfUrl && (
+                    <DropdownMenuItem onClick={handleReanalyzePage} disabled={isReanalyzingPage}>
+                      <Search className={`w-4 h-4 mr-2 ${isReanalyzingPage ? 'animate-spin' : ''}`} />
+                      {isReanalyzingPage ? 'Söker...' : 'Hitta sidnummer'}
+                    </DropdownMenuItem>
+                  )}
+                  
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Radera
+                      </DropdownMenuItem>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Är du säker?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Detta kommer permanent radera vallöftet. Denna åtgärd kan inte ångras.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleDelete}
+                          disabled={isDeleting}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          {isDeleting ? 'Raderar...' : 'Radera'}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
         
         <div className="flex-1 space-y-3">
@@ -456,83 +518,6 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
               <span>Uppdaterat: {updatedAt}</span>
             </div>
           </div>
-        
-          {isAdmin && !loading && (
-          <div className="flex flex-col gap-2 shrink-0">
-            {status === 'pending-analysis' && (
-              <Button
-                onClick={handleAnalyze}
-                disabled={isAnalyzing}
-                variant="outline"
-                size="sm"
-              >
-                <RefreshCw className={`w-4 h-4 mr-2 ${isAnalyzing ? 'animate-spin' : ''}`} />
-                {isAnalyzing ? 'Analyserar...' : 'Analysera status'}
-              </Button>
-            )}
-            
-            {status !== 'pending-analysis' && (
-              <Button
-                onClick={handleAnalyze}
-                disabled={isAnalyzing}
-                variant="outline"
-                size="sm"
-              >
-                <RefreshCw className={`w-4 h-4 mr-2 ${isAnalyzing ? 'animate-spin' : ''}`} />
-                {isAnalyzing ? 'Analyserar om...' : 'Analysera om status'}
-              </Button>
-            )}
-
-            <Button
-              onClick={handleAnalyzeMeasurability}
-              disabled={isAnalyzingMeasurability}
-              variant="outline"
-              size="sm"
-            >
-              <Target className={`w-4 h-4 mr-2 ${isAnalyzingMeasurability ? 'animate-spin' : ''}`} />
-              {isAnalyzingMeasurability ? 'Analyserar...' : measurabilityScore ? 'Omanalysera mätbarhet' : 'Analysera mätbarhet'}
-            </Button>
-
-            {manifestPdfUrl && directQuote && (
-              <Button
-                onClick={handleReanalyzePage}
-                disabled={isReanalyzingPage}
-                variant="outline"
-                size="sm"
-              >
-                <Search className={`w-4 h-4 mr-2 ${isReanalyzingPage ? 'animate-spin' : ''}`} />
-                {isReanalyzingPage ? 'Söker...' : 'Sök sidnummer'}
-              </Button>
-            )}
-
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  disabled={isDeleting}
-                  variant="destructive"
-                  size="sm"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Radera
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Är du säker?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Detta kommer att permanent radera vallöftet. Denna åtgärd kan inte ångras.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Avbryt</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete}>
-                    Radera
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            </div>
-          )}
         </div>
       </div>
     </Card>
