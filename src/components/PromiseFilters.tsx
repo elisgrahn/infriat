@@ -53,15 +53,17 @@ export const PromiseFilters = ({
         <h3 className="text-sm font-semibold text-foreground">Sortera efter</h3>
         <Select value={sortBy} onValueChange={onSortChange}>
           <SelectTrigger>
-            <SelectValue placeholder="Välj sortering" />
+            <SelectValue placeholder="Sortera efter..." />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="newest">Nyaste först</SelectItem>
-            <SelectItem value="oldest">Äldste först</SelectItem>
-            <SelectItem value="measurability-high">Högsta mätbarhet</SelectItem>
-            <SelectItem value="measurability-low">Lägsta mätbarhet</SelectItem>
-            <SelectItem value="status-fulfilled">Status: Infriat</SelectItem>
-            <SelectItem value="status-broken">Status: Brutet</SelectItem>
+            <SelectItem value="created-desc">Skapat datum (fallande)</SelectItem>
+            <SelectItem value="created-asc">Skapat datum (stigande)</SelectItem>
+            <SelectItem value="year-desc">Valår (fallande)</SelectItem>
+            <SelectItem value="year-asc">Valår (stigande)</SelectItem>
+            <SelectItem value="measurability-desc">Mätbarhet (fallande)</SelectItem>
+            <SelectItem value="measurability-asc">Mätbarhet (stigande)</SelectItem>
+            <SelectItem value="status-fulfilled">Status: Infriade först</SelectItem>
+            <SelectItem value="status-broken">Status: Brutna först</SelectItem>
           </SelectContent>
         </Select>
       </div>

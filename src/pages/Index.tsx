@@ -54,7 +54,7 @@ const Index = () => {
     return statuses ? statuses.split(',') : [];
   });
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || "");
-  const [sortBy, setSortBy] = useState(() => searchParams.get('sort') || "newest");
+  const [sortBy, setSortBy] = useState(() => searchParams.get('sort') || "created-desc");
   const [promises, setPromises] = useState<Promise[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -91,7 +91,7 @@ const Index = () => {
       params.delete('search');
     }
     
-    if (sortBy !== 'newest') {
+    if (sortBy !== 'created-desc') {
       params.set('sort', sortBy);
     } else {
       params.delete('sort');
@@ -163,20 +163,24 @@ const Index = () => {
 
   const sortedPromises = [...filteredPromises].sort((a, b) => {
     switch (sortBy) {
-      case "newest":
+      case "created-desc":
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      case "oldest":
+      case "created-asc":
         return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-      case "measurability-high":
+      case "year-desc":
+        return b.election_year - a.election_year;
+      case "year-asc":
+        return a.election_year - b.election_year;
+      case "measurability-desc":
         return (b.measurability_score || 0) - (a.measurability_score || 0);
-      case "measurability-low":
+      case "measurability-asc":
         return (a.measurability_score || 0) - (b.measurability_score || 0);
       case "status-fulfilled":
         return a.status === "fulfilled" ? -1 : b.status === "fulfilled" ? 1 : 0;
       case "status-broken":
         return a.status === "broken" ? -1 : b.status === "broken" ? 1 : 0;
       default:
-        return 0;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     }
   });
 
