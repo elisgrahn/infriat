@@ -7,3 +7,7 @@ memory_mb = 512
 
 [functions.analyze-promise-status]
 verify_jwt = true
+
+[functions.analyze-measurability]
+verify_jwt = true
+timeout = 180
