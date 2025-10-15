@@ -54,20 +54,86 @@ serve(async (req) => {
       });
     }
 
-    const { manifestText, manifestPdfUrl, partyAbbreviation, electionYear } = await req.json();
+    const { manifestText, txtUrl, pdfBase64, pdfUrl, partyAbbreviation, electionYear } = await req.json();
     
-    if (!manifestText || !partyAbbreviation || !electionYear) {
+    if (!partyAbbreviation || !electionYear) {
       throw new Error('Missing required parameters');
     }
 
-    console.log(`Analyzing manifest for ${partyAbbreviation} ${electionYear}, PDF URL: ${manifestPdfUrl || 'none'}`);
+    console.log(`Analyzing manifest for ${partyAbbreviation} ${electionYear}`);
+
+    // Get manifest text (either from input or download from URL)
+    let finalManifestText = manifestText;
+    if (!finalManifestText && txtUrl) {
+      console.log('Downloading TXT from URL:', txtUrl);
+      const txtResponse = await fetch(txtUrl);
+      if (!txtResponse.ok) throw new Error('Failed to download TXT file');
+      finalManifestText = await txtResponse.text();
+    }
+
+    if (!finalManifestText) {
+      throw new Error('No manifest text provided');
+    }
+
+    // Handle PDF upload
+    let manifestPdfUrl = null;
+    if (pdfBase64) {
+      // Decode base64 and upload to storage
+      console.log('Uploading PDF from base64');
+      const pdfBytes = Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0));
+      const fileName = `${partyAbbreviation}-${electionYear}-${Date.now()}.pdf`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('manifests')
+        .upload(fileName, pdfBytes, {
+          contentType: 'application/pdf'
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw new Error('Failed to upload PDF');
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('manifests')
+        .getPublicUrl(fileName);
+      
+      manifestPdfUrl = publicUrl;
+      console.log('PDF uploaded:', publicUrl);
+    } else if (pdfUrl) {
+      // Download PDF from URL and upload to storage
+      console.log('Downloading PDF from URL:', pdfUrl);
+      const pdfResponse = await fetch(pdfUrl);
+      if (!pdfResponse.ok) throw new Error('Failed to download PDF file');
+      
+      const pdfBytes = new Uint8Array(await pdfResponse.arrayBuffer());
+      const fileName = `${partyAbbreviation}-${electionYear}-${Date.now()}.pdf`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('manifests')
+        .upload(fileName, pdfBytes, {
+          contentType: 'application/pdf'
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw new Error('Failed to upload PDF');
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('manifests')
+        .getPublicUrl(fileName);
+      
+      manifestPdfUrl = publicUrl;
+      console.log('PDF uploaded:', publicUrl);
+    }
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    console.log(`Analyzing manifest for ${partyAbbreviation} ${electionYear}`);
+    console.log(`Starting AI analysis`);
 
     // Call Lovable AI to analyze the manifest
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -105,7 +171,7 @@ Inkludera löften även om de inte har specifika siffror, så länge åtgärden 
           },
           {
             role: 'user',
-            content: manifestText
+            content: finalManifestText
           }
         ],
         tools: [

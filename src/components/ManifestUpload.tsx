@@ -59,48 +59,31 @@ export const ManifestUpload = () => {
         electionYear: parseInt(selectedYear)
       });
 
+      // Prepare data for edge function
       let manifestText = "";
-      let pdfFileToUpload: File | null = null;
+      let pdfBase64 = "";
 
       // Get TXT content
       if (txtFile) {
         manifestText = await txtFile.text();
       } else if (txtUrl) {
-        const txtResponse = await fetch(txtUrl);
-        if (!txtResponse.ok) throw new Error("Kunde inte ladda ner TXT-fil");
-        manifestText = await txtResponse.text();
+        // Let edge function download it to avoid CORS issues
+        manifestText = "";
       }
 
-      // Get PDF file
+      // Get PDF as base64
       if (pdfFile) {
-        pdfFileToUpload = pdfFile;
-      } else if (pdfUrl) {
-        const pdfResponse = await fetch(pdfUrl);
-        if (!pdfResponse.ok) throw new Error("Kunde inte ladda ner PDF-fil");
-        const blob = await pdfResponse.blob();
-        pdfFileToUpload = new File([blob], `manifest-${selectedParty}-${selectedYear}.pdf`, { type: 'application/pdf' });
+        const buffer = await pdfFile.arrayBuffer();
+        pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
       }
 
-      if (!pdfFileToUpload) throw new Error("Kunde inte läsa PDF-fil");
-
-      // Upload PDF to Supabase Storage
-      const fileName = `${selectedParty}-${selectedYear}-${Date.now()}.pdf`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('manifests')
-        .upload(fileName, pdfFileToUpload);
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL for the PDF
-      const { data: { publicUrl } } = supabase.storage
-        .from('manifests')
-        .getPublicUrl(fileName);
-
-      // Send to edge function for analysis
+      // Send to edge function for analysis (it will handle URL downloads and PDF upload)
       const { data, error } = await supabase.functions.invoke('analyze-manifest', {
         body: {
-          manifestText,
-          manifestPdfUrl: publicUrl,
+          manifestText: manifestText || undefined,
+          txtUrl: txtUrl || undefined,
+          pdfBase64: pdfBase64 || undefined,
+          pdfUrl: pdfUrl || undefined,
           partyAbbreviation: selectedParty,
           electionYear: parseInt(selectedYear)
         }
