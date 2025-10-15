@@ -1,12 +1,12 @@
 export const partyColors: Record<string, string> = {
-  'Socialdemokraterna': 'data-[state=on]:bg-red-600 data-[state=on]:hover:bg-red-700',
-  'Moderaterna': 'data-[state=on]:bg-blue-600 data-[state=on]:hover:bg-blue-700',
-  'Sverigedemokraterna': 'data-[state=on]:bg-yellow-500 data-[state=on]:hover:bg-yellow-600',
-  'Centerpartiet': 'data-[state=on]:bg-green-600 data-[state=on]:hover:bg-green-700',
-  'Vänsterpartiet': 'data-[state=on]:bg-red-700 data-[state=on]:hover:bg-red-800',
-  'Kristdemokraterna': 'data-[state=on]:bg-blue-500 data-[state=on]:hover:bg-blue-600',
-  'Liberalerna': 'data-[state=on]:bg-cyan-500 data-[state=on]:hover:bg-cyan-600',
-  'Miljöpartiet': 'data-[state=on]:bg-green-500 data-[state=on]:hover:bg-green-600',
+  'Socialdemokraterna': 'data-[state=on]:bg-[hsl(352,86%,49%)] data-[state=on]:hover:bg-[hsl(352,86%,44%)] bg-[hsl(352,86%,49%)] hover:bg-[hsl(352,86%,44%)]',
+  'Moderaterna': 'data-[state=on]:bg-[hsl(198,81%,62%)] data-[state=on]:hover:bg-[hsl(198,81%,57%)] bg-[hsl(198,81%,62%)] hover:bg-[hsl(198,81%,57%)]',
+  'Sverigedemokraterna': 'data-[state=on]:bg-[hsl(60,100%,43%)] data-[state=on]:hover:bg-[hsl(60,100%,38%)] bg-[hsl(60,100%,43%)] hover:bg-[hsl(60,100%,38%)]',
+  'Centerpartiet': 'data-[state=on]:bg-[hsl(140,100%,30%)] data-[state=on]:hover:bg-[hsl(140,100%,25%)] bg-[hsl(140,100%,30%)] hover:bg-[hsl(140,100%,25%)]',
+  'Vänsterpartiet': 'data-[state=on]:bg-[hsl(4,77%,48%)] data-[state=on]:hover:bg-[hsl(4,77%,43%)] bg-[hsl(4,77%,48%)] hover:bg-[hsl(4,77%,43%)]',
+  'Kristdemokraterna': 'data-[state=on]:bg-[hsl(240,100%,23%)] data-[state=on]:hover:bg-[hsl(240,100%,20%)] bg-[hsl(240,100%,23%)] hover:bg-[hsl(240,100%,20%)]',
+  'Liberalerna': 'data-[state=on]:bg-[hsl(204,100%,35%)] data-[state=on]:hover:bg-[hsl(204,100%,30%)] bg-[hsl(204,100%,35%)] hover:bg-[hsl(204,100%,30%)]',
+  'Miljöpartiet': 'data-[state=on]:bg-[hsl(90,61%,52%)] data-[state=on]:hover:bg-[hsl(90,61%,47%)] bg-[hsl(90,61%,52%)] hover:bg-[hsl(90,61%,47%)]',
 };
 
 export const statusColors: Record<string, string> = {
