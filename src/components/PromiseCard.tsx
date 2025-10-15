@@ -119,18 +119,67 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
   };
 
   const handleReanalyzePage = async () => {
+    if (!manifestPdfUrl || !directQuote) return;
+    
     setIsReanalyzingPage(true);
     try {
-      const { data, error } = await supabase.functions.invoke('reanalyze-quote-page', {
-        body: { promiseId }
-      });
-
+      // Dynamically import PDF.js
+      const pdfjs = await import('pdfjs-dist');
+      
+      // Configure worker for browser environment
+      pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+      
+      // Load PDF
+      const loadingTask = pdfjs.getDocument(manifestPdfUrl);
+      const pdf = await loadingTask.promise;
+      
+      // Search for quote in all pages
+      let foundPage: number | null = null;
+      const quote = directQuote.toLowerCase().trim();
+      
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(' ')
+          .toLowerCase()
+          .replace(/\s+/g, ' ');
+        
+        // Try exact match first
+        if (pageText.includes(quote)) {
+          foundPage = i;
+          break;
+        }
+        
+        // Try partial match for long quotes (first 50 characters)
+        if (quote.length > 50) {
+          const partialQuote = quote.substring(0, 50);
+          if (pageText.includes(partialQuote)) {
+            foundPage = i;
+            break;
+          }
+        }
+      }
+      
+      // Update page_number in database
+      const { error } = await supabase
+        .from('promises')
+        .update({ page_number: foundPage })
+        .eq('id', promiseId);
+      
       if (error) throw error;
-
-      toast.success(data.message || 'Sidnummer uppdaterat!');
+      
+      if (foundPage) {
+        toast.success(`Citatet hittades på sida ${foundPage}!`);
+      } else {
+        toast.success('Citatet kunde inte hittas i PDF:en. Sidnummer rensades.');
+      }
+      
       onStatusUpdate?.();
-    } catch (error) {
-      toast.error('Kunde inte söka efter sidnummer');
+    } catch (error: any) {
+      console.error('PDF search error:', error);
+      toast.error(`Kunde inte söka i PDF: ${error.message || 'Okänt fel'}`);
     } finally {
       setIsReanalyzingPage(false);
     }
