@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Calendar, Users, RefreshCw, ExternalLink, FileText, Clock, Upload, Trash2, Search, Target } from "lucide-react";
+import { Calendar, Users, RefreshCw, ExternalLink, FileText, Clock, Upload, Trash2, Search, Target, Share2, Check } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -100,7 +100,20 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
   const [isAnalyzingMeasurability, setIsAnalyzingMeasurability] = useState(false);
   const [isReanalyzingPage, setIsReanalyzingPage] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [copied, setCopied] = useState(false);
   const { isAdmin, loading } = useAuth();
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/?promise=${promiseId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      toast.success('Länk kopierad!');
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      toast.error('Kunde inte kopiera länk');
+    }
+  };
 
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
@@ -251,9 +264,10 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
 
   return (
     <Card className={`p-6 hover:shadow-lg transition-all duration-300 border-l-4 ${config.borderColor}`}>
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-        <div className="flex-1 space-y-3">
-          <div className="flex items-start gap-3 flex-wrap">
+      <div className="flex flex-col gap-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 space-y-3">
+            <div className="flex items-start gap-3 flex-wrap">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -270,7 +284,31 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
               <Users className="w-3 h-3" />
               {party}
             </Badge>
-            {measurabilityScore && (
+            </div>
+          </div>
+          
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleShare}
+                  className="shrink-0"
+                >
+                  {copied ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Dela länk till detta löfte</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        
+        <div className="flex-1 space-y-3">
+          {measurabilityScore && (
+            <div className="flex items-start gap-3 flex-wrap">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger>
@@ -307,8 +345,8 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-            )}
-          </div>
+            </div>
+          )}
           
           <h3 className="text-lg font-semibold text-foreground leading-snug">
             {promise}
@@ -418,9 +456,8 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
               <span>Uppdaterat: {updatedAt}</span>
             </div>
           </div>
-        </div>
-
-        {isAdmin && !loading && (
+        
+          {isAdmin && !loading && (
           <div className="flex flex-col gap-2 shrink-0">
             {status === 'pending-analysis' && (
               <Button
@@ -494,8 +531,9 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
     </Card>
   );

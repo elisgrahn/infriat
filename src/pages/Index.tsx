@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { PromiseCard } from "@/components/PromiseCard";
 import { PromiseFilters } from "@/components/PromiseFilters";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { ShieldCheck, Scale, TrendingUp, Settings, LogIn, LogOut } from "lucide-react";
+import { ShieldCheck, Scale, TrendingUp, Settings, LogIn, LogOut, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -33,10 +33,19 @@ interface Promise {
 const Index = () => {
   const navigate = useNavigate();
   const { user, isAdmin, signOut } = useAuth();
-  const [selectedParties, setSelectedParties] = useState<string[]>([]);
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("newest");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const promiseRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  
+  const [selectedParties, setSelectedParties] = useState<string[]>(() => {
+    const parties = searchParams.get('parties');
+    return parties ? parties.split(',') : [];
+  });
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(() => {
+    const statuses = searchParams.get('statuses');
+    return statuses ? statuses.split(',') : [];
+  });
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || "");
+  const [sortBy, setSortBy] = useState(() => searchParams.get('sort') || "newest");
   const [promises, setPromises] = useState<Promise[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -47,6 +56,30 @@ const Index = () => {
       navigate('/auth');
     }
   };
+
+  // Update URL when filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (selectedParties.length > 0) params.set('parties', selectedParties.join(','));
+    if (selectedStatuses.length > 0) params.set('statuses', selectedStatuses.join(','));
+    if (searchQuery) params.set('search', searchQuery);
+    if (sortBy !== 'newest') params.set('sort', sortBy);
+    
+    setSearchParams(params, { replace: true });
+  }, [selectedParties, selectedStatuses, searchQuery, sortBy]);
+
+  // Scroll to promise if ID in URL
+  useEffect(() => {
+    const promiseId = searchParams.get('promise');
+    if (promiseId && promiseRefs.current[promiseId]) {
+      setTimeout(() => {
+        promiseRefs.current[promiseId]?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }, 500);
+    }
+  }, [promises, searchParams]);
 
   useEffect(() => {
     fetchPromises();
@@ -122,16 +155,22 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <header className="bg-gradient-to-br from-primary via-primary-light to-primary-dark text-primary-foreground">
-        <div className="container mx-auto px-4 py-16 md:py-24">
-          <div className="max-w-4xl mx-auto text-center space-y-6">
-            <div className="inline-flex items-center gap-2 bg-primary-foreground/10 backdrop-blur-sm px-4 py-2 rounded-full border border-primary-foreground/20">
-              <ShieldCheck className="w-4 h-4" />
+      <header className="relative overflow-hidden bg-gradient-to-br from-primary via-primary-light to-primary-dark text-primary-foreground">
+        {/* Animated background elements */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-primary-foreground rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-10 right-20 w-96 h-96 bg-secondary rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+        </div>
+        
+        <div className="container relative mx-auto px-4 py-20 md:py-32">
+          <div className="max-w-5xl mx-auto text-center space-y-8">
+            <div className="inline-flex items-center gap-2 bg-primary-foreground/10 backdrop-blur-md px-5 py-2.5 rounded-full border border-primary-foreground/20 shadow-lg">
+              <Sparkles className="w-4 h-4 animate-pulse" />
               <span className="text-sm font-medium">Politisk transparens</span>
             </div>
             
             <div className="flex items-center justify-center gap-4">
-              <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
+              <h1 className="text-5xl md:text-7xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary-foreground via-primary-foreground to-primary-foreground/80 drop-shadow-lg">
                 Infriat
               </h1>
               <div className="flex gap-2">
@@ -141,7 +180,7 @@ const Index = () => {
                     variant="ghost"
                     size="icon"
                     onClick={() => navigate("/admin")}
-                    className="text-primary-foreground hover:bg-primary-foreground/10"
+                    className="text-primary-foreground hover:bg-primary-foreground/20 backdrop-blur-sm transition-all"
                     title="Admin"
                   >
                     <Settings className="w-6 h-6" />
@@ -151,7 +190,7 @@ const Index = () => {
                   variant="ghost"
                   size="icon"
                   onClick={handleAuthClick}
-                  className="text-primary-foreground hover:bg-primary-foreground/10"
+                  className="text-primary-foreground hover:bg-primary-foreground/20 backdrop-blur-sm transition-all"
                   title={user ? 'Logga ut' : 'Logga in'}
                 >
                   {user ? <LogOut className="w-6 h-6" /> : <LogIn className="w-6 h-6" />}
@@ -159,39 +198,46 @@ const Index = () => {
               </div>
             </div>
             
-            <p className="text-lg md:text-xl text-primary-foreground/90 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-xl md:text-2xl text-primary-foreground/95 max-w-3xl mx-auto leading-relaxed font-light">
               Vi granskar svenska politiska partier och följer upp deras vallöften. 
               Transparens och ansvar är grunden för ett demokratiskt samhälle.
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-8 max-w-3xl mx-auto">
-              <div className="bg-primary-foreground/10 backdrop-blur-sm rounded-xl p-6 border border-primary-foreground/20">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <Scale className="w-5 h-5" />
-                  <div className="text-3xl font-bold">{stats.total}</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-12 max-w-4xl mx-auto">
+              <div className="group bg-primary-foreground/10 backdrop-blur-md rounded-2xl p-8 border border-primary-foreground/20 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300">
+                <div className="flex items-center justify-center gap-3 mb-3">
+                  <Scale className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+                  <div className="text-4xl font-bold">{stats.total}</div>
                 </div>
-                <div className="text-sm text-primary-foreground/80">Totalt antal löften</div>
+                <div className="text-sm text-primary-foreground/90 font-medium">Totalt antal löften</div>
               </div>
               
-              <div className="bg-primary-foreground/10 backdrop-blur-sm rounded-xl p-6 border border-primary-foreground/20">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <ShieldCheck className="w-5 h-5" />
-                  <div className="text-3xl font-bold">{stats.fulfilled}</div>
+              <div className="group bg-primary-foreground/10 backdrop-blur-md rounded-2xl p-8 border border-primary-foreground/20 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300">
+                <div className="flex items-center justify-center gap-3 mb-3">
+                  <ShieldCheck className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                  <div className="text-4xl font-bold">{stats.fulfilled}</div>
                 </div>
-                <div className="text-sm text-primary-foreground/80">Infriade löften</div>
+                <div className="text-sm text-primary-foreground/90 font-medium">Infriade löften</div>
               </div>
               
-              <div className="bg-primary-foreground/10 backdrop-blur-sm rounded-xl p-6 border border-primary-foreground/20">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <TrendingUp className="w-5 h-5" />
-                  <div className="text-3xl font-bold">
+              <div className="group bg-primary-foreground/10 backdrop-blur-md rounded-2xl p-8 border border-primary-foreground/20 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300">
+                <div className="flex items-center justify-center gap-3 mb-3">
+                  <TrendingUp className="w-6 h-6 group-hover:translate-y-[-4px] transition-transform" />
+                  <div className="text-4xl font-bold">
                     {Math.round((stats.fulfilled / stats.total) * 100)}%
                   </div>
                 </div>
-                <div className="text-sm text-primary-foreground/80">Uppfyllelsegrad</div>
+                <div className="text-sm text-primary-foreground/90 font-medium">Uppfyllelsegrad</div>
               </div>
             </div>
           </div>
+        </div>
+        
+        {/* Bottom wave decoration */}
+        <div className="absolute bottom-0 left-0 right-0">
+          <svg className="w-full h-12 text-background" viewBox="0 0 1440 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 48h1440V0c-157.5 48-315 48-472.5 32C810 16 652.5 0 495 16 337.5 32 180 48 0 16v32z" fill="currentColor"/>
+          </svg>
         </div>
       </header>
 
@@ -238,24 +284,25 @@ const Index = () => {
             ) : (
               <div className="space-y-4">
                 {sortedPromises.map((promise) => (
-                  <PromiseCard
-                    key={promise.id}
-                    promiseId={promise.id}
-                    promise={promise.promise_text}
-                    party={promise.parties.name}
-                    electionYear={promise.election_year}
-                    createdAt={new Date(promise.created_at).toLocaleDateString('sv-SE')}
-                    updatedAt={new Date(promise.updated_at).toLocaleDateString('sv-SE')}
-                    status={promise.status}
-                    description={promise.summary || undefined}
-                    statusExplanation={promise.status_explanation || undefined}
-                    statusSources={promise.status_sources || undefined}
-                    directQuote={promise.direct_quote || undefined}
-                    pageNumber={promise.page_number || undefined}
-                    manifestPdfUrl={promise.manifest_pdf_url || undefined}
-                    measurabilityScore={promise.measurability_score || undefined}
-                    onStatusUpdate={fetchPromises}
-                  />
+                  <div key={promise.id} ref={(el) => promiseRefs.current[promise.id] = el}>
+                    <PromiseCard
+                      promiseId={promise.id}
+                      promise={promise.promise_text}
+                      party={promise.parties.name}
+                      electionYear={promise.election_year}
+                      createdAt={new Date(promise.created_at).toLocaleDateString('sv-SE')}
+                      updatedAt={new Date(promise.updated_at).toLocaleDateString('sv-SE')}
+                      status={promise.status}
+                      description={promise.summary || undefined}
+                      statusExplanation={promise.status_explanation || undefined}
+                      statusSources={promise.status_sources || undefined}
+                      directQuote={promise.direct_quote || undefined}
+                      pageNumber={promise.page_number || undefined}
+                      manifestPdfUrl={promise.manifest_pdf_url || undefined}
+                      measurabilityScore={promise.measurability_score || undefined}
+                      onStatusUpdate={fetchPromises}
+                    />
+                  </div>
                 ))}
               </div>
             )}
