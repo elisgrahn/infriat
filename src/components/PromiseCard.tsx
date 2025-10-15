@@ -123,11 +123,12 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
     
     setIsReanalyzingPage(true);
     try {
-      // Dynamically import PDF.js
+      // Dynamically import PDF.js and worker
       const pdfjs = await import('pdfjs-dist');
+      const pdfjsWorker = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
       
-      // Configure worker for browser environment
-      pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+      // Configure worker using Vite's import.meta.url
+      pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker.default;
       
       // Load PDF
       const loadingTask = pdfjs.getDocument(manifestPdfUrl);
