@@ -237,6 +237,20 @@ Din uppgift är att:
 3. Inkludera ett direkt citat från manifestet
 4. Förklara varför löftet är mätbart
 
+KRITISKT VIKTIGT OM CITAT:
+- Citatet MÅSTE vara en EXAKT kopia från manifestet - ord för ord, tecken för tecken
+- Ändra ALDRIG ordningen på meningar i citatet
+- Parafrasera ALDRIG eller omformulera texten
+- Använd ALDRIG [...] eller andra förkortningar
+- Om citatet är långt, ta HELA citatet ordagrant - hoppa inte över delar
+- Citatet ska gå att söka efter ordagrant i PDF:en
+
+Exempel på FELAKTIGT citat (ändrar ordning):
+"Vi vill minska korruption. Biståndet är viktigt. Därför ska det vara 1% av BNI."
+
+Exempel på KORREKT citat (exakt som i text):
+"Biståndet spelar en viktig roll i en orolig värld. Därför vill vi att det svenska biståndet ska uppnå till en procent av BNI. Samtidigt finns i dag allvarliga problem med bristande öppenhet och korruption."
+
 OBS: Ange INTE sidnummer eftersom de inte går att härleda från endast texten.
 
 Ett löfte är mätbart om det uppfyller minst ett av dessa kriterier:
