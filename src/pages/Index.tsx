@@ -36,6 +36,7 @@ const Index = () => {
   const [selectedParties, setSelectedParties] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
   const [promises, setPromises] = useState<Promise[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -88,6 +89,25 @@ const Index = () => {
       promise.parties.name.toLowerCase().includes(searchQuery.toLowerCase());
 
     return matchesParty && matchesStatus && matchesSearch;
+  });
+
+  const sortedPromises = [...filteredPromises].sort((a, b) => {
+    switch (sortBy) {
+      case "newest":
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      case "oldest":
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      case "measurability-high":
+        return (b.measurability_score || 0) - (a.measurability_score || 0);
+      case "measurability-low":
+        return (a.measurability_score || 0) - (b.measurability_score || 0);
+      case "status-fulfilled":
+        return a.status === "fulfilled" ? -1 : b.status === "fulfilled" ? 1 : 0;
+      case "status-broken":
+        return a.status === "broken" ? -1 : b.status === "broken" ? 1 : 0;
+      default:
+        return 0;
+    }
   });
 
   const stats = {
@@ -182,14 +202,16 @@ const Index = () => {
           <aside className="lg:col-span-1">
             <div className="sticky top-8 bg-card rounded-xl p-6 border shadow-sm">
               <h2 className="text-xl font-bold mb-6 text-foreground">Filtrera</h2>
-              <PromiseFilters
-                selectedParties={selectedParties}
-                selectedStatuses={selectedStatuses}
-                searchQuery={searchQuery}
-                onPartiesChange={setSelectedParties}
-                onStatusesChange={setSelectedStatuses}
-                onSearchChange={setSearchQuery}
-              />
+            <PromiseFilters
+              selectedParties={selectedParties}
+              selectedStatuses={selectedStatuses}
+              searchQuery={searchQuery}
+              sortBy={sortBy}
+              onPartiesChange={setSelectedParties}
+              onStatusesChange={setSelectedStatuses}
+              onSearchChange={setSearchQuery}
+              onSortChange={setSortBy}
+            />
             </div>
           </aside>
 
@@ -197,7 +219,7 @@ const Index = () => {
           <div className="lg:col-span-3 space-y-4">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-foreground">
-                {filteredPromises.length} {filteredPromises.length === 1 ? "löfte" : "löften"}
+                {sortedPromises.length} {sortedPromises.length === 1 ? "löfte" : "löften"}
               </h2>
             </div>
 
@@ -207,7 +229,7 @@ const Index = () => {
                   Laddar löften...
                 </p>
               </div>
-            ) : filteredPromises.length === 0 ? (
+            ) : sortedPromises.length === 0 ? (
               <div className="text-center py-16 bg-card rounded-xl border">
                 <p className="text-muted-foreground text-lg">
                   Inga löften hittades som matchar dina filter.
@@ -215,7 +237,7 @@ const Index = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredPromises.map((promise) => (
+                {sortedPromises.map((promise) => (
                   <PromiseCard
                     key={promise.id}
                     promiseId={promise.id}

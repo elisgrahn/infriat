@@ -2,14 +2,17 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { partyColors, statusColors } from "@/utils/partyColors";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface PromiseFiltersProps {
   selectedParties: string[];
   selectedStatuses: string[];
   searchQuery: string;
+  sortBy: string;
   onPartiesChange: (parties: string[]) => void;
   onStatusesChange: (statuses: string[]) => void;
   onSearchChange: (query: string) => void;
+  onSortChange: (sort: string) => void;
 }
 
 const parties = [
@@ -28,9 +31,11 @@ export const PromiseFilters = ({
   selectedParties,
   selectedStatuses,
   searchQuery,
+  sortBy,
   onPartiesChange,
   onStatusesChange,
   onSearchChange,
+  onSortChange,
 }: PromiseFiltersProps) => {
   return (
     <div className="space-y-6">
@@ -42,6 +47,23 @@ export const PromiseFilters = ({
           onChange={(e) => onSearchChange(e.target.value)}
           className="pl-10"
         />
+      </div>
+
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-foreground">Sortera efter</h3>
+        <Select value={sortBy} onValueChange={onSortChange}>
+          <SelectTrigger>
+            <SelectValue placeholder="Välj sortering" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="newest">Nyaste först</SelectItem>
+            <SelectItem value="oldest">Äldste först</SelectItem>
+            <SelectItem value="measurability-high">Högsta mätbarhet</SelectItem>
+            <SelectItem value="measurability-low">Lägsta mätbarhet</SelectItem>
+            <SelectItem value="status-fulfilled">Status: Infriat</SelectItem>
+            <SelectItem value="status-broken">Status: Brutet</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="space-y-3">

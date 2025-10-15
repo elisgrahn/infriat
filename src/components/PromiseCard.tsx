@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Calendar, Users, RefreshCw, ExternalLink, FileText, Clock, Upload, Trash2, Search } from "lucide-react";
+import { Calendar, Users, RefreshCw, ExternalLink, FileText, Clock, Upload, Trash2, Search, Target } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -254,10 +254,28 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
             {measurabilityScore && (
               <TooltipProvider>
                 <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Badge variant="outline" className="text-xs">
-                      Mätbarhet: {measurabilityScore}/5
-                    </Badge>
+                  <TooltipTrigger>
+                    <div className="relative overflow-hidden rounded-md border border-border">
+                      <div 
+                        className="absolute inset-0 bg-gradient-to-r from-rose-500/20 via-amber-500/20 to-emerald-500/20"
+                        style={{
+                          clipPath: `inset(0 ${100 - (measurabilityScore / 5) * 100}% 0 0)`
+                        }}
+                      />
+                      <Badge 
+                        variant="outline" 
+                        className={`gap-1.5 relative bg-background/80 backdrop-blur-sm border-0 ${
+                          measurabilityScore === 5 ? 'text-emerald-600' :
+                          measurabilityScore >= 4 ? 'text-emerald-500' :
+                          measurabilityScore === 3 ? 'text-amber-500' :
+                          measurabilityScore === 2 ? 'text-orange-500' :
+                          'text-rose-500'
+                        }`}
+                      >
+                        <Target className="w-3 h-3" />
+                        Mätbarhet: {measurabilityScore}/5
+                      </Badge>
+                    </div>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p className="text-xs max-w-[200px]">
