@@ -12,16 +12,7 @@ interface PromiseFiltersProps {
   onSearchChange: (query: string) => void;
 }
 
-const parties = [
-  "Vänsterpartiet",
-  "Socialdemokraterna",
-  "Miljöpartiet",
-  "Centerpartiet",
-  "Liberalerna",
-  "Kristdemokraterna",
-  "Moderaterna",
-  "Sverigedemokraterna",
-];
+const parties = ["S", "M", "SD", "C", "V", "KD", "L", "MP"];
 const statuses = ["Infriat", "Delvis infriat", "Pågående", "Försenat", "Brutet", "Oklart"];
 
 export const PromiseFilters = ({
