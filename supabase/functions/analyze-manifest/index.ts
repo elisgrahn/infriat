@@ -153,16 +153,17 @@ Din uppgift är att:
 1. Identifiera konkreta, mätbara vallöften i texten
 2. För varje vallöfte, ge en kort sammanfattning
 3. Inkludera ett direkt citat från manifestet
-4. Försök hitta vilket sidnummer citatet finns på (om möjligt)
-5. Förklara varför löftet är mätbart
+4. Förklara varför löftet är mätbart
 
-ETT LÖFTE ÄR MÄTBART om det uppfyller minst ett av dessa kriterier:
+OBS: Ange INTE sidnummer eftersom de inte går att härleda från endast texten.
+
+Ett löfte är mätbart om det uppfyller minst ett av dessa kriterier:
 - Innehåller specifika siffror eller mål (t.ex. "sänka skatten med 10%")
 - Beskriver konkreta lagändringar eller politiska reformer (t.ex. "avskaffa strandskyddet", "ändra lagen om X")
 - Lovar att införa eller avskaffa en specifik policy eller myndighet
 - Beskriver en tydlig åtgärd som kan verifieras genom offentliga handlingar (riksdagsmotion, proposition, lagändringar)
 
-INTE MÄTBART:
+Inte mätbart:
 - Vaga mål utan konkret åtgärd (t.ex. "förbättra välfärden", "stärka Sverige")
 - Värderingar och principer utan specifik handling
 - Allmänna visioner utan tydlig leverans
@@ -199,10 +200,6 @@ Inkludera löften även om de inte har specifika siffror, så länge åtgärden 
                         direct_quote: { 
                           type: "string",
                           description: "Exakt citat från manifestet som stödjer löftet"
-                        },
-                        page_number: {
-                          type: "number",
-                          description: "Sidnummer där citatet finns (om tillgängligt i manifestet)"
                         },
                         measurability_reason: { 
                           type: "string",
@@ -307,7 +304,7 @@ Inkludera löften även om de inte har specifika siffror, så länge åtgärden 
       promise_text: p.promise_text,
       summary: p.summary,
       direct_quote: p.direct_quote,
-      page_number: p.page_number || null,
+      page_number: null,
       manifest_pdf_url: manifestPdfUrl || null,
       measurability_reason: p.measurability_reason,
       status: 'pending-analysis'
