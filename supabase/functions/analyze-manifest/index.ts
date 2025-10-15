@@ -1,9 +1,10 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import * as pdfjs from "https://esm.sh/pdfjs-dist@4.0.379/legacy/build/pdf.mjs";
 
-// Import PDF.js without worker (use main thread parsing in edge function)
-const pdfjs = await import("https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/+esm");
+// Configure PDF.js worker for Deno environment
+pdfjs.GlobalWorkerOptions.workerSrc = "https://esm.sh/pdfjs-dist@4.0.379/legacy/build/pdf.worker.mjs";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -155,119 +156,34 @@ serve(async (req) => {
       throw new Error(`Party not found: ${partyAbbreviation}`);
     }
 
-    // Handle PDF-only mode: update page numbers for existing promises
+    // Handle PDF-only mode: just update manifest_pdf_url for existing promises
     if (pdfOnlyMode) {
       if (!manifestPdfUrl) {
         throw new Error('PDF required for page number updates');
       }
 
-      console.log('PDF-only mode: updating page numbers for existing promises');
+      console.log('PDF-only mode: updating manifest_pdf_url for existing promises');
 
-      // Fetch existing promises without page numbers
-      const { data: existingPromises, error: fetchError } = await supabase
+      // Update all promises for this party/year with the new PDF URL
+      const { data: updatedPromises, error: updateError } = await supabase
         .from('promises')
-        .select('id, direct_quote')
+        .update({ manifest_pdf_url: manifestPdfUrl })
         .eq('party_id', party.id)
         .eq('election_year', electionYear)
-        .is('page_number', null);
+        .select('id');
 
-      if (fetchError) {
-        throw new Error('Failed to fetch existing promises');
+      if (updateError) {
+        throw new Error('Failed to update promises with PDF URL');
       }
 
-      if (!existingPromises || existingPromises.length === 0) {
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            count: 0,
-            pdfOnly: true,
-            message: 'Inga löften utan sidnummer hittades för detta parti och år'
-          }), 
-          {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        );
-      }
-
-      console.log(`Found ${existingPromises.length} promises without page numbers`);
-
-      // Load and search PDF
-      const pdfResponse = await fetch(manifestPdfUrl);
-      const pdfArrayBuffer = await pdfResponse.arrayBuffer();
-      const loadingTask = pdfjs.getDocument({ data: pdfArrayBuffer });
-      const pdf = await loadingTask.promise;
-
-      const normalizeText = (text: string) => {
-        return text
-          .toLowerCase()
-          .replace(/\s+/g, ' ')
-          .replace(/- /g, '')
-          .replace(/\n/g, ' ')
-          .trim();
-      };
-
-      // Extract all text from PDF
-      const pageTexts: Array<{pageNum: number, normalized: string}> = [];
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items.map((item: any) => item.str).join(' ');
-        pageTexts.push({ pageNum: i, normalized: normalizeText(pageText) });
-      }
-
-      // Find page numbers for each promise
-      let updatedCount = 0;
-      for (const promise of existingPromises) {
-        const normalizedQuote = normalizeText(promise.direct_quote);
-        let foundPage = null;
-
-        // Try exact match
-        for (const { pageNum, normalized } of pageTexts) {
-          if (normalized.includes(normalizedQuote)) {
-            foundPage = pageNum;
-            break;
-          }
-        }
-
-        // Try fuzzy match for longer quotes
-        if (!foundPage && normalizedQuote.length > 30) {
-          const words = normalizedQuote.split(' ').filter(w => w.length > 0);
-          const requiredWords = Math.floor(words.length * 0.8);
-
-          for (const { pageNum, normalized } of pageTexts) {
-            const matchedWords = words.filter(word => 
-              word.length > 3 && normalized.includes(word)
-            );
-
-            if (matchedWords.length >= requiredWords) {
-              foundPage = pageNum;
-              break;
-            }
-          }
-        }
-
-        // Update promise with page number if found
-        if (foundPage) {
-          const { error: updateError } = await supabase
-            .from('promises')
-            .update({ 
-              page_number: foundPage,
-              manifest_pdf_url: manifestPdfUrl 
-            })
-            .eq('id', promise.id);
-
-          if (!updateError) {
-            updatedCount++;
-          }
-        }
-      }
+      const updatedCount = updatedPromises?.length || 0;
 
       return new Response(
         JSON.stringify({ 
           success: true, 
           count: updatedCount,
           pdfOnly: true,
-          message: `Sidnummer uppdaterat för ${updatedCount} av ${existingPromises.length} löften`
+          message: `PDF-URL uppdaterad för ${updatedCount} löften. Använd "Sök i PDF" i frontend för att hitta sidnummer.`
         }), 
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
