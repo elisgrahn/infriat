@@ -48,6 +48,8 @@ const Index = () => {
   const [sortBy, setSortBy] = useState(() => searchParams.get('sort') || "newest");
   const [promises, setPromises] = useState<Promise[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 20;
 
   const handleAuthClick = async () => {
     if (user) {
@@ -168,6 +170,18 @@ const Index = () => {
         return 0;
     }
   });
+
+  // Pagination
+  const totalPages = Math.ceil(sortedPromises.length / ITEMS_PER_PAGE);
+  const paginatedPromises = sortedPromises.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedParties, selectedStatuses, searchQuery, sortBy]);
 
   const stats = {
     total: promises.length,
@@ -301,29 +315,53 @@ const Index = () => {
                 </p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {sortedPromises.map((promise) => (
-                  <div key={promise.id} ref={(el) => promiseRefs.current[promise.id] = el}>
-                    <PromiseCard
-                      promiseId={promise.id}
-                      promise={promise.promise_text}
-                      party={promise.parties.name}
-                      electionYear={promise.election_year}
-                      createdAt={new Date(promise.created_at).toLocaleDateString('sv-SE')}
-                      updatedAt={new Date(promise.updated_at).toLocaleDateString('sv-SE')}
-                      status={promise.status}
-                      description={promise.summary || undefined}
-                      statusExplanation={promise.status_explanation || undefined}
-                      statusSources={promise.status_sources || undefined}
-                      directQuote={promise.direct_quote || undefined}
-                      pageNumber={promise.page_number || undefined}
-                      manifestPdfUrl={promise.manifest_pdf_url || undefined}
-                      measurabilityScore={promise.measurability_score || undefined}
-                      onStatusUpdate={fetchPromises}
-                    />
+              <>
+                <div className="space-y-4">
+                  {paginatedPromises.map((promise) => (
+                    <div key={promise.id} ref={(el) => promiseRefs.current[promise.id] = el}>
+                      <PromiseCard
+                        promiseId={promise.id}
+                        promise={promise.promise_text}
+                        party={promise.parties.name}
+                        electionYear={promise.election_year}
+                        createdAt={new Date(promise.created_at).toLocaleDateString('sv-SE')}
+                        updatedAt={new Date(promise.updated_at).toLocaleDateString('sv-SE')}
+                        status={promise.status}
+                        description={promise.summary || undefined}
+                        statusExplanation={promise.status_explanation || undefined}
+                        statusSources={promise.status_sources || undefined}
+                        directQuote={promise.direct_quote || undefined}
+                        pageNumber={promise.page_number || undefined}
+                        manifestPdfUrl={promise.manifest_pdf_url || undefined}
+                        measurabilityScore={promise.measurability_score || undefined}
+                        onStatusUpdate={fetchPromises}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-8">
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Föregående
+                    </Button>
+                    <span className="text-sm text-muted-foreground px-4">
+                      Sida {currentPage} av {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Nästa
+                    </Button>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </div>
         </div>

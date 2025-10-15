@@ -290,6 +290,44 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
               <Users className="w-3 h-3" />
               {party}
             </Badge>
+            {measurabilityScore && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <div className="relative overflow-hidden rounded-md border border-border">
+                      <div 
+                        className="absolute inset-0 bg-gradient-to-r from-rose-500/20 via-amber-500/20 to-emerald-500/20"
+                        style={{
+                          clipPath: `inset(0 ${100 - (measurabilityScore / 5) * 100}% 0 0)`
+                        }}
+                      />
+                      <Badge 
+                        variant="outline" 
+                        className={`gap-1.5 relative bg-background/80 backdrop-blur-sm border-0 ${
+                          measurabilityScore === 5 ? 'text-emerald-600' :
+                          measurabilityScore >= 4 ? 'text-emerald-500' :
+                          measurabilityScore === 3 ? 'text-amber-500' :
+                          measurabilityScore === 2 ? 'text-orange-500' :
+                          'text-rose-500'
+                        }`}
+                      >
+                        <Target className="w-3 h-3" />
+                        Mätbarhet: {measurabilityScore}/5
+                      </Badge>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs max-w-[200px]">
+                      {measurabilityScore === 5 && "Extremt mätbart - Specifika siffror + tidsram"}
+                      {measurabilityScore === 4 && "Mycket mätbart - Konkreta mål eller tidsram"}
+                      {measurabilityScore === 3 && "Måttligt mätbart - Tydlig verifierbar åtgärd"}
+                      {measurabilityScore === 2 && "Svagt mätbart - Relativa förändringar"}
+                      {measurabilityScore === 1 && "Nästan omätbart - Vaga formuleringar"}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
             </div>
           </div>
           
@@ -369,47 +407,6 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
         </div>
         
         <div className="flex-1 space-y-3">
-          {measurabilityScore && (
-            <div className="flex items-start gap-3 flex-wrap">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <div className="relative overflow-hidden rounded-md border border-border">
-                      <div 
-                        className="absolute inset-0 bg-gradient-to-r from-rose-500/20 via-amber-500/20 to-emerald-500/20"
-                        style={{
-                          clipPath: `inset(0 ${100 - (measurabilityScore / 5) * 100}% 0 0)`
-                        }}
-                      />
-                      <Badge 
-                        variant="outline" 
-                        className={`gap-1.5 relative bg-background/80 backdrop-blur-sm border-0 ${
-                          measurabilityScore === 5 ? 'text-emerald-600' :
-                          measurabilityScore >= 4 ? 'text-emerald-500' :
-                          measurabilityScore === 3 ? 'text-amber-500' :
-                          measurabilityScore === 2 ? 'text-orange-500' :
-                          'text-rose-500'
-                        }`}
-                      >
-                        <Target className="w-3 h-3" />
-                        Mätbarhet: {measurabilityScore}/5
-                      </Badge>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="text-xs max-w-[200px]">
-                      {measurabilityScore === 5 && "Extremt mätbart - Specifika siffror + tidsram"}
-                      {measurabilityScore === 4 && "Mycket mätbart - Konkreta mål eller tidsram"}
-                      {measurabilityScore === 3 && "Måttligt mätbart - Tydlig verifierbar åtgärd"}
-                      {measurabilityScore === 2 && "Svagt mätbart - Relativa förändringar"}
-                      {measurabilityScore === 1 && "Nästan omätbart - Vaga formuleringar"}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-          )}
-          
           <h3 className="text-lg font-semibold text-foreground leading-snug">
             {promise}
           </h3>
