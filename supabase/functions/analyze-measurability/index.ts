@@ -89,11 +89,11 @@ serve(async (req) => {
             messages: [
               {
                 role: 'system',
-                content: `Du är en expert på att bedöma mätbarheten av politiska vallöften. 
-                
+              content: `Du är en expert på att bedöma mätbarheten av politiska vallöften. 
+              
 Bedöm mätbarheten på en skala 1-5:
-- 5: Mycket mätbart (konkreta siffror, tidsramar, specifika åtgärder)
-- 4: Mätbart (tydliga mål, men mindre konkret)
+- 5: Mycket mätbart - KRÄVER BÅDE konkreta siffror/mätbara mål OCH en tydlig tidsram (årtal)
+- 4: Mätbart - har ANTINGEN konkreta siffror/mätbara mål ELLER en tydlig tidsram
 - 3: Delvis mätbart (vissa mätbara delar)
 - 2: Svårmätbart (vaga formuleringar)
 - 1: Omätbart (inga konkreta mål alls)
