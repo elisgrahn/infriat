@@ -354,48 +354,119 @@ GENERELL PRINCIP: Om texten säger "vi vill/ska/föreslår [göra något konkret
       throw new Error(`AI API error: ${response.status} ${response.statusText} - ${errorText.slice(0, 200)}`);
     }
 
+    // Parse AI response with detailed error logging
     let aiData;
     try {
-      aiData = await response.json();
+      const responseText = await response.text();
+      console.log('AI response received, length:', responseText.length);
+      aiData = JSON.parse(responseText);
       console.log('AI response parsed successfully');
+      console.log('AI response structure:', JSON.stringify({
+        hasChoices: !!aiData.choices,
+        choicesLength: aiData.choices?.length,
+        hasMessage: !!aiData.choices?.[0]?.message,
+        hasToolCalls: !!aiData.choices?.[0]?.message?.tool_calls,
+        toolCallsLength: aiData.choices?.[0]?.message?.tool_calls?.length
+      }));
     } catch (parseError) {
       console.error('Failed to parse AI response:', parseError);
       throw new Error('AI returnerade ogiltigt JSON-svar');
     }
 
-    // Extract the tool call result
-    const toolCall = aiData.choices[0]?.message?.tool_calls?.[0];
-    if (!toolCall) {
-      throw new Error('No tool call in AI response');
+    // Extract the tool call result with defensive checks
+    console.log('Attempting to extract tool call...');
+    if (!aiData.choices || !Array.isArray(aiData.choices) || aiData.choices.length === 0) {
+      console.error('Invalid AI response structure - no choices array');
+      throw new Error('AI-svar saknar choices array');
     }
 
-    const extractedPromises = JSON.parse(toolCall.function.arguments);
+    const firstChoice = aiData.choices[0];
+    if (!firstChoice.message) {
+      console.error('Invalid AI response structure - no message in first choice');
+      throw new Error('AI-svar saknar message i första valet');
+    }
+
+    if (!firstChoice.message.tool_calls || !Array.isArray(firstChoice.message.tool_calls) || firstChoice.message.tool_calls.length === 0) {
+      console.error('Invalid AI response structure - no tool_calls');
+      console.error('Message content:', JSON.stringify(firstChoice.message).slice(0, 500));
+      throw new Error('AI-svar saknar tool_calls. Möjligen har AI:n returnerat ett vanligt meddelande istället.');
+    }
+
+    const toolCall = firstChoice.message.tool_calls[0];
+    console.log('Tool call extracted:', {
+      hasFunction: !!toolCall.function,
+      hasArguments: !!toolCall.function?.arguments,
+      argumentsLength: toolCall.function?.arguments?.length
+    });
+
+    // Parse tool call arguments with error handling
+    let extractedPromises;
+    try {
+      extractedPromises = JSON.parse(toolCall.function.arguments);
+      console.log('Tool call arguments parsed successfully');
+      console.log('Extracted promises structure:', {
+        hasPromises: !!extractedPromises.promises,
+        isArray: Array.isArray(extractedPromises.promises),
+        promisesCount: extractedPromises.promises?.length
+      });
+    } catch (argParseError) {
+      console.error('Failed to parse tool call arguments:', argParseError);
+      console.error('Arguments string (first 500 chars):', toolCall.function.arguments.slice(0, 500));
+      throw new Error('Kunde inte tolka AI:ns löften-data');
+    }
+
+    if (!extractedPromises.promises || !Array.isArray(extractedPromises.promises)) {
+      console.error('Invalid promises structure - not an array');
+      throw new Error('AI returnerade ogiltig löftesstruktur');
+    }
+
     const uniquePromises = extractedPromises.promises;
+    console.log(`Preparing to insert ${uniquePromises.length} promises`);
 
-    // Insert promises WITHOUT page numbers (frontend will handle that)
-    const promisesToInsert = uniquePromises.map((p: any) => ({
-      party_id: party.id,
-      election_year: electionYear,
-      promise_text: p.promise_text,
-      summary: p.summary,
-      direct_quote: p.direct_quote,
-      page_number: null, // Frontend will find this
-      manifest_pdf_url: manifestPdfUrl || null,
-      measurability_reason: p.measurability_reason,
-      status: 'pending-analysis'
-    }));
+    // Validate promise structure before insert
+    const promisesToInsert = uniquePromises.map((p: any, index: number) => {
+      if (!p.promise_text || !p.summary || !p.direct_quote) {
+        console.error(`Promise ${index} missing required fields:`, {
+          hasPromiseText: !!p.promise_text,
+          hasSummary: !!p.summary,
+          hasDirectQuote: !!p.direct_quote
+        });
+      }
+      return {
+        party_id: party.id,
+        election_year: electionYear,
+        promise_text: p.promise_text,
+        summary: p.summary,
+        direct_quote: p.direct_quote,
+        page_number: null, // Frontend will find this
+        manifest_pdf_url: manifestPdfUrl || null,
+        measurability_reason: p.measurability_reason || null,
+        status: 'pending-analysis'
+      };
+    });
 
+    console.log('Attempting database insert...');
     const { data: insertedPromises, error: insertError } = await supabase
       .from('promises')
       .insert(promisesToInsert)
       .select();
 
     if (insertError) {
-      console.error('Insert error:', insertError);
-      throw new Error('Failed to insert promises');
+      console.error('Database insert error details:', {
+        code: insertError.code,
+        message: insertError.message,
+        details: insertError.details,
+        hint: insertError.hint
+      });
+      throw new Error(`Databasfel vid insättning: ${insertError.message}`);
     }
 
-    console.log(`Inserted ${insertedPromises.length} unique promises`);
+    if (!insertedPromises || insertedPromises.length === 0) {
+      console.error('No promises were inserted (insertedPromises is empty)');
+      throw new Error('Inga löften kunde sparas i databasen');
+    }
+
+    console.log(`Successfully inserted ${insertedPromises.length} unique promises`);
 
     return new Response(
       JSON.stringify({ 
