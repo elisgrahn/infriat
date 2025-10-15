@@ -217,6 +217,20 @@ serve(async (req) => {
 
     console.log(`Starting AI analysis for ${partyAbbreviation} ${electionYear}`);
     console.log(`Manifest text length: ${finalManifestText.length} characters`);
+
+    // Check if manifest is too large (> 200k characters)
+    if (finalManifestText.length > 200000) {
+      console.warn(`Manifest is very large: ${finalManifestText.length} characters`);
+      return new Response(
+        JSON.stringify({ 
+          error: `Manifestet är för stort (${Math.round(finalManifestText.length / 1000)}k tecken). Försök dela upp det i mindre delar eller kontakta support.` 
+        }), 
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
     
     const aiRequestBody = JSON.stringify({
       model: 'google/gemini-2.5-flash',
@@ -330,7 +344,7 @@ GENERELL PRINCIP: Om texten säger "vi vill/ska/föreslår [göra något konkret
       });
       
       clearTimeout(timeoutId);
-      console.log(`AI response received with status: ${response.status}`);
+      console.log('AI response received with status:', response.status);
     } catch (fetchError) {
       if (fetchError instanceof Error && fetchError.name === 'AbortError') {
         console.error('AI request timeout after 280 seconds');
@@ -356,9 +370,20 @@ GENERELL PRINCIP: Om texten säger "vi vill/ska/föreslår [göra något konkret
 
     // Parse AI response with detailed error logging
     let aiData;
+    
+    // Read response body with error handling
+    console.log('Starting to read AI response body...');
+    let responseText: string;
     try {
-      const responseText = await response.text();
-      console.log('AI response received, length:', responseText.length);
+      responseText = await response.text();
+      console.log('AI response body read successfully, length:', responseText.length);
+    } catch (readError) {
+      console.error('Failed to read AI response body:', readError);
+      throw new Error(`Kunde inte läsa AI-svar (möjligen för stort): ${readError instanceof Error ? readError.message : 'Okänt fel'}`);
+    }
+
+    // Parse the AI response JSON
+    try {
       aiData = JSON.parse(responseText);
       console.log('AI response parsed successfully');
       console.log('AI response structure:', JSON.stringify({
@@ -370,6 +395,7 @@ GENERELL PRINCIP: Om texten säger "vi vill/ska/föreslår [göra något konkret
       }));
     } catch (parseError) {
       console.error('Failed to parse AI response:', parseError);
+      console.error('Response text (first 500 chars):', responseText.slice(0, 500));
       throw new Error('AI returnerade ogiltigt JSON-svar');
     }
 
