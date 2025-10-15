@@ -91,7 +91,15 @@ ${context ? `Ytterligare kontext: ${context}` : ''}
 
 Ge en strukturerad bedömning enligt detta format:
 
-**Status:** [välj: kept, broken, eller in-progress]
+**Status:** [välj EN av: fulfilled, partially-fulfilled, in-progress, delayed, broken, eller unclear]
+
+Statusdefinitioner:
+- fulfilled: Löftet är helt infriat enligt beskrivning och tidsram
+- partially-fulfilled: Partiet har infriat en del av löftet, men har valt att inte arbeta vidare på det
+- in-progress: Partiet arbetar aktivt med att infria löftet
+- delayed: Partiet har fortfarande för avsikt att infria löftet, men inte enligt ursprungliga tidsplanen
+- broken: Partiet lovade något som de inte kunde hålla
+- unclear: Det saknas tydligt underlag för att bedöma löftets status
 
 **Förklaring:** [3-5 meningar som förklarar statusen baserat på konkreta åtgärder, lagförslag, beslut och aktuella nyheter]
 
@@ -144,11 +152,17 @@ Ge en strukturerad bedömning enligt detta format:
     }
 
     // Extract status from text response - look for the exact pattern
-    let status: 'kept' | 'broken' | 'in-progress' = 'in-progress';
+    let status: 'fulfilled' | 'partially-fulfilled' | 'in-progress' | 'delayed' | 'broken' | 'unclear' = 'unclear';
     
     const lowerText = textContent.toLowerCase();
-    if (lowerText.includes('status:** kept') || lowerText.includes('status: kept')) {
-      status = 'kept';
+    if (lowerText.includes('status:** fulfilled') || lowerText.includes('status: fulfilled')) {
+      status = 'fulfilled';
+    } else if (lowerText.includes('status:** partially-fulfilled') || lowerText.includes('status: partially-fulfilled')) {
+      status = 'partially-fulfilled';
+    } else if (lowerText.includes('status:** in-progress') || lowerText.includes('status: in-progress')) {
+      status = 'in-progress';
+    } else if (lowerText.includes('status:** delayed') || lowerText.includes('status: delayed')) {
+      status = 'delayed';
     } else if (lowerText.includes('status:** broken') || lowerText.includes('status: broken')) {
       status = 'broken';
     }
