@@ -1,10 +1,9 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import * as pdfjs from "https://esm.sh/pdfjs-dist@4.0.379/legacy/build/pdf.mjs";
 
-// Configure PDF.js worker for Deno environment
-pdfjs.GlobalWorkerOptions.workerSrc = "https://esm.sh/pdfjs-dist@4.0.379/legacy/build/pdf.worker.mjs";
+// Import PDF.js without worker (use main thread parsing in edge function)
+const pdfjs = await import("https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/+esm");
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
