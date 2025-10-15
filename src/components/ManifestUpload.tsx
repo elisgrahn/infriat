@@ -42,10 +42,11 @@ export const ManifestUpload = () => {
     const hasTxt = txtUrl || txtFile;
     const hasPdf = pdfUrl || pdfFile;
     
-    if (!hasTxt || !hasPdf || !selectedParty || !selectedYear) {
+    // Either TXT or PDF is required, not both mandatory
+    if (!selectedParty || !selectedYear || (!hasTxt && !hasPdf)) {
       toast({
         title: "Saknade uppgifter",
-        description: "Ange både TXT och PDF (via URL eller fil) samt parti och år",
+        description: "Ange TXT (för fullständig analys) eller PDF (för att lägga till sidnummer) samt parti och år",
         variant: "destructive"
       });
       return;
@@ -91,10 +92,14 @@ export const ManifestUpload = () => {
 
       if (error) throw error;
 
-      let toastMessage = `${data.count} vallöften extraherade och sparade.`;
+      let toastMessage = data.message || `${data.count} vallöften ${data.pdfOnly ? 'uppdaterade' : 'extraherade och sparade'}.`;
       
       if (data.warnings?.unverifiedQuotes?.length > 0) {
         toastMessage += `\n\n⚠️ Varning: ${data.warnings.unverifiedQuotes.length} citat kunde inte verifieras i PDF:en.`;
+      }
+
+      if (data.duplicatesRemoved) {
+        toastMessage += `\n\n${data.duplicatesRemoved} befintliga löften raderades.`;
       }
 
       toast({
@@ -133,7 +138,7 @@ export const ManifestUpload = () => {
           Ladda upp valmanifest
         </CardTitle>
         <CardDescription>
-          Ange URL eller ladda upp filer för TXT och PDF av valmanifestet
+          Ladda upp TXT för fullständig analys, eller bara PDF för att lägga till sidnummer till befintliga löften
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">

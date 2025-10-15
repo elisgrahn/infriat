@@ -75,9 +75,8 @@ serve(async (req) => {
       finalManifestText = await txtResponse.text();
     }
 
-    if (!finalManifestText) {
-      throw new Error('No manifest text provided');
-    }
+    // Check if this is PDF-only mode (adding page numbers to existing promises)
+    const pdfOnlyMode = !finalManifestText && (pdfBase64 || pdfUrl);
 
     // Handle PDF upload
     let manifestPdfUrl = null;
@@ -130,6 +129,155 @@ serve(async (req) => {
       
       manifestPdfUrl = publicUrl;
       console.log('PDF uploaded:', publicUrl);
+    }
+
+    // Get party ID early as we need it for both modes
+    const { data: party, error: partyError } = await supabase
+      .from('parties')
+      .select('id')
+      .eq('abbreviation', partyAbbreviation)
+      .single();
+
+    if (partyError || !party) {
+      throw new Error(`Party not found: ${partyAbbreviation}`);
+    }
+
+    // Handle PDF-only mode: update page numbers for existing promises
+    if (pdfOnlyMode) {
+      if (!manifestPdfUrl) {
+        throw new Error('PDF required for page number updates');
+      }
+
+      console.log('PDF-only mode: updating page numbers for existing promises');
+
+      // Fetch existing promises without page numbers
+      const { data: existingPromises, error: fetchError } = await supabase
+        .from('promises')
+        .select('id, direct_quote')
+        .eq('party_id', party.id)
+        .eq('election_year', electionYear)
+        .is('page_number', null);
+
+      if (fetchError) {
+        throw new Error('Failed to fetch existing promises');
+      }
+
+      if (!existingPromises || existingPromises.length === 0) {
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            count: 0,
+            pdfOnly: true,
+            message: 'Inga löften utan sidnummer hittades för detta parti och år'
+          }), 
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+
+      console.log(`Found ${existingPromises.length} promises without page numbers`);
+
+      // Load and search PDF
+      const pdfResponse = await fetch(manifestPdfUrl);
+      const pdfArrayBuffer = await pdfResponse.arrayBuffer();
+      const loadingTask = pdfjs.getDocument({ data: pdfArrayBuffer });
+      const pdf = await loadingTask.promise;
+
+      const normalizeText = (text: string) => {
+        return text
+          .toLowerCase()
+          .replace(/\s+/g, ' ')
+          .replace(/- /g, '')
+          .replace(/\n/g, ' ')
+          .trim();
+      };
+
+      // Extract all text from PDF
+      const pageTexts: Array<{pageNum: number, normalized: string}> = [];
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map((item: any) => item.str).join(' ');
+        pageTexts.push({ pageNum: i, normalized: normalizeText(pageText) });
+      }
+
+      // Find page numbers for each promise
+      let updatedCount = 0;
+      for (const promise of existingPromises) {
+        const normalizedQuote = normalizeText(promise.direct_quote);
+        let foundPage = null;
+
+        // Try exact match
+        for (const { pageNum, normalized } of pageTexts) {
+          if (normalized.includes(normalizedQuote)) {
+            foundPage = pageNum;
+            break;
+          }
+        }
+
+        // Try fuzzy match for longer quotes
+        if (!foundPage && normalizedQuote.length > 30) {
+          const words = normalizedQuote.split(' ').filter(w => w.length > 0);
+          const requiredWords = Math.floor(words.length * 0.8);
+
+          for (const { pageNum, normalized } of pageTexts) {
+            const matchedWords = words.filter(word => 
+              word.length > 3 && normalized.includes(word)
+            );
+
+            if (matchedWords.length >= requiredWords) {
+              foundPage = pageNum;
+              break;
+            }
+          }
+        }
+
+        // Update promise with page number if found
+        if (foundPage) {
+          const { error: updateError } = await supabase
+            .from('promises')
+            .update({ 
+              page_number: foundPage,
+              manifest_pdf_url: manifestPdfUrl 
+            })
+            .eq('id', promise.id);
+
+          if (!updateError) {
+            updatedCount++;
+          }
+        }
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          count: updatedCount,
+          pdfOnly: true,
+          message: `Sidnummer uppdaterat för ${updatedCount} av ${existingPromises.length} löften`
+        }), 
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
+    // Normal mode: analyze manifest text
+    if (!finalManifestText) {
+      throw new Error('No manifest text provided');
+    }
+
+    // Delete existing promises for this party and year to avoid duplicates
+    const { data: deletedPromises, error: deleteError } = await supabase
+      .from('promises')
+      .delete()
+      .eq('party_id', party.id)
+      .eq('election_year', electionYear)
+      .select('id');
+
+    const deletedCount = deletedPromises?.length || 0;
+    if (deletedCount > 0) {
+      console.log(`Deleted ${deletedCount} existing promises for ${partyAbbreviation} ${electionYear}`);
     }
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -253,53 +401,7 @@ Inkludera löften även om de inte har specifika siffror, så länge åtgärden 
     }
 
     const extractedPromises = JSON.parse(toolCall.function.arguments);
-    
-    // Get party ID (supabase client already created above for auth)
-    const { data: party, error: partyError } = await supabase
-      .from('parties')
-      .select('id')
-      .eq('abbreviation', partyAbbreviation)
-      .single();
-
-    if (partyError || !party) {
-      throw new Error(`Party not found: ${partyAbbreviation}`);
-    }
-
-    // Check for existing promises from same party and election year
-    const { data: existingPromises, error: existingError } = await supabase
-      .from('promises')
-      .select('promise_text, summary')
-      .eq('party_id', party.id)
-      .eq('election_year', electionYear);
-
-    if (existingError) {
-      console.error('Error fetching existing promises:', existingError);
-    }
-
-    // Filter out duplicates based on similar promise_text or summary
-    const existingTexts = new Set(existingPromises?.map(p => p.promise_text.toLowerCase().trim()) || []);
-    const existingSummaries = new Set(existingPromises?.map(p => p.summary?.toLowerCase().trim()) || []);
-
-    const uniquePromises = extractedPromises.promises.filter((p: any) => {
-      const textMatch = existingTexts.has(p.promise_text.toLowerCase().trim());
-      const summaryMatch = p.summary && existingSummaries.has(p.summary.toLowerCase().trim());
-      return !textMatch && !summaryMatch;
-    });
-
-    console.log(`Extracted ${extractedPromises.promises.length} promises, ${uniquePromises.length} are unique`);
-
-    if (uniquePromises.length === 0) {
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          count: 0,
-          message: 'Inga nya unika löften hittades (alla verkar redan finnas i databasen)'
-        }), 
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
+    const uniquePromises = extractedPromises.promises; // All promises are unique since we deleted old ones
 
     // Search for quotes in PDF if we have one
     let quoteVerification: Array<{quote: string, found: boolean, pageNumber: number | null}> = [];
@@ -429,6 +531,7 @@ Inkludera löften även om de inte har specifika siffror, så länge åtgärden 
       JSON.stringify({ 
         success: true, 
         count: insertedPromises.length,
+        duplicatesRemoved: deletedCount,
         promises: insertedPromises,
         warnings: unverifiedQuotes.length > 0 ? {
           unverifiedQuotes: unverifiedQuotes,
