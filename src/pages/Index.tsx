@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { PromiseCard } from "@/components/PromiseCard";
 import { PromiseFilters } from "@/components/PromiseFilters";
-import { StatisticsCharts } from "@/components/StatisticsCharts";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ShieldCheck, Scale, TrendingUp, Settings, LogIn, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -164,8 +163,6 @@ const Index = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-12">
-        {promises.length > 0 && <StatisticsCharts promises={promises} />}
-        
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Filters Sidebar */}
           <aside className="lg:col-span-1">
