@@ -80,6 +80,8 @@ export const ManifestUpload = () => {
           .replace(/\s+/g, ' ')
           .replace(/- /g, '')
           .replace(/\n/g, ' ')
+          .replace(/\[\.\.\.]/g, '') // Remove [...] markers
+          .replace(/…/g, '') // Remove ellipsis
           .trim();
       };
 

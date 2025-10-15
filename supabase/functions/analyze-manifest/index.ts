@@ -281,7 +281,7 @@ Inkludera löften även om de inte har specifika siffror, så länge åtgärden 
                         },
                         direct_quote: { 
                           type: "string",
-                          description: "Exakt citat från manifestet som stödjer löftet"
+                          description: "Fullständigt, exakt citat från manifestet som stödjer löftet. VIKTIGT: Använd ALDRIG [...] eller andra förkortningar - inkludera hela citatet ordagrant."
                         },
                         measurability_reason: { 
                           type: "string",

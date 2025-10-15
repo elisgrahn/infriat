@@ -141,6 +141,8 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
           .replace(/\s+/g, ' ') // Normalize whitespace
           .replace(/- /g, '') // Remove hyphens at line breaks
           .replace(/\n/g, ' ') // Replace newlines with spaces
+          .replace(/\[\.\.\.]/g, '') // Remove [...] markers
+          .replace(/…/g, '') // Remove ellipsis
           .trim();
       };
       
