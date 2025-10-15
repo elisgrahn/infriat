@@ -162,6 +162,17 @@ const Index = () => {
   });
 
   const sortedPromises = [...filteredPromises].sort((a, b) => {
+    // Status ranking based on filter button order
+    const statusRank: Record<string, number> = {
+      'fulfilled': 1,
+      'partially-fulfilled': 2,
+      'in-progress': 3,
+      'delayed': 4,
+      'broken': 5,
+      'unclear': 6,
+      'pending-analysis': 7
+    };
+
     switch (sortBy) {
       case "created-desc":
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
@@ -175,10 +186,10 @@ const Index = () => {
         return (b.measurability_score || 0) - (a.measurability_score || 0);
       case "measurability-asc":
         return (a.measurability_score || 0) - (b.measurability_score || 0);
-      case "status-fulfilled":
-        return a.status === "fulfilled" ? -1 : b.status === "fulfilled" ? 1 : 0;
-      case "status-broken":
-        return a.status === "broken" ? -1 : b.status === "broken" ? 1 : 0;
+      case "status-asc":
+        return statusRank[a.status] - statusRank[b.status];
+      case "status-desc":
+        return statusRank[b.status] - statusRank[a.status];
       default:
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     }
