@@ -2,17 +2,14 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, Upload, Link as LinkIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 
 const manifestSchema = z.object({
-  manifestText: z.string()
-    .trim()
-    .min(100, 'Manifesttext måste vara minst 100 tecken')
-    .max(50000, 'Manifesttext får vara max 50000 tecken'),
   partyAbbreviation: z.string().min(1).max(3),
   electionYear: z.number().int().min(2000).max(2030)
 });
@@ -31,17 +28,24 @@ const PARTIES = [
 const ELECTION_YEARS = ["2026", "2022", "2018", "2014"];
 
 export const ManifestUpload = () => {
-  const [manifestText, setManifestText] = useState("");
+  const [txtUrl, setTxtUrl] = useState("");
+  const [pdfUrl, setPdfUrl] = useState("");
+  const [txtFile, setTxtFile] = useState<File | null>(null);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [selectedParty, setSelectedParty] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
 
   const handleAnalyze = async () => {
-    if (!manifestText || !selectedParty || !selectedYear) {
+    // Validate that we have either URLs or files
+    const hasTxt = txtUrl || txtFile;
+    const hasPdf = pdfUrl || pdfFile;
+    
+    if (!hasTxt || !hasPdf || !selectedParty || !selectedYear) {
       toast({
         title: "Saknade uppgifter",
-        description: "Fyll i alla fält innan analys",
+        description: "Ange både TXT och PDF (via URL eller fil) samt parti och år",
         variant: "destructive"
       });
       return;
@@ -49,18 +53,56 @@ export const ManifestUpload = () => {
 
     setIsAnalyzing(true);
     try {
-      // Validate input
-      const validated = manifestSchema.parse({
-        manifestText,
+      // Validate party and year
+      manifestSchema.parse({
         partyAbbreviation: selectedParty,
         electionYear: parseInt(selectedYear)
       });
 
+      let manifestText = "";
+      let pdfFileToUpload: File | null = null;
+
+      // Get TXT content
+      if (txtFile) {
+        manifestText = await txtFile.text();
+      } else if (txtUrl) {
+        const txtResponse = await fetch(txtUrl);
+        if (!txtResponse.ok) throw new Error("Kunde inte ladda ner TXT-fil");
+        manifestText = await txtResponse.text();
+      }
+
+      // Get PDF file
+      if (pdfFile) {
+        pdfFileToUpload = pdfFile;
+      } else if (pdfUrl) {
+        const pdfResponse = await fetch(pdfUrl);
+        if (!pdfResponse.ok) throw new Error("Kunde inte ladda ner PDF-fil");
+        const blob = await pdfResponse.blob();
+        pdfFileToUpload = new File([blob], `manifest-${selectedParty}-${selectedYear}.pdf`, { type: 'application/pdf' });
+      }
+
+      if (!pdfFileToUpload) throw new Error("Kunde inte läsa PDF-fil");
+
+      // Upload PDF to Supabase Storage
+      const fileName = `${selectedParty}-${selectedYear}-${Date.now()}.pdf`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('manifests')
+        .upload(fileName, pdfFileToUpload);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL for the PDF
+      const { data: { publicUrl } } = supabase.storage
+        .from('manifests')
+        .getPublicUrl(fileName);
+
+      // Send to edge function for analysis
       const { data, error } = await supabase.functions.invoke('analyze-manifest', {
         body: {
-          manifestText: validated.manifestText,
-          partyAbbreviation: validated.partyAbbreviation,
-          electionYear: validated.electionYear
+          manifestText,
+          manifestPdfUrl: publicUrl,
+          partyAbbreviation: selectedParty,
+          electionYear: parseInt(selectedYear)
         }
       });
 
@@ -72,13 +114,16 @@ export const ManifestUpload = () => {
       });
 
       // Reset form
-      setManifestText("");
+      setTxtUrl("");
+      setPdfUrl("");
+      setTxtFile(null);
+      setPdfFile(null);
       setSelectedParty("");
       setSelectedYear("");
     } catch (error: any) {
       const errorMessage = error instanceof z.ZodError 
         ? error.errors[0].message 
-        : "Kunde inte analysera manifestet";
+        : error.message || "Kunde inte analysera manifestet";
       
       toast({
         title: "Fel vid analys",
@@ -98,10 +143,10 @@ export const ManifestUpload = () => {
           Ladda upp valmanifest
         </CardTitle>
         <CardDescription>
-          Klistra in text från ett valmanifest för att extrahera och analysera vallöften
+          Ange URL eller ladda upp filer för TXT och PDF av valmanifestet
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Parti</label>
@@ -136,14 +181,82 @@ export const ManifestUpload = () => {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Manifesttext</label>
-          <Textarea
-            placeholder="Klistra in manifesttexten här..."
-            value={manifestText}
-            onChange={(e) => setManifestText(e.target.value)}
-            className="font-mono text-sm min-h-[400px] max-h-[600px]"
-          />
+        <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
+          <h3 className="text-sm font-semibold flex items-center gap-2">
+            <LinkIcon className="w-4 h-4" />
+            TXT-manifest (för analys)
+          </h3>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">URL till TXT</label>
+            <Input
+              type="url"
+              placeholder="https://exempel.se/manifest.txt"
+              value={txtUrl}
+              onChange={(e) => {
+                setTxtUrl(e.target.value);
+                if (e.target.value) setTxtFile(null);
+              }}
+            />
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>ELLER</span>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Ladda upp TXT-fil</label>
+            <Input
+              type="file"
+              accept=".txt"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setTxtFile(file);
+                  setTxtUrl("");
+                }
+              }}
+            />
+            {txtFile && (
+              <p className="text-xs text-muted-foreground">Vald fil: {txtFile.name}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
+          <h3 className="text-sm font-semibold flex items-center gap-2">
+            <Upload className="w-4 h-4" />
+            PDF-manifest (för källhänvisning)
+          </h3>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">URL till PDF</label>
+            <Input
+              type="url"
+              placeholder="https://exempel.se/manifest.pdf"
+              value={pdfUrl}
+              onChange={(e) => {
+                setPdfUrl(e.target.value);
+                if (e.target.value) setPdfFile(null);
+              }}
+            />
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>ELLER</span>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Ladda upp PDF-fil</label>
+            <Input
+              type="file"
+              accept=".pdf"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setPdfFile(file);
+                  setPdfUrl("");
+                }
+              }}
+            />
+            {pdfFile && (
+              <p className="text-xs text-muted-foreground">Vald fil: {pdfFile.name}</p>
+            )}
+          </div>
         </div>
 
         <Button 
@@ -154,12 +267,12 @@ export const ManifestUpload = () => {
           {isAnalyzing ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Analyserar...
+              Analyserar och laddar upp...
             </>
           ) : (
             <>
               <Upload className="w-4 h-4 mr-2" />
-              Analysera manifest
+              Analysera och spara manifest
             </>
           )}
         </Button>

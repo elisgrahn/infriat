@@ -149,18 +149,24 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="bg-muted/50 border-l-2 border-primary pl-4 py-2 rounded-r space-y-2">
+                    <div className="bg-muted/50 border-l-2 border-primary pl-4 py-2 rounded-r space-y-3">
                       <p className="text-sm italic text-foreground">"{directQuote}"</p>
-                      {manifestPdfUrl && pageNumber && (
-                        <a 
-                          href={`${manifestPdfUrl}#page=${pageNumber}`}
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline inline-flex items-center gap-1 text-sm"
+                      {manifestPdfUrl && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
                         >
-                          <ExternalLink className="w-3 h-3" />
-                          Visa i valmanifest (sida {pageNumber})
-                        </a>
+                          <a 
+                            href={pageNumber ? `${manifestPdfUrl}#page=${pageNumber}` : manifestPdfUrl}
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                            {pageNumber ? `Öppna i källa (sida ${pageNumber})` : 'Öppna i källa'}
+                          </a>
+                        </Button>
                       )}
                     </div>
                   </AccordionContent>

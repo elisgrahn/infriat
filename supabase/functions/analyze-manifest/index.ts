@@ -54,11 +54,13 @@ serve(async (req) => {
       });
     }
 
-    const { manifestText, partyAbbreviation, electionYear } = await req.json();
+    const { manifestText, manifestPdfUrl, partyAbbreviation, electionYear } = await req.json();
     
     if (!manifestText || !partyAbbreviation || !electionYear) {
       throw new Error('Missing required parameters');
     }
+
+    console.log(`Analyzing manifest for ${partyAbbreviation} ${electionYear}, PDF URL: ${manifestPdfUrl || 'none'}`);
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -85,7 +87,8 @@ Din uppgift är att:
 1. Identifiera konkreta, mätbara vallöften i texten
 2. För varje vallöfte, ge en kort sammanfattning
 3. Inkludera ett direkt citat från manifestet
-4. Förklara varför löftet är mätbart
+4. Försök hitta vilket sidnummer citatet finns på (om möjligt)
+5. Förklara varför löftet är mätbart
 
 ETT LÖFTE ÄR MÄTBART om det uppfyller minst ett av dessa kriterier:
 - Innehåller specifika siffror eller mål (t.ex. "sänka skatten med 10%")
@@ -130,6 +133,10 @@ Inkludera löften även om de inte har specifika siffror, så länge åtgärden 
                         direct_quote: { 
                           type: "string",
                           description: "Exakt citat från manifestet som stödjer löftet"
+                        },
+                        page_number: {
+                          type: "number",
+                          description: "Sidnummer där citatet finns (om tillgängligt i manifestet)"
                         },
                         measurability_reason: { 
                           type: "string",
@@ -234,6 +241,8 @@ Inkludera löften även om de inte har specifika siffror, så länge åtgärden 
       promise_text: p.promise_text,
       summary: p.summary,
       direct_quote: p.direct_quote,
+      page_number: p.page_number || null,
+      manifest_pdf_url: manifestPdfUrl || null,
       measurability_reason: p.measurability_reason,
       status: 'pending-analysis'
     }));
