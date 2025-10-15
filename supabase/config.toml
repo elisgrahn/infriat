@@ -2,7 +2,7 @@ project_id = "turijymricwxtdrslcuz"
 
 [functions.analyze-manifest]
 verify_jwt = true
-timeout = 150
+timeout = 300
 
 [functions.analyze-promise-status]
 verify_jwt = true

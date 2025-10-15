@@ -215,21 +215,15 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    console.log(`Starting AI analysis`);
-
-    // Call Lovable AI to analyze the manifest
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          {
-            role: 'system',
-            content: `Du är en expert på att analysera politiska valmanifest och extrahera mätbara vallöften. 
+    console.log(`Starting AI analysis for ${partyAbbreviation} ${electionYear}`);
+    console.log(`Manifest text length: ${finalManifestText.length} characters`);
+    
+    const aiRequestBody = JSON.stringify({
+      model: 'google/gemini-2.5-flash',
+      messages: [
+        {
+          role: 'system',
+          content: `Du är en expert på att analysera politiska valmanifest och extrahera mätbara vallöften. 
 
 Din uppgift är att:
 1. Identifiera ALLA konkreta, mätbara vallöften i texten - var GENERÖS med vad som räknas som ett löfte
@@ -265,78 +259,108 @@ VAD SOM INTE ÄR MÄTBART (var restriktiv här):
 - Endast visioner utan leverans (t.ex. "ett bättre Sverige")
 
 GENERELL PRINCIP: Om texten säger "vi vill/ska/föreslår [göra något konkret]", inkludera det som ett löfte.`
-          },
-          {
-            role: 'user',
-            content: finalManifestText
-          }
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "extract_promises",
-              description: "Extrahera mätbara vallöften från valmanifestet",
-              parameters: {
-                type: "object",
-                properties: {
-                  promises: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        promise_text: { 
-                          type: "string",
-                          description: "En mycket kort och koncis sammanfattning av vallöftet (max 10-15 ord). Ska vara så kort som möjligt men ändå fånga kärnan i löftet."
-                        },
-                        summary: { 
-                          type: "string",
-                          description: "En kort sammanfattning (max 2 meningar)"
-                        },
-                        direct_quote: { 
-                          type: "string",
-                          description: "Fullständigt, exakt citat från manifestet som stödjer löftet. VIKTIGT: Använd ALDRIG [...] eller andra förkortningar - inkludera hela citatet ordagrant."
-                        },
-                        measurability_reason: { 
-                          type: "string",
-                          description: "Förklaring av varför löftet är mätbart"
-                        }
+        },
+        {
+          role: 'user',
+          content: finalManifestText
+        }
+      ],
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "extract_promises",
+            description: "Extrahera mätbara vallöften från valmanifestet",
+            parameters: {
+              type: "object",
+              properties: {
+                promises: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      promise_text: { 
+                        type: "string",
+                        description: "En mycket kort och koncis sammanfattning av vallöftet (max 10-15 ord). Ska vara så kort som möjligt men ändå fånga kärnan i löftet."
                       },
-                      required: ["promise_text", "summary", "direct_quote", "measurability_reason"],
-                      additionalProperties: false
-                    }
+                      summary: { 
+                        type: "string",
+                        description: "En kort sammanfattning (max 2 meningar)"
+                      },
+                      direct_quote: { 
+                        type: "string",
+                        description: "Fullständigt, exakt citat från manifestet som stödjer löftet. VIKTIGT: Använd ALDRIG [...] eller andra förkortningar - inkludera hela citatet ordagrant."
+                      },
+                      measurability_reason: { 
+                        type: "string",
+                        description: "Förklaring av varför löftet är mätbart"
+                      }
+                    },
+                    required: ["promise_text", "summary", "direct_quote", "measurability_reason"],
+                    additionalProperties: false
                   }
-                },
-                required: ["promises"],
-                additionalProperties: false
-              }
+                }
+              },
+              required: ["promises"],
+              additionalProperties: false
             }
           }
-        ],
-        tool_choice: { type: "function", function: { name: "extract_promises" } }
-      }),
+        }
+      ],
+      tool_choice: { type: "function", function: { name: "extract_promises" } }
     });
-
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: 'AI rate limit exceeded, please try again later.' }), {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+    
+    console.log(`AI request body size: ${aiRequestBody.length} bytes`);
+    
+    let response;
+    try {
+      // Call Lovable AI to analyze the manifest with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 280000); // 280 seconds (just under 300s function timeout)
+      
+      response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: aiRequestBody,
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      console.log(`AI response received with status: ${response.status}`);
+    } catch (fetchError) {
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        console.error('AI request timeout after 280 seconds');
+        throw new Error('AI-analysen tog för lång tid (timeout efter 280 sekunder). Försök med ett kortare manifest eller dela upp det i flera delar.');
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: 'AI credits depleted, please add funds.' }), {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      const errorText = await response.text();
-      console.error('AI API error:', response.status, errorText);
-      throw new Error('AI API error');
+      console.error('AI fetch error:', fetchError);
+      throw new Error(`Nätverksfel vid AI-anrop: ${fetchError instanceof Error ? fetchError.message : 'Okänt fel'}`);
     }
 
-    const aiData = await response.json();
-    console.log('AI response received');
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('AI API error:', response.status, response.statusText, errorText);
+      
+      if (response.status === 429) {
+        throw new Error('AI rate limit överskriden. Försök igen om några minuter.');
+      }
+      if (response.status === 402) {
+        throw new Error('AI-krediter slut. Lägg till mer credits i din Lovable workspace.');
+      }
+      
+      throw new Error(`AI API error: ${response.status} ${response.statusText} - ${errorText.slice(0, 200)}`);
+    }
+
+    let aiData;
+    try {
+      aiData = await response.json();
+      console.log('AI response parsed successfully');
+    } catch (parseError) {
+      console.error('Failed to parse AI response:', parseError);
+      throw new Error('AI returnerade ogiltigt JSON-svar');
+    }
 
     // Extract the tool call result
     const toolCall = aiData.choices[0]?.message?.tool_calls?.[0];

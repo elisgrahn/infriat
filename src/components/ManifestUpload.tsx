@@ -184,6 +184,13 @@ export const ManifestUpload = () => {
     }
 
     setIsAnalyzing(true);
+    
+    // Show initial progress toast
+    toast({
+      title: "Startar analys...",
+      description: "Förbereder filer för uppladdning"
+    });
+    
     try {
       // Validate party and year
       manifestSchema.parse({
@@ -209,25 +216,72 @@ export const ManifestUpload = () => {
         pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
       }
 
+      // Show upload progress
+      toast({
+        title: "Laddar upp filer...",
+        description: hasPdf ? "Laddar upp manifest till servern" : "Förbereder textfil"
+      });
+
       // Send to edge function for analysis (it will handle URL downloads and PDF upload)
       // Ensure URLs have protocol
       const finalTxtUrl = txtUrl ? ensureProtocol(txtUrl) : undefined;
       const finalPdfUrl = pdfUrl ? ensureProtocol(pdfUrl) : undefined;
 
-      const { data, error } = await supabase.functions.invoke('analyze-manifest', {
-        body: {
-          manifestText: manifestText || undefined,
-          txtUrl: finalTxtUrl,
-          pdfBase64: pdfBase64 || undefined,
-          pdfUrl: finalPdfUrl,
-          partyAbbreviation: selectedParty,
-          electionYear: parseInt(selectedYear)
-        }
-      });
+      // Show AI analysis toast after a delay
+      const analysisToastTimer = setTimeout(() => {
+        toast({
+          title: "Analyserar manifest med AI...",
+          description: "Detta kan ta 1-2 minuter för stora manifest"
+        });
+      }, 3000);
+
+      // Show warning if it takes too long
+      const warningToastTimer = setTimeout(() => {
+        toast({
+          title: "Analysen tar längre tid än förväntat...",
+          description: "Stora manifest kan ta upp till 5 minuter. Vänligen ha tålamod.",
+          variant: "default"
+        });
+      }, 30000);
+
+      let data, error;
+      try {
+        const result = await supabase.functions.invoke('analyze-manifest', {
+          body: {
+            manifestText: manifestText || undefined,
+            txtUrl: finalTxtUrl,
+            pdfBase64: pdfBase64 || undefined,
+            pdfUrl: finalPdfUrl,
+            partyAbbreviation: selectedParty,
+            electionYear: parseInt(selectedYear)
+          }
+        });
+        data = result.data;
+        error = result.error;
+      } finally {
+        clearTimeout(analysisToastTimer);
+        clearTimeout(warningToastTimer);
+      }
 
       if (error) {
         console.error('Edge function error:', error);
-        throw error;
+        console.error('Error details:', JSON.stringify(error, null, 2));
+        
+        // Better error messages based on error type
+        let errorMessage = 'Kunde inte analysera manifestet';
+        
+        if (error.message) {
+          errorMessage = error.message;
+        } else if (typeof error === 'string') {
+          errorMessage = error;
+        }
+        
+        // Special handling for network errors
+        if (errorMessage.includes('NetworkError') || errorMessage.includes('Failed to fetch')) {
+          errorMessage = 'Nätverksfel: Edge-funktionen svarade inte. Detta kan bero på timeout (manifestet är för stort) eller nätverksproblem. Försök med ett kortare manifest.';
+        }
+        
+        throw new Error(errorMessage);
       }
 
       if (!data) {
@@ -247,7 +301,7 @@ export const ManifestUpload = () => {
       }
 
       toast({
-        title: "Analys klar!",
+        title: "✅ Analys klar!",
         description: toastMessage,
         variant: data.warnings ? "default" : "default"
       });
@@ -257,8 +311,8 @@ export const ManifestUpload = () => {
       
       if (pdfUrlToSearch && selectedParty && selectedYear) {
         toast({
-          title: "Söker efter sidnummer...",
-          description: "Detta kan ta ett tag beroende på PDF-storlek",
+          title: "🔍 Söker efter sidnummer i PDF...",
+          description: "Detta kan ta 1-3 minuter beroende på PDF-storlek",
         });
 
         try {
@@ -277,15 +331,16 @@ export const ManifestUpload = () => {
             );
 
             toast({
-              title: "Sidnummer uppdaterade!",
+              title: "✅ Sidnummer uppdaterade!",
               description: `${result.updated} av ${result.total} löften fick sidnummer`,
             });
           }
         } catch (pdfError) {
           console.error('PDF search error:', pdfError);
+          console.error('PDF error stack:', pdfError);
           toast({
-            title: "Kunde inte söka i PDF",
-            description: pdfError instanceof Error ? pdfError.message : "Okänt fel",
+            title: "⚠️ Kunde inte söka i PDF",
+            description: pdfError instanceof Error ? pdfError.message : "Okänt fel vid PDF-sökning",
             variant: "destructive"
           });
         }
@@ -299,12 +354,32 @@ export const ManifestUpload = () => {
       setSelectedParty("");
       setSelectedYear("");
     } catch (error: any) {
-      const errorMessage = error instanceof z.ZodError 
-        ? error.errors[0].message 
-        : error.message || "Kunde inte analysera manifestet";
+      console.error('Analysis error:', error);
+      console.error('Error stack:', error?.stack);
+      
+      let errorMessage = "Kunde inte analysera manifestet";
+      let errorTitle = "❌ Fel vid analys";
+      
+      if (error instanceof z.ZodError) {
+        errorMessage = error.errors[0].message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+        
+        // Specific error messages
+        if (error.message.includes('timeout') || error.message.includes('Timeout')) {
+          errorTitle = "⏱️ Timeout";
+          errorMessage = `AI-analysen tog för lång tid. Försök med: 1) Ett kortare manifest, 2) Dela upp i flera delar, 3) Vänta en stund och försök igen.`;
+        } else if (error.message.includes('rate limit') || error.message.includes('429')) {
+          errorTitle = "⚠️ Rate limit";
+          errorMessage = "För många förfrågningar. Vänta några minuter och försök igen.";
+        } else if (error.message.includes('credits') || error.message.includes('402')) {
+          errorTitle = "💰 Slut på AI-krediter";
+          errorMessage = "Lägg till mer credits i din Lovable workspace för att fortsätta använda AI-analysen.";
+        }
+      }
       
       toast({
-        title: "Fel vid analys",
+        title: errorTitle,
         description: errorMessage,
         variant: "destructive"
       });
