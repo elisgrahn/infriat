@@ -185,8 +185,14 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
                   <AccordionContent>
                     <ul className="space-y-2">
                       {statusSources.map((source, idx) => {
-                        const url = new URL(source);
-                        const displayText = `${url.hostname}${url.pathname.slice(0, 40)}${url.pathname.length > 40 ? '...' : ''}`;
+                        let displayText = source;
+                        try {
+                          const url = new URL(source);
+                          displayText = `${url.hostname}${url.pathname.slice(0, 40)}${url.pathname.length > 40 ? '...' : ''}`;
+                        } catch {
+                          // If not a valid URL, use the source as-is
+                          displayText = source.length > 60 ? source.slice(0, 60) + '...' : source;
+                        }
                         
                         return (
                           <li key={idx} className="text-sm">
