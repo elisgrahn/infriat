@@ -183,7 +183,8 @@ serve(async (req) => {
           success: true, 
           count: updatedCount,
           pdfOnly: true,
-          message: `PDF-URL uppdaterad för ${updatedCount} löften. Använd "Sök i PDF" i frontend för att hitta sidnummer.`
+          pdfUrl: manifestPdfUrl,
+          message: `PDF-URL uppdaterad för ${updatedCount} löften. Söker efter sidnummer...`
         }), 
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },

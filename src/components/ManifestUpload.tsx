@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload, Link as LinkIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
+import * as pdfjsLib from "pdfjs-dist";
 
 const manifestSchema = z.object({
   partyAbbreviation: z.string().min(1).max(3),
@@ -45,6 +46,106 @@ export const ManifestUpload = () => {
       return `https://${trimmed}`;
     }
     return trimmed;
+  };
+
+  // Function to search PDF and update page numbers
+  const searchPdfForPageNumbers = async (pdfUrl: string, partyId: string, electionYear: number) => {
+    try {
+      // Fetch promises without page numbers
+      const { data: promises, error: fetchError } = await supabase
+        .from('promises')
+        .select('id, direct_quote')
+        .eq('party_id', partyId)
+        .eq('election_year', electionYear);
+
+      if (fetchError || !promises || promises.length === 0) {
+        console.log('No promises to update');
+        return { updated: 0, total: 0 };
+      }
+
+      // Configure PDF.js worker
+      pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+        'pdfjs-dist/build/pdf.worker.min.mjs',
+        import.meta.url
+      ).toString();
+
+      // Load PDF
+      const loadingTask = pdfjsLib.getDocument(pdfUrl);
+      const pdf = await loadingTask.promise;
+
+      // Normalize text function
+      const normalizeText = (text: string) => {
+        return text
+          .toLowerCase()
+          .replace(/\s+/g, ' ')
+          .replace(/- /g, '')
+          .replace(/\n/g, ' ')
+          .trim();
+      };
+
+      // Extract all page texts
+      const pageTexts: Array<{pageNum: number, normalized: string}> = [];
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(' ');
+        pageTexts.push({ 
+          pageNum: i, 
+          normalized: normalizeText(pageText) 
+        });
+      }
+
+      // Search for each promise
+      let updatedCount = 0;
+      for (const promise of promises) {
+        const normalizedQuote = normalizeText(promise.direct_quote);
+        let foundPage = null;
+
+        // Try exact match
+        for (const { pageNum, normalized } of pageTexts) {
+          if (normalized.includes(normalizedQuote)) {
+            foundPage = pageNum;
+            break;
+          }
+        }
+
+        // Try fuzzy match for longer quotes
+        if (!foundPage && normalizedQuote.length > 30) {
+          const words = normalizedQuote.split(' ').filter(w => w.length > 0);
+          const requiredWords = Math.floor(words.length * 0.8);
+
+          for (const { pageNum, normalized } of pageTexts) {
+            const matchedWords = words.filter(word => 
+              word.length > 3 && normalized.includes(word)
+            );
+
+            if (matchedWords.length >= requiredWords) {
+              foundPage = pageNum;
+              break;
+            }
+          }
+        }
+
+        // Update promise with page number if found
+        if (foundPage) {
+          const { error: updateError } = await supabase
+            .from('promises')
+            .update({ page_number: foundPage })
+            .eq('id', promise.id);
+
+          if (!updateError) {
+            updatedCount++;
+          }
+        }
+      }
+
+      return { updated: updatedCount, total: promises.length };
+    } catch (error) {
+      console.error('Error searching PDF:', error);
+      throw error;
+    }
   };
 
   const handleAnalyze = async () => {
@@ -121,6 +222,42 @@ export const ManifestUpload = () => {
         description: toastMessage,
         variant: data.warnings ? "default" : "default"
       });
+
+      // If PDF-only mode, automatically search for page numbers
+      if (data.pdfOnly && data.pdfUrl) {
+        toast({
+          title: "Söker efter sidnummer...",
+          description: "Detta kan ta ett tag beroende på PDF-storlek",
+        });
+
+        try {
+          // Get party ID
+          const { data: party } = await supabase
+            .from('parties')
+            .select('id')
+            .eq('abbreviation', selectedParty)
+            .single();
+
+          if (party) {
+            const result = await searchPdfForPageNumbers(
+              data.pdfUrl, 
+              party.id, 
+              parseInt(selectedYear)
+            );
+
+            toast({
+              title: "Sidnummer uppdaterade!",
+              description: `${result.updated} av ${result.total} löften fick sidnummer`,
+            });
+          }
+        } catch (pdfError) {
+          toast({
+            title: "Kunde inte söka i PDF",
+            description: pdfError instanceof Error ? pdfError.message : "Okänt fel",
+            variant: "destructive"
+          });
+        }
+      }
 
       // Reset form
       setTxtUrl("");
