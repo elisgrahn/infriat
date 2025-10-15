@@ -7,7 +7,7 @@ interface Promise {
   party_id: string;
   election_year: number;
   promise_text: string;
-  status: 'kept' | 'broken' | 'in-progress' | 'pending-analysis';
+  status: 'fulfilled' | 'partially-fulfilled' | 'in-progress' | 'delayed' | 'broken' | 'unclear' | 'pending-analysis';
   parties: {
     name: string;
     abbreviation: string;
@@ -20,16 +20,22 @@ interface StatisticsChartsProps {
 }
 
 const COLORS = {
-  kept: 'hsl(var(--success))',
-  broken: 'hsl(var(--destructive))',
-  'in-progress': 'hsl(var(--warning))',
+  fulfilled: '#047857', // emerald-700
+  'partially-fulfilled': '#34d399', // emerald-400
+  'in-progress': '#f59e0b', // amber-500
+  delayed: '#fb7185', // rose-400
+  broken: '#be123c', // rose-700
+  unclear: '#a855f7', // purple-500
   'pending-analysis': 'hsl(var(--muted))',
 };
 
 const STATUS_LABELS = {
-  kept: 'Uppfyllt',
-  broken: 'Brutet',
+  fulfilled: 'Infriat',
+  'partially-fulfilled': 'Delvis infriat',
   'in-progress': 'Pågående',
+  delayed: 'Försenat',
+  broken: 'Brutet',
+  unclear: 'Oklart',
   'pending-analysis': 'Under analys',
 };
 
@@ -38,7 +44,7 @@ export const StatisticsCharts = ({ promises }: StatisticsChartsProps) => {
   const yearlyData = promises.reduce((acc, promise) => {
     const year = promise.election_year;
     if (!acc[year]) {
-      acc[year] = { kept: 0, broken: 0, 'in-progress': 0, 'pending-analysis': 0 };
+      acc[year] = { fulfilled: 0, 'partially-fulfilled': 0, 'in-progress': 0, delayed: 0, broken: 0, unclear: 0, 'pending-analysis': 0 };
     }
     acc[year][promise.status]++;
     return acc;
@@ -62,16 +68,16 @@ export const StatisticsCharts = ({ promises }: StatisticsChartsProps) => {
       acc[party] = {};
     }
     if (!acc[party][year]) {
-      acc[party][year] = { kept: 0, total: 0 };
+      acc[party][year] = { fulfilled: 0, total: 0 };
     }
     
     acc[party][year].total++;
-    if (promise.status === 'kept') {
-      acc[party][year].kept++;
+    if (promise.status === 'fulfilled') {
+      acc[party][year].fulfilled++;
     }
     
     return acc;
-  }, {} as Record<string, Record<number, { kept: number; total: number }>>);
+  }, {} as Record<string, Record<number, { fulfilled: number; total: number }>>);
 
   const lineData = Object.keys(partyTimelineData)
     .reduce((years, party) => {
@@ -88,7 +94,7 @@ export const StatisticsCharts = ({ promises }: StatisticsChartsProps) => {
       Object.keys(partyTimelineData).forEach(party => {
         const yearData = partyTimelineData[party][year];
         if (yearData) {
-          dataPoint[party] = Math.round((yearData.kept / yearData.total) * 100);
+          dataPoint[party] = Math.round((yearData.fulfilled / yearData.total) * 100);
         }
       });
       return dataPoint;

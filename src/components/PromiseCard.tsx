@@ -4,12 +4,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Calendar, Users, RefreshCw, ExternalLink, FileText } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
 
-type PromiseStatus = "kept" | "broken" | "in-progress" | "pending-analysis";
+type PromiseStatus = "fulfilled" | "partially-fulfilled" | "in-progress" | "delayed" | "broken" | "unclear" | "pending-analysis";
 
 interface PromiseCardProps {
   promiseId: string;
@@ -25,26 +26,51 @@ interface PromiseCardProps {
 }
 
 const statusConfig = {
-  kept: {
-    label: "Uppfyllt",
+  fulfilled: {
+    label: "Infriat",
+    tooltip: "Löftet är helt infriat enligt beskrivning och tidsram",
     variant: "default" as const,
-    className: "bg-success text-success-foreground hover:bg-success/90",
-    borderColor: "border-l-success",
+    className: "bg-emerald-700 text-white hover:bg-emerald-800",
+    borderColor: "border-l-emerald-700",
   },
-  broken: {
-    label: "Brutet",
-    variant: "destructive" as const,
-    className: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-    borderColor: "border-l-destructive",
+  "partially-fulfilled": {
+    label: "Delvis infriat",
+    tooltip: "Partiet har infriat en del av löftet, men har valt att inte arbeta vidare på det",
+    variant: "default" as const,
+    className: "bg-emerald-400 text-white hover:bg-emerald-500",
+    borderColor: "border-l-emerald-400",
   },
   "in-progress": {
     label: "Pågående",
+    tooltip: "Partiet arbetar aktivt med att infria löftet",
     variant: "secondary" as const,
-    className: "bg-warning text-warning-foreground hover:bg-warning/90",
-    borderColor: "border-l-warning",
+    className: "bg-amber-500 text-white hover:bg-amber-600",
+    borderColor: "border-l-amber-500",
+  },
+  delayed: {
+    label: "Försenat",
+    tooltip: "Partiet har fortfarande för avsikt att infria löftet, men inte enligt ursprungliga tidsplanen",
+    variant: "default" as const,
+    className: "bg-rose-400 text-white hover:bg-rose-500",
+    borderColor: "border-l-rose-400",
+  },
+  broken: {
+    label: "Brutet",
+    tooltip: "Partiet lovade något som de inte kunde hålla",
+    variant: "destructive" as const,
+    className: "bg-rose-700 text-white hover:bg-rose-800",
+    borderColor: "border-l-rose-700",
+  },
+  unclear: {
+    label: "Oklart",
+    tooltip: "Det saknas tydligt underlag för att bedöma löftets status",
+    variant: "secondary" as const,
+    className: "bg-purple-500 text-white hover:bg-purple-600",
+    borderColor: "border-l-purple-500",
   },
   "pending-analysis": {
     label: "Under analys",
+    tooltip: "Löftets status analyseras för närvarande",
     variant: "secondary" as const,
     className: "bg-muted text-muted-foreground hover:bg-muted/90",
     borderColor: "border-l-muted",
@@ -79,9 +105,18 @@ export const PromiseCard = ({ promiseId, promise, party, date, status, descripti
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
         <div className="flex-1 space-y-3">
           <div className="flex items-start gap-3 flex-wrap">
-            <Badge className={config.className}>
-              {config.label}
-            </Badge>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge className={config.className}>
+                    {config.label}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs">{config.tooltip}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <Badge variant="outline" className="gap-1.5">
               <Users className="w-3 h-3" />
               {party}

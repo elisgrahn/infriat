@@ -16,7 +16,7 @@ interface Promise {
   summary: string | null;
   direct_quote: string | null;
   measurability_reason: string | null;
-  status: 'kept' | 'broken' | 'in-progress' | 'pending-analysis';
+  status: 'fulfilled' | 'partially-fulfilled' | 'in-progress' | 'delayed' | 'broken' | 'unclear' | 'pending-analysis';
   status_explanation: string | null;
   status_sources: string[] | null;
   parties: {
@@ -67,9 +67,12 @@ const Index = () => {
     const matchesParty = selectedParty === "Alla" || promise.parties.name === selectedParty;
     const matchesStatus =
       selectedStatus === "Alla" ||
-      (selectedStatus === "Uppfyllt" && promise.status === "kept") ||
+      (selectedStatus === "Infriat" && promise.status === "fulfilled") ||
+      (selectedStatus === "Delvis infriat" && promise.status === "partially-fulfilled") ||
+      (selectedStatus === "Pågående" && promise.status === "in-progress") ||
+      (selectedStatus === "Försenat" && promise.status === "delayed") ||
       (selectedStatus === "Brutet" && promise.status === "broken") ||
-      (selectedStatus === "Pågående" && promise.status === "in-progress");
+      (selectedStatus === "Oklart" && promise.status === "unclear");
     const matchesSearch =
       searchQuery === "" ||
       promise.promise_text.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -80,9 +83,11 @@ const Index = () => {
 
   const stats = {
     total: promises.length,
-    kept: promises.filter((p) => p.status === "kept").length,
+    fulfilled: promises.filter((p) => p.status === "fulfilled").length,
+    partiallyFulfilled: promises.filter((p) => p.status === "partially-fulfilled").length,
     broken: promises.filter((p) => p.status === "broken").length,
     inProgress: promises.filter((p) => p.status === "in-progress").length,
+    delayed: promises.filter((p) => p.status === "delayed").length,
   };
 
   return (
@@ -142,16 +147,16 @@ const Index = () => {
               <div className="bg-primary-foreground/10 backdrop-blur-sm rounded-xl p-6 border border-primary-foreground/20">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <ShieldCheck className="w-5 h-5" />
-                  <div className="text-3xl font-bold">{stats.kept}</div>
+                  <div className="text-3xl font-bold">{stats.fulfilled}</div>
                 </div>
-                <div className="text-sm text-primary-foreground/80">Uppfyllda löften</div>
+                <div className="text-sm text-primary-foreground/80">Infriade löften</div>
               </div>
               
               <div className="bg-primary-foreground/10 backdrop-blur-sm rounded-xl p-6 border border-primary-foreground/20">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <TrendingUp className="w-5 h-5" />
                   <div className="text-3xl font-bold">
-                    {Math.round((stats.kept / stats.total) * 100)}%
+                    {Math.round((stats.fulfilled / stats.total) * 100)}%
                   </div>
                 </div>
                 <div className="text-sm text-primary-foreground/80">Uppfyllelsegrad</div>

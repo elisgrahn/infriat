@@ -12,7 +12,7 @@ interface PromiseFiltersProps {
 }
 
 const parties = ["Alla", "Socialdemokraterna", "Moderaterna", "Sverigedemokraterna", "Centerpartiet", "Vänsterpartiet", "Kristdemokraterna", "Liberalerna", "Miljöpartiet"];
-const statuses = ["Alla", "Uppfyllt", "Brutet", "Pågående"];
+const statuses = ["Alla", "Infriat", "Delvis infriat", "Pågående", "Försenat", "Brutet", "Oklart"];
 
 export const PromiseFilters = ({
   selectedParty,
