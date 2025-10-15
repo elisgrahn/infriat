@@ -12,7 +12,16 @@ interface PromiseFiltersProps {
   onSearchChange: (query: string) => void;
 }
 
-const parties = ["Socialdemokraterna", "Moderaterna", "Sverigedemokraterna", "Centerpartiet", "Vänsterpartiet", "Kristdemokraterna", "Liberalerna", "Miljöpartiet"];
+const parties = [
+  "Vänsterpartiet",
+  "Socialdemokraterna",
+  "Miljöpartiet",
+  "Centerpartiet",
+  "Liberalerna",
+  "Kristdemokraterna",
+  "Moderaterna",
+  "Sverigedemokraterna",
+];
 const statuses = ["Infriat", "Delvis infriat", "Pågående", "Försenat", "Brutet", "Oklart"];
 
 export const PromiseFilters = ({
@@ -47,7 +56,7 @@ export const PromiseFilters = ({
             <ToggleGroupItem
               key={party}
               value={party}
-              className={`transition-all text-sm ${partyColors[party]}`}
+              className={`transition-all text-sm data-[state=on]:text-gray-900 ${partyColors[party]}`}
             >
               {party}
             </ToggleGroupItem>
@@ -67,7 +76,7 @@ export const PromiseFilters = ({
             <ToggleGroupItem
               key={status}
               value={status}
-              className={`transition-all text-sm ${statusColors[status]}`}
+              className={`transition-all text-sm data-[state=on]:text-gray-900 ${statusColors[status]}`}
             >
               {status}
             </ToggleGroupItem>
