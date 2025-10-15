@@ -1,20 +1,20 @@
 export const partyColors: Record<string, string> = {
   Socialdemokraterna:
-    "data-[state=off]:bg-background data-[state=off]:hover:bg-muted data-[state=on]:bg-[hsl(352,86%,49%)] data-[state=on]:hover:bg-[hsl(352,86%,44%)] bg-[hsl(352,86%,49%)] hover:bg-[hsl(352,86%,44%)]",
+    "data-[state=off]:bg-background data-[state=off]:hover:bg-muted data-[state=on]:bg-[hsl(354,73%,53%)] data-[state=on]:hover:bg-[hsl(354,73%,48%)] data-[state=on]:text-white bg-[hsl(354,73%,53%)] hover:bg-[hsl(354,73%,48%)] text-white",
   Moderaterna:
-    "data-[state=off]:bg-background data-[state=off]:hover:bg-muted data-[state=on]:bg-[hsl(198,81%,62%)] data-[state=on]:hover:bg-[hsl(198,81%,57%)] bg-[hsl(198,81%,62%)] hover:bg-[hsl(198,81%,57%)]",
+    "data-[state=off]:bg-background data-[state=off]:hover:bg-muted data-[state=on]:bg-[hsl(199,63%,68%)] data-[state=on]:hover:bg-[hsl(199,63%,63%)] data-[state=on]:text-white bg-[hsl(199,63%,68%)] hover:bg-[hsl(199,63%,63%)] text-white",
   Sverigedemokraterna:
-    "data-[state=off]:bg-background data-[state=off]:hover:bg-muted data-[state=on]:bg-[hsl(60,100%,43%)] data-[state=on]:hover:bg-[hsl(60,100%,38%)] bg-[hsl(60,100%,43%)] hover:bg-[hsl(60,100%,38%)]",
+    "data-[state=off]:bg-background data-[state=off]:hover:bg-muted data-[state=on]:bg-[hsl(43,100%,64%)] data-[state=on]:hover:bg-[hsl(43,100%,59%)] data-[state=on]:text-white bg-[hsl(43,100%,64%)] hover:bg-[hsl(43,100%,59%)] text-white",
   Centerpartiet:
-    "data-[state=off]:bg-background data-[state=off]:hover:bg-muted data-[state=on]:bg-[hsl(140,100%,30%)] data-[state=on]:hover:bg-[hsl(140,100%,25%)] bg-[hsl(140,100%,30%)] hover:bg-[hsl(140,100%,25%)]",
+    "data-[state=off]:bg-background data-[state=off]:hover:bg-muted data-[state=on]:bg-[hsl(121,54%,42%)] data-[state=on]:hover:bg-[hsl(121,54%,37%)] data-[state=on]:text-white bg-[hsl(121,54%,42%)] hover:bg-[hsl(121,54%,37%)] text-white",
   Vänsterpartiet:
-    "data-[state=off]:bg-background data-[state=off]:hover:bg-muted data-[state=on]:bg-[hsl(4,77%,48%)] data-[state=on]:hover:bg-[hsl(4,77%,43%)] bg-[hsl(4,77%,48%)] hover:bg-[hsl(4,77%,43%)]",
+    "data-[state=off]:bg-background data-[state=off]:hover:bg-muted data-[state=on]:bg-[hsl(0,75%,32%)] data-[state=on]:hover:bg-[hsl(0,75%,27%)] data-[state=on]:text-white bg-[hsl(0,75%,32%)] hover:bg-[hsl(0,75%,27%)] text-white",
   Kristdemokraterna:
-    "data-[state=off]:bg-background data-[state=off]:hover:bg-muted data-[state=on]:bg-[hsl(205,100%,32%)] data-[state=on]:hover:bg-[hsl(205,100%,32%)] bg-[hsl(205,100%,32%)] hover:bg-[hsl(205,100%,32%)]",
+    "data-[state=off]:bg-background data-[state=off]:hover:bg-muted data-[state=on]:bg-[hsl(253,62%,30%)] data-[state=on]:hover:bg-[hsl(253,62%,25%)] data-[state=on]:text-white bg-[hsl(253,62%,30%)] hover:bg-[hsl(253,62%,25%)] text-white",
   Liberalerna:
-    "data-[state=off]:bg-background data-[state=off]:hover:bg-muted data-[state=on]:bg-[hsl(204,100%,35%)] data-[state=on]:hover:bg-[hsl(204,100%,30%)] bg-[hsl(204,100%,35%)] hover:bg-[hsl(204,100%,30%)]",
+    "data-[state=off]:bg-background data-[state=off]:hover:bg-muted data-[state=on]:bg-[hsl(204,70%,39%)] data-[state=on]:hover:bg-[hsl(204,70%,34%)] data-[state=on]:text-white bg-[hsl(204,70%,39%)] hover:bg-[hsl(204,70%,34%)] text-white",
   Miljöpartiet:
-    "data-[state=off]:bg-background data-[state=off]:hover:bg-muted data-[state=on]:bg-[hsl(90,61%,52%)] data-[state=on]:hover:bg-[hsl(90,61%,47%)] bg-[hsl(90,61%,52%)] hover:bg-[hsl(90,61%,47%)]",
+    "data-[state=off]:bg-background data-[state=off]:hover:bg-muted data-[state=on]:bg-[hsl(120,39%,65%)] data-[state=on]:hover:bg-[hsl(120,39%,60%)] data-[state=on]:text-white bg-[hsl(120,39%,65%)] hover:bg-[hsl(120,39%,60%)] text-white",
 };
 
 export const statusColors: Record<string, string> = {

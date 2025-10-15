@@ -122,7 +122,7 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            <Badge className={`gap-1.5 text-white ${partyColors[party] || 'bg-muted hover:bg-muted/80'}`}>
+            <Badge className={`gap-1.5 ${partyColors[party]?.replace(/data-\[state=off\][^\s]+ /g, '').replace(/data-\[state=on\][^\s]+ /g, '') || 'bg-muted hover:bg-muted/80 text-white'}`}>
               <Users className="w-3 h-3" />
               {party}
             </Badge>
