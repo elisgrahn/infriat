@@ -225,7 +225,16 @@ export const ManifestUpload = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      if (!data) {
+        throw new Error('Ingen data returnerades från analysen');
+      }
+
+      console.log('Analysis response:', data);
 
       let toastMessage = data.message || `${data.count} vallöften ${data.pdfOnly ? 'uppdaterade' : 'extraherade och sparade'}.`;
       
