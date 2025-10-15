@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import * as pdfjs from "https://esm.sh/pdfjs-dist@4.0.379/legacy/build/pdf.mjs";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -297,14 +298,89 @@ Inkludera löften även om de inte har specifika siffror, så länge åtgärden 
       );
     }
 
-    // Insert only unique promises
-    const promisesToInsert = uniquePromises.map((p: any) => ({
+    // Search for quotes in PDF if we have one
+    let quoteVerification: Array<{quote: string, found: boolean, pageNumber: number | null}> = [];
+    
+    if (manifestPdfUrl) {
+      console.log('Searching for quotes in PDF...');
+      try {
+        // Download PDF
+        const pdfResponse = await fetch(manifestPdfUrl);
+        const pdfArrayBuffer = await pdfResponse.arrayBuffer();
+        
+        // Load PDF document
+        const loadingTask = pdfjs.getDocument({ data: pdfArrayBuffer });
+        const pdf = await loadingTask.promise;
+        
+        console.log(`PDF loaded, ${pdf.numPages} pages`);
+        
+        // Extract all text from PDF with page numbers
+        const pageTexts: Array<{pageNum: number, text: string}> = [];
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items
+            .map((item: any) => item.str)
+            .join(' ')
+            .toLowerCase();
+          pageTexts.push({ pageNum: i, text: pageText });
+        }
+        
+        // Search for each quote
+        for (const promise of uniquePromises) {
+          const quote = promise.direct_quote.toLowerCase().trim();
+          let found = false;
+          let foundPage = null;
+          
+          // Try to find the quote in any page
+          for (const { pageNum, text } of pageTexts) {
+            if (text.includes(quote)) {
+              found = true;
+              foundPage = pageNum;
+              break;
+            }
+          }
+          
+          // If exact match not found, try partial match (at least 50% of quote)
+          if (!found && quote.length > 50) {
+            const words = quote.split(' ');
+            const halfLength = Math.floor(words.length / 2);
+            const partialQuote = words.slice(0, halfLength).join(' ');
+            
+            for (const { pageNum, text } of pageTexts) {
+              if (text.includes(partialQuote)) {
+                found = true;
+                foundPage = pageNum;
+                console.log(`Partial match found for: "${quote.substring(0, 50)}..." on page ${pageNum}`);
+                break;
+              }
+            }
+          }
+          
+          quoteVerification.push({
+            quote: promise.direct_quote,
+            found,
+            pageNumber: foundPage
+          });
+          
+          if (!found) {
+            console.warn(`Quote not found in PDF: "${promise.direct_quote.substring(0, 100)}..."`);
+          }
+        }
+      } catch (pdfError) {
+        console.error('Error searching PDF:', pdfError);
+        // Continue anyway, just without verification
+      }
+    }
+
+    // Insert promises with verified page numbers
+    const promisesToInsert = uniquePromises.map((p: any, index: number) => ({
       party_id: party.id,
       election_year: electionYear,
       promise_text: p.promise_text,
       summary: p.summary,
       direct_quote: p.direct_quote,
-      page_number: null,
+      page_number: quoteVerification[index]?.pageNumber || null,
       manifest_pdf_url: manifestPdfUrl || null,
       measurability_reason: p.measurability_reason,
       status: 'pending-analysis'
@@ -322,11 +398,20 @@ Inkludera löften även om de inte har specifika siffror, så länge åtgärden 
 
     console.log(`Inserted ${insertedPromises.length} unique promises`);
 
+    // Prepare warnings for unverified quotes
+    const unverifiedQuotes = quoteVerification
+      .filter(v => !v.found)
+      .map(v => v.quote.substring(0, 100));
+
     return new Response(
       JSON.stringify({ 
         success: true, 
         count: insertedPromises.length,
-        promises: insertedPromises
+        promises: insertedPromises,
+        warnings: unverifiedQuotes.length > 0 ? {
+          unverifiedQuotes: unverifiedQuotes,
+          message: `${unverifiedQuotes.length} citat kunde inte verifieras i PDF:en. Detta kan indikera hallucinationer.`
+        } : null
       }), 
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

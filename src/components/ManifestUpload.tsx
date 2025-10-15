@@ -91,9 +91,16 @@ export const ManifestUpload = () => {
 
       if (error) throw error;
 
+      let toastMessage = `${data.count} vallöften extraherade och sparade.`;
+      
+      if (data.warnings?.unverifiedQuotes?.length > 0) {
+        toastMessage += `\n\n⚠️ Varning: ${data.warnings.unverifiedQuotes.length} citat kunde inte verifieras i PDF:en.`;
+      }
+
       toast({
         title: "Analys klar!",
-        description: `${data.count} vallöften extraherade och sparade.`
+        description: toastMessage,
+        variant: data.warnings ? "default" : "default"
       });
 
       // Reset form

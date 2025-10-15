@@ -158,13 +158,13 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
                           asChild
                         >
                           <a 
-                            href={manifestPdfUrl}
+                            href={pageNumber ? `${manifestPdfUrl}#page=${pageNumber}` : manifestPdfUrl}
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-2"
                           >
                             <ExternalLink className="w-4 h-4" />
-                            Öppna manifest (sök efter citatet)
+                            {pageNumber ? `Öppna i källa (sida ${pageNumber})` : 'Öppna manifest'}
                           </a>
                         </Button>
                       )}
