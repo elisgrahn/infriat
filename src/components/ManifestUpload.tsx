@@ -37,6 +37,16 @@ export const ManifestUpload = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { toast } = useToast();
 
+  // Helper to ensure URL has protocol
+  const ensureProtocol = (url: string) => {
+    if (!url) return url;
+    const trimmed = url.trim();
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+      return `https://${trimmed}`;
+    }
+    return trimmed;
+  };
+
   const handleAnalyze = async () => {
     // Validate that we have either URLs or files
     const hasTxt = txtUrl || txtFile;
@@ -79,12 +89,16 @@ export const ManifestUpload = () => {
       }
 
       // Send to edge function for analysis (it will handle URL downloads and PDF upload)
+      // Ensure URLs have protocol
+      const finalTxtUrl = txtUrl ? ensureProtocol(txtUrl) : undefined;
+      const finalPdfUrl = pdfUrl ? ensureProtocol(pdfUrl) : undefined;
+
       const { data, error } = await supabase.functions.invoke('analyze-manifest', {
         body: {
           manifestText: manifestText || undefined,
-          txtUrl: txtUrl || undefined,
+          txtUrl: finalTxtUrl,
           pdfBase64: pdfBase64 || undefined,
-          pdfUrl: pdfUrl || undefined,
+          pdfUrl: finalPdfUrl,
           partyAbbreviation: selectedParty,
           electionYear: parseInt(selectedYear)
         }

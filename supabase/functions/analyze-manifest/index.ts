@@ -70,9 +70,16 @@ serve(async (req) => {
     let finalManifestText = manifestText;
     if (!finalManifestText && txtUrl) {
       console.log('Downloading TXT from URL:', txtUrl);
-      const txtResponse = await fetch(txtUrl);
-      if (!txtResponse.ok) throw new Error('Failed to download TXT file');
-      finalManifestText = await txtResponse.text();
+      try {
+        const txtResponse = await fetch(txtUrl);
+        if (!txtResponse.ok) {
+          throw new Error(`Failed to download TXT: HTTP ${txtResponse.status} ${txtResponse.statusText}`);
+        }
+        finalManifestText = await txtResponse.text();
+      } catch (txtError) {
+        console.error('TXT download error:', txtError);
+        throw new Error(`Kunde inte ladda ner TXT från URL: ${txtError instanceof Error ? txtError.message : 'Ogiltig URL'}`);
+      }
     }
 
     // Check if this is PDF-only mode (adding page numbers to existing promises)
@@ -106,29 +113,36 @@ serve(async (req) => {
     } else if (pdfUrl) {
       // Download PDF from URL and upload to storage
       console.log('Downloading PDF from URL:', pdfUrl);
-      const pdfResponse = await fetch(pdfUrl);
-      if (!pdfResponse.ok) throw new Error('Failed to download PDF file');
-      
-      const pdfBytes = new Uint8Array(await pdfResponse.arrayBuffer());
-      const fileName = `${partyAbbreviation}-${electionYear}-${Date.now()}.pdf`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('manifests')
-        .upload(fileName, pdfBytes, {
-          contentType: 'application/pdf'
-        });
+      try {
+        const pdfResponse = await fetch(pdfUrl);
+        if (!pdfResponse.ok) {
+          throw new Error(`Failed to download PDF: HTTP ${pdfResponse.status} ${pdfResponse.statusText}`);
+        }
+        
+        const pdfBytes = new Uint8Array(await pdfResponse.arrayBuffer());
+        const fileName = `${partyAbbreviation}-${electionYear}-${Date.now()}.pdf`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('manifests')
+          .upload(fileName, pdfBytes, {
+            contentType: 'application/pdf'
+          });
 
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw new Error('Failed to upload PDF');
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          throw new Error('Failed to upload PDF');
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('manifests')
+          .getPublicUrl(fileName);
+        
+        manifestPdfUrl = publicUrl;
+        console.log('PDF uploaded:', publicUrl);
+      } catch (pdfError) {
+        console.error('PDF download error:', pdfError);
+        throw new Error(`Kunde inte ladda ner PDF från URL: ${pdfError instanceof Error ? pdfError.message : 'Ogiltig URL'}`);
       }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('manifests')
-        .getPublicUrl(fileName);
-      
-      manifestPdfUrl = publicUrl;
-      console.log('PDF uploaded:', publicUrl);
     }
 
     // Get party ID early as we need it for both modes
