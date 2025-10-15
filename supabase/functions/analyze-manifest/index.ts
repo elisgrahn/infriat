@@ -463,6 +463,7 @@ Inkludera löften även om de inte har specifika siffror, så länge åtgärden 
         count: insertedPromises.length,
         duplicatesRemoved: deletedCount,
         promises: insertedPromises,
+        pdfUrl: manifestPdfUrl,
         warnings: unverifiedQuotes.length > 0 ? {
           unverifiedQuotes: unverifiedQuotes,
           message: `${unverifiedQuotes.length} citat kunde inte verifieras i PDF:en. Detta kan indikera hallucinationer.`

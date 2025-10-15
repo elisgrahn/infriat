@@ -225,8 +225,10 @@ export const ManifestUpload = () => {
         variant: data.warnings ? "default" : "default"
       });
 
-      // If PDF-only mode, automatically search for page numbers
-      if (data.pdfOnly && data.pdfUrl) {
+      // Automatically search for page numbers if we have a PDF URL
+      const pdfUrlToSearch = data.pdfUrl || data.promises?.[0]?.manifest_pdf_url;
+      
+      if (pdfUrlToSearch && selectedParty && selectedYear) {
         toast({
           title: "Söker efter sidnummer...",
           description: "Detta kan ta ett tag beroende på PDF-storlek",
@@ -242,7 +244,7 @@ export const ManifestUpload = () => {
 
           if (party) {
             const result = await searchPdfForPageNumbers(
-              data.pdfUrl, 
+              pdfUrlToSearch, 
               party.id, 
               parseInt(selectedYear)
             );
@@ -253,6 +255,7 @@ export const ManifestUpload = () => {
             });
           }
         } catch (pdfError) {
+          console.error('PDF search error:', pdfError);
           toast({
             title: "Kunde inte söka i PDF",
             description: pdfError instanceof Error ? pdfError.message : "Okänt fel",
