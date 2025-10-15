@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -55,7 +56,23 @@ serve(async (req) => {
       });
     }
 
-    const { promiseId, context } = await req.json();
+    // Validate request body
+    const requestSchema = z.object({
+      promiseId: z.string().uuid(),
+      context: z.string().max(5000).optional()
+    });
+
+    const body = await req.json();
+    const validation = requestSchema.safeParse(body);
+    
+    if (!validation.success) {
+      return new Response(JSON.stringify({ error: 'Ogiltig begäran' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { promiseId, context } = validation.data;
     
     if (!promiseId) {
       return new Response(JSON.stringify({ error: 'Ogiltigt vallöfte-ID' }), {

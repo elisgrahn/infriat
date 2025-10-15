@@ -2,6 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import * as pdfjs from "https://esm.sh/pdfjs-dist@4.0.379/legacy/build/pdf.mjs";
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 
 // Configure PDF.js worker for Deno environment
 pdfjs.GlobalWorkerOptions.workerSrc = "https://esm.sh/pdfjs-dist@4.0.379/legacy/build/pdf.worker.mjs";
@@ -58,14 +59,31 @@ serve(async (req) => {
       });
     }
 
-    const { manifestText, txtUrl, pdfBase64, pdfUrl, partyAbbreviation, electionYear } = await req.json();
+    // Validate request body
+    const requestSchema = z.object({
+      manifestText: z.string().max(1000000).optional(),
+      txtUrl: z.string().url().max(2000).optional(),
+      pdfBase64: z.string().optional(),
+      pdfUrl: z.string().url().max(2000).optional(),
+      partyAbbreviation: z.string().min(1).max(10),
+      electionYear: z.number().int().min(1900).max(2100)
+    }).refine(
+      (data) => data.manifestText || data.txtUrl || data.pdfBase64 || data.pdfUrl,
+      { message: "At least one of manifestText, txtUrl, pdfBase64, or pdfUrl must be provided" }
+    );
+
+    const body = await req.json();
+    const validation = requestSchema.safeParse(body);
     
-    if (!partyAbbreviation || !electionYear) {
-      return new Response(JSON.stringify({ error: 'Parti och valår krävs' }), {
+    if (!validation.success) {
+      console.error('Validation error:', validation.error);
+      return new Response(JSON.stringify({ error: 'Ogiltig begäran' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    const { manifestText, txtUrl, pdfBase64, pdfUrl, partyAbbreviation, electionYear } = validation.data;
 
     console.log(`Analyzing manifest for ${partyAbbreviation} ${electionYear}`);
 
