@@ -16,6 +16,7 @@ interface Promise {
   summary: string | null;
   direct_quote: string | null;
   measurability_reason: string | null;
+  measurability_score: number | null;
   status: 'fulfilled' | 'partially-fulfilled' | 'in-progress' | 'delayed' | 'broken' | 'unclear' | 'pending-analysis';
   status_explanation: string | null;
   status_sources: string[] | null;
@@ -230,6 +231,7 @@ const Index = () => {
                     directQuote={promise.direct_quote || undefined}
                     pageNumber={promise.page_number || undefined}
                     manifestPdfUrl={promise.manifest_pdf_url || undefined}
+                    measurabilityScore={promise.measurability_score || undefined}
                     onStatusUpdate={fetchPromises}
                   />
                 ))}

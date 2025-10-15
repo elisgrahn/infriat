@@ -43,6 +43,7 @@ export type Database = {
           id: string
           manifest_pdf_url: string | null
           measurability_reason: string | null
+          measurability_score: number | null
           page_number: number | null
           party_id: string
           promise_text: string
@@ -59,6 +60,7 @@ export type Database = {
           id?: string
           manifest_pdf_url?: string | null
           measurability_reason?: string | null
+          measurability_score?: number | null
           page_number?: number | null
           party_id: string
           promise_text: string
@@ -75,6 +77,7 @@ export type Database = {
           id?: string
           manifest_pdf_url?: string | null
           measurability_reason?: string | null
+          measurability_score?: number | null
           page_number?: number | null
           party_id?: string
           promise_text?: string

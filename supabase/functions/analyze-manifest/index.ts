@@ -212,6 +212,14 @@ Din uppgift är att:
 2. För varje vallöfte, ge en kort sammanfattning
 3. Inkludera ett direkt citat från manifestet
 4. Förklara varför löftet är mätbart
+5. GE EN MEASURABILITY SCORE (1-5) baserat på hur konkret och mätbart löftet är
+
+MEASURABILITY SCORE GUIDE:
+- Score 5: Extremt mätbart - Innehåller specifika numeriska mål OCH tidsram (ex: "Öka X med 25% till 2026", "Bygga 10,000 bostäder innan 2027")
+- Score 4: Mycket mätbart - Konkreta numeriska mål ELLER tidsram (ex: "Halvera utsläppen", "Bygga 5000 bostäder", "Avskaffa X före 2025")
+- Score 3: Måttligt mätbart - Tydlig åtgärd utan siffror (ex: "Införa lag om X", "Avskaffa bidrag Y", "Öka anslaget till Z")
+- Score 2: Svagt mätbart - Relativa förändringar utan konkreta mål (ex: "Förbättra villkoren för X", "Stärka Y", "Öka satsningar på Z")
+- Score 1: Nästan omätbart - Vaga formuleringar (ex: "Få ordning på landet", "Skapa trygghet", "Förbättra samhället")
 
 OBS: Detta är chunk ${chunkNum} av ${totalChunks} från ett större manifest. Fokusera endast på att extrahera löften från denna del.
 
@@ -251,9 +259,15 @@ VIKTIGT - VAR GENERÖS: Ett löfte är mätbart om det uppfyller minst ett av de
                         promise_text: { type: "string", description: "Kort sammanfattning (max 10-15 ord)" },
                         summary: { type: "string", description: "Kort sammanfattning (max 2 meningar)" },
                         direct_quote: { type: "string", description: "Exakt citat från manifestet" },
-                        measurability_reason: { type: "string", description: "Varför löftet är mätbart" }
+                        measurability_reason: { type: "string", description: "Varför löftet är mätbart" },
+                        measurability_score: { 
+                          type: "integer", 
+                          description: "Score 1-5 som mäter hur konkret löftet är. 5 = mycket mätbart med siffror och tidsram, 1 = vagt",
+                          minimum: 1,
+                          maximum: 5
+                        }
                       },
-                      required: ["promise_text", "summary", "direct_quote", "measurability_reason"],
+                      required: ["promise_text", "summary", "direct_quote", "measurability_reason", "measurability_score"],
                       additionalProperties: false
                     }
                   }
@@ -469,6 +483,14 @@ Din uppgift är att:
 2. För varje vallöfte, ge en kort sammanfattning
 3. Inkludera ett direkt citat från manifestet
 4. Förklara varför löftet är mätbart
+5. GE EN MEASURABILITY SCORE (1-5) baserat på hur konkret och mätbart löftet är
+
+MEASURABILITY SCORE GUIDE:
+- Score 5: Extremt mätbart - Innehåller specifika numeriska mål OCH tidsram (ex: "Öka X med 25% till 2026", "Bygga 10,000 bostäder innan 2027")
+- Score 4: Mycket mätbart - Konkreta numeriska mål ELLER tidsram (ex: "Halvera utsläppen", "Bygga 5000 bostäder", "Avskaffa X före 2025")
+- Score 3: Måttligt mätbart - Tydlig åtgärd utan siffror (ex: "Införa lag om X", "Avskaffa bidrag Y", "Öka anslaget till Z")
+- Score 2: Svagt mätbart - Relativa förändringar utan konkreta mål (ex: "Förbättra villkoren för X", "Stärka Y", "Öka satsningar på Z")
+- Score 1: Nästan omätbart - Vaga formuleringar (ex: "Få ordning på landet", "Skapa trygghet", "Förbättra samhället")
 
 KRITISKT VIKTIGT OM CITAT:
 - Citatet MÅSTE vara en EXAKT kopia från manifestet - ord för ord, tecken för tecken
@@ -534,9 +556,15 @@ GENERELL PRINCIP: Om texten säger "vi vill/ska/föreslår [göra något konkret
                         measurability_reason: { 
                           type: "string",
                           description: "Förklaring av varför löftet är mätbart"
+                        },
+                        measurability_score: { 
+                          type: "integer", 
+                          description: "Score 1-5 som mäter hur konkret löftet är. 5 = mycket mätbart med siffror och tidsram, 1 = vagt",
+                          minimum: 1,
+                          maximum: 5
                         }
                       },
-                      required: ["promise_text", "summary", "direct_quote", "measurability_reason"],
+                      required: ["promise_text", "summary", "direct_quote", "measurability_reason", "measurability_score"],
                       additionalProperties: false
                     }
                   }
@@ -693,6 +721,7 @@ GENERELL PRINCIP: Om texten säger "vi vill/ska/föreslår [göra något konkret
         page_number: null, // Frontend will find this
         manifest_pdf_url: manifestPdfUrl || null,
         measurability_reason: p.measurability_reason || null,
+        measurability_score: p.measurability_score || null,
         status: 'pending-analysis'
       };
     });

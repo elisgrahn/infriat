@@ -38,6 +38,7 @@ interface PromiseCardProps {
   directQuote?: string;
   pageNumber?: number;
   manifestPdfUrl?: string;
+  measurabilityScore?: number;
   onStatusUpdate?: () => void;
 }
 
@@ -93,7 +94,7 @@ const statusConfig = {
   },
 };
 
-export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt, updatedAt, status, description, statusExplanation, statusSources, directQuote, pageNumber, manifestPdfUrl, onStatusUpdate }: PromiseCardProps) => {
+export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt, updatedAt, status, description, statusExplanation, statusSources, directQuote, pageNumber, manifestPdfUrl, measurabilityScore, onStatusUpdate }: PromiseCardProps) => {
   const config = statusConfig[status];
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isReanalyzingPage, setIsReanalyzingPage] = useState(false);
@@ -250,6 +251,26 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
               <Users className="w-3 h-3" />
               {party}
             </Badge>
+            {measurabilityScore && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="outline" className="text-xs">
+                      Mätbarhet: {measurabilityScore}/5
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs max-w-[200px]">
+                      {measurabilityScore === 5 && "Extremt mätbart - Specifika siffror + tidsram"}
+                      {measurabilityScore === 4 && "Mycket mätbart - Konkreta mål eller tidsram"}
+                      {measurabilityScore === 3 && "Måttligt mätbart - Tydlig verifierbar åtgärd"}
+                      {measurabilityScore === 2 && "Svagt mätbart - Relativa förändringar"}
+                      {measurabilityScore === 1 && "Nästan omätbart - Vaga formuleringar"}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </div>
           
           <h3 className="text-lg font-semibold text-foreground leading-snug">
