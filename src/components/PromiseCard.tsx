@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { partyColors } from "@/utils/partyColors";
 
 
 type PromiseStatus = "fulfilled" | "partially-fulfilled" | "in-progress" | "delayed" | "broken" | "unclear" | "pending-analysis";
@@ -121,7 +122,7 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            <Badge variant="outline" className="gap-1.5">
+            <Badge className={`gap-1.5 text-white ${partyColors[party] || 'bg-muted hover:bg-muted/80'}`}>
               <Users className="w-3 h-3" />
               {party}
             </Badge>
