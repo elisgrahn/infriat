@@ -46,6 +46,7 @@ interface PromiseCardProps {
   manifestPdfUrl?: string;
   measurabilityScore?: number;
   onStatusUpdate?: () => void;
+  isHighlighted?: boolean;
 }
 
 const statusConfig = {
@@ -100,7 +101,7 @@ const statusConfig = {
   },
 };
 
-export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt, updatedAt, status, description, statusExplanation, statusSources, directQuote, pageNumber, manifestPdfUrl, measurabilityScore, onStatusUpdate }: PromiseCardProps) => {
+export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt, updatedAt, status, description, statusExplanation, statusSources, directQuote, pageNumber, manifestPdfUrl, measurabilityScore, onStatusUpdate, isHighlighted }: PromiseCardProps) => {
   const config = statusConfig[status];
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isAnalyzingMeasurability, setIsAnalyzingMeasurability] = useState(false);
@@ -110,7 +111,7 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
   const { isAdmin, loading } = useAuth();
 
   const handleShare = async () => {
-    const url = `${window.location.origin}/?promise=${promiseId}`;
+    const url = `${window.location.origin}${window.location.pathname}${window.location.search}#lofte-${promiseId}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
@@ -269,7 +270,9 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
   };
 
   return (
-    <Card className={`p-6 hover:shadow-lg transition-all duration-300 border-l-4 ${config.borderColor}`}>
+    <Card className={`p-6 hover:shadow-lg transition-all duration-300 border-l-4 ${config.borderColor} ${
+      isHighlighted ? 'ring-4 ring-primary ring-offset-4 animate-pulse shadow-2xl shadow-primary/50' : ''
+    }`}>
       <div className="flex flex-col gap-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 space-y-3">
