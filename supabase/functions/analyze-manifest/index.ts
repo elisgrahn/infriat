@@ -232,7 +232,7 @@ serve(async (req) => {
             content: `Du är en expert på att analysera politiska valmanifest och extrahera mätbara vallöften. 
 
 Din uppgift är att:
-1. Identifiera konkreta, mätbara vallöften i texten
+1. Identifiera ALLA konkreta, mätbara vallöften i texten - var GENERÖS med vad som räknas som ett löfte
 2. För varje vallöfte, ge en kort sammanfattning
 3. Inkludera ett direkt citat från manifestet
 4. Förklara varför löftet är mätbart
@@ -241,30 +241,30 @@ KRITISKT VIKTIGT OM CITAT:
 - Citatet MÅSTE vara en EXAKT kopia från manifestet - ord för ord, tecken för tecken
 - Ändra ALDRIG ordningen på meningar i citatet
 - Parafrasera ALDRIG eller omformulera texten
-- Använd ALDRIG [...] eller andra förkortningar
-- Om citatet är långt, ta HELA citatet ordagrant - hoppa inte över delar
-- Citatet ska gå att söka efter ordagrant i PDF:en
+- Ta ett citat som är 1-3 meningar långt och som är EXAKT från texten
+- Om du ser formuleringen "Vi vill" eller "Vi föreslår" följt av flera punkter, ta med varje punkt som ett separat löfte
 
 Exempel på FELAKTIGT citat (ändrar ordning):
 "Vi vill minska korruption. Biståndet är viktigt. Därför ska det vara 1% av BNI."
 
 Exempel på KORREKT citat (exakt som i text):
-"Biståndet spelar en viktig roll i en orolig värld. Därför vill vi att det svenska biståndet ska uppnå till en procent av BNI. Samtidigt finns i dag allvarliga problem med bristande öppenhet och korruption."
+"Biståndet spelar en viktig roll i en orolig värld. Därför vill vi att det svenska biståndet ska uppnå till en procent av BNI."
 
 OBS: Ange INTE sidnummer eftersom de inte går att härleda från endast texten.
 
-Ett löfte är mätbart om det uppfyller minst ett av dessa kriterier:
-- Innehåller specifika siffror eller mål (t.ex. "sänka skatten med 10%")
-- Beskriver konkreta lagändringar eller politiska reformer (t.ex. "avskaffa strandskyddet", "ändra lagen om X")
-- Lovar att införa eller avskaffa en specifik policy eller myndighet
-- Beskriver en tydlig åtgärd som kan verifieras genom offentliga handlingar (riksdagsmotion, proposition, lagändringar)
+VIKTIGT - VAR GENERÖS: Ett löfte är mätbart om det uppfyller minst ett av dessa kriterier:
+- Innehåller specifika siffror eller mål (t.ex. "sänka skatten med 10%", "höja straffen")
+- Beskriver konkreta lagändringar eller politiska reformer (t.ex. "avskaffa X", "ändra lagen om Y", "införa Z")
+- Lovar att införa, avskaffa, höja, sänka, stärka eller förändra en specifik policy, lag eller åtgärd
+- Beskriver en tydlig åtgärd som kan verifieras (t.ex. "utvisa kriminella", "förbjuda tiggeri")
+- Innehåller ord som "ska", "vill", "föreslår" följt av en konkret åtgärd
 
-Inte mätbart:
-- Vaga mål utan konkret åtgärd (t.ex. "förbättra välfärden", "stärka Sverige")
-- Värderingar och principer utan specifik handling
-- Allmänna visioner utan tydlig leverans
+VAD SOM INTE ÄR MÄTBART (var restriktiv här):
+- Endast vaga mål utan någon konkret åtgärd (t.ex. "förbättra välfärden" utan att säga hur)
+- Bara värderingar och principer utan handling (t.ex. "vi tror på jämlikhet")
+- Endast visioner utan leverans (t.ex. "ett bättre Sverige")
 
-Inkludera löften även om de inte har specifika siffror, så länge åtgärden är konkret och kan verifieras.`
+GENERELL PRINCIP: Om texten säger "vi vill/ska/föreslår [göra något konkret]", inkludera det som ett löfte.`
           },
           {
             role: 'user',
