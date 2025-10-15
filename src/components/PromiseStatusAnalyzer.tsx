@@ -5,6 +5,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { z } from "zod";
+
+const contextSchema = z.string()
+  .trim()
+  .max(1000, 'Kontext får vara max 1000 tecken');
 
 interface PromiseStatusAnalyzerProps {
   promiseId: string;
@@ -24,10 +29,13 @@ export const PromiseStatusAnalyzer = ({
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
     try {
+      // Validate context if provided
+      const validatedContext = context ? contextSchema.parse(context) : undefined;
+
       const { data, error } = await supabase.functions.invoke('analyze-promise-status', {
         body: {
           promiseId,
-          context: context || undefined
+          context: validatedContext
         }
       });
 
@@ -42,9 +50,13 @@ export const PromiseStatusAnalyzer = ({
       onAnalysisComplete?.();
     } catch (error: any) {
       console.error('Analysis error:', error);
+      const errorMessage = error instanceof z.ZodError 
+        ? error.errors[0].message 
+        : error.message || "Kunde inte analysera löftet";
+      
       toast({
         title: "Fel vid analys",
-        description: error.message || "Kunde inte analysera löftet",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {

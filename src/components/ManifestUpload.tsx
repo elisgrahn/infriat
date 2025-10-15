@@ -6,6 +6,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { z } from "zod";
+
+const manifestSchema = z.object({
+  manifestText: z.string()
+    .trim()
+    .min(100, 'Manifesttext måste vara minst 100 tecken')
+    .max(50000, 'Manifesttext får vara max 50000 tecken'),
+  partyAbbreviation: z.string().min(1).max(3),
+  electionYear: z.number().int().min(2000).max(2030)
+});
 
 const PARTIES = [
   { name: "Moderaterna", abbr: "M" },
@@ -39,11 +49,18 @@ export const ManifestUpload = () => {
 
     setIsAnalyzing(true);
     try {
+      // Validate input
+      const validated = manifestSchema.parse({
+        manifestText,
+        partyAbbreviation: selectedParty,
+        electionYear: parseInt(selectedYear)
+      });
+
       const { data, error } = await supabase.functions.invoke('analyze-manifest', {
         body: {
-          manifestText,
-          partyAbbreviation: selectedParty,
-          electionYear: parseInt(selectedYear)
+          manifestText: validated.manifestText,
+          partyAbbreviation: validated.partyAbbreviation,
+          electionYear: validated.electionYear
         }
       });
 
@@ -59,9 +76,13 @@ export const ManifestUpload = () => {
       setSelectedParty("");
       setSelectedYear("");
     } catch (error: any) {
+      const errorMessage = error instanceof z.ZodError 
+        ? error.errors[0].message 
+        : "Kunde inte analysera manifestet";
+      
       toast({
         title: "Fel vid analys",
-        description: "Kunde inte analysera manifestet",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
