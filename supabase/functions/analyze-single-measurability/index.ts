@@ -120,7 +120,15 @@ Svara ENDAST med ett JSON-objekt: {"score": X, "reason": "kort förklaring"}`,
       });
     }
 
-    const result = JSON.parse(content);
+    // Extract JSON from markdown code blocks if present
+    let jsonContent = content.trim();
+    if (jsonContent.startsWith('```json')) {
+      jsonContent = jsonContent.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+    } else if (jsonContent.startsWith('```')) {
+      jsonContent = jsonContent.replace(/^```\s*/, '').replace(/\s*```$/, '');
+    }
+
+    const result = JSON.parse(jsonContent);
     const score = Math.min(Math.max(result.score, 1), 5);
 
     const { error: updateError } = await supabase
