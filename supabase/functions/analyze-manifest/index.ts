@@ -201,6 +201,7 @@ serve(async (req) => {
       
       const aiRequestBody = JSON.stringify({
         model: 'google/gemini-2.5-flash',
+        max_completion_tokens: 30000,
         messages: [
           {
             role: 'system',
@@ -280,15 +281,60 @@ VIKTIGT - VAR GENERÖS: Ett löfte är mätbart om det uppfyller minst ett av de
         throw new Error(`AI error for chunk ${chunkNum}: ${response.status} - ${errorText.slice(0, 200)}`);
       }
 
-      const responseText = await response.text();
-      const aiData = JSON.parse(responseText);
-      
+      console.log(`Starting to read AI response body for chunk ${chunkNum}...`);
+      let responseText: string;
+      try {
+        responseText = await response.text();
+        console.log(`AI response body read successfully for chunk ${chunkNum}, length: ${responseText.length}`);
+      } catch (readError) {
+        console.error(`Failed to read AI response body for chunk ${chunkNum}:`, readError);
+        throw new Error(`Kunde inte läsa AI-svar för chunk ${chunkNum} (möjligen för stort): ${readError instanceof Error ? readError.message : 'Okänt fel'}`);
+      }
+
+      let aiData: any;
+      try {
+        aiData = JSON.parse(responseText);
+        console.log(`AI response parsed successfully for chunk ${chunkNum}`);
+      } catch (parseError) {
+        console.error(`Failed to parse AI response for chunk ${chunkNum}:`, parseError);
+        console.error(`Response text (first 500 chars):`, responseText.slice(0, 500));
+        throw new Error(`AI returnerade ogiltigt JSON-svar för chunk ${chunkNum}`);
+      }
+
+      console.log(`AI response structure for chunk ${chunkNum}:`, {
+        hasChoices: !!aiData.choices,
+        choicesLength: aiData.choices?.length,
+        hasMessage: !!aiData.choices?.[0]?.message,
+        hasToolCalls: !!aiData.choices?.[0]?.message?.tool_calls,
+        toolCallsLength: aiData.choices?.[0]?.message?.tool_calls?.length
+      });
+
       const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
       if (!toolCall) {
         throw new Error(`No tool call in chunk ${chunkNum} response`);
       }
-      
-      const extractedPromises = JSON.parse(toolCall.function.arguments);
+
+      console.log(`Tool call extracted for chunk ${chunkNum}:`, {
+        hasFunction: !!toolCall.function,
+        hasArguments: !!toolCall.function?.arguments,
+        argumentsLength: toolCall.function?.arguments?.length
+      });
+
+      let extractedPromises: any;
+      try {
+        extractedPromises = JSON.parse(toolCall.function.arguments);
+        console.log(`Tool call arguments parsed successfully for chunk ${chunkNum}`);
+      } catch (argsError) {
+        console.error(`Failed to parse tool call arguments for chunk ${chunkNum}:`, argsError);
+        throw new Error(`Kunde inte läsa löften från AI-svar för chunk ${chunkNum}`);
+      }
+
+      console.log(`Extracted promises structure for chunk ${chunkNum}:`, {
+        hasPromises: !!extractedPromises.promises,
+        isArray: Array.isArray(extractedPromises.promises),
+        promisesCount: extractedPromises.promises?.length
+      });
+
       return extractedPromises.promises || [];
     }
 
@@ -355,15 +401,44 @@ VIKTIGT - VAR GENERÖS: Ett löfte är mätbart om det uppfyller minst ett av de
       for (let i = 0; i < chunks.length; i++) {
         console.log(`Analyzing chunk ${i + 1}/${chunks.length} (${chunks[i].length} chars)...`);
         
-        const chunkPromises = await analyzeManifestChunk(
-          chunks[i],
-          i + 1,
-          chunks.length
-        );
+        let chunkPromises: any[] = [];
+        let retries = 0;
+        const MAX_RETRIES = 2;
+        
+        while (retries <= MAX_RETRIES) {
+          try {
+            chunkPromises = await analyzeManifestChunk(
+              chunks[i],
+              i + 1,
+              chunks.length
+            );
+            break; // Success, exit retry loop
+          } catch (chunkError) {
+            retries++;
+            console.error(`Chunk ${i + 1} failed (attempt ${retries}/${MAX_RETRIES + 1}):`, chunkError);
+            
+            if (retries > MAX_RETRIES) {
+              console.error(`Chunk ${i + 1} failed after ${MAX_RETRIES + 1} attempts, skipping...`);
+              // Continue to next chunk instead of failing entire analysis
+              break;
+            }
+            
+            // Wait before retry (exponential backoff)
+            const waitTime = 2000 * Math.pow(2, retries - 1); // 2s, 4s
+            console.log(`Waiting ${waitTime}ms before retry...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+          }
+        }
         
         allPromises.push(...chunkPromises);
         console.log(`Chunk ${i + 1} complete: found ${chunkPromises.length} promises`);
       }
+      
+      if (allPromises.length === 0) {
+        throw new Error(`Inga löften kunde extraheras från manifestet. Detta kan bero på timeout eller AI-fel.`);
+      }
+      
+      console.log(`Total promises extracted from all chunks: ${allPromises.length}`);
       
       // Deduplicate promises based on promise_text similarity
       const seen = new Set<string>();
