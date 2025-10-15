@@ -187,9 +187,9 @@ const Index = () => {
       case "measurability-asc":
         return (a.measurability_score || 0) - (b.measurability_score || 0);
       case "status-asc":
-        return statusRank[a.status] - statusRank[b.status];
-      case "status-desc":
         return statusRank[b.status] - statusRank[a.status];
+      case "status-desc":
+        return statusRank[a.status] - statusRank[b.status];
       default:
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     }
