@@ -345,110 +345,16 @@ GENERELL PRINCIP: Om texten säger "vi vill/ska/föreslår [göra något konkret
     }
 
     const extractedPromises = JSON.parse(toolCall.function.arguments);
-    const uniquePromises = extractedPromises.promises; // All promises are unique since we deleted old ones
+    const uniquePromises = extractedPromises.promises;
 
-    // Search for quotes in PDF if we have one
-    let quoteVerification: Array<{quote: string, found: boolean, pageNumber: number | null}> = [];
-    
-    if (manifestPdfUrl) {
-      console.log('Searching for quotes in PDF...');
-      try {
-        // Download PDF
-        const pdfResponse = await fetch(manifestPdfUrl);
-        const pdfArrayBuffer = await pdfResponse.arrayBuffer();
-        
-        // Load PDF document
-        const loadingTask = pdfjs.getDocument({ data: pdfArrayBuffer });
-        const pdf = await loadingTask.promise;
-        
-        console.log(`PDF loaded, ${pdf.numPages} pages`);
-        
-        // Function to normalize text for better matching
-        const normalizeText = (text: string) => {
-          return text
-            .toLowerCase()
-            .replace(/\s+/g, ' ') // Normalize whitespace
-            .replace(/- /g, '') // Remove hyphens at line breaks
-            .replace(/\n/g, ' ') // Replace newlines with spaces
-            .trim();
-        };
-        
-        // Extract all text from PDF with page numbers
-        const pageTexts: Array<{pageNum: number, text: string, normalized: string}> = [];
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-          const pageText = textContent.items
-            .map((item: any) => item.str)
-            .join(' ');
-          
-          pageTexts.push({ 
-            pageNum: i, 
-            text: pageText.toLowerCase(),
-            normalized: normalizeText(pageText)
-          });
-        }
-        
-        // Search for each quote
-        for (const promise of uniquePromises) {
-          const quote = promise.direct_quote.toLowerCase().trim();
-          const normalizedQuote = normalizeText(promise.direct_quote);
-          let found = false;
-          let foundPage = null;
-          
-          // Try exact match with normalized text
-          for (const { pageNum, normalized } of pageTexts) {
-            if (normalized.includes(normalizedQuote)) {
-              found = true;
-              foundPage = pageNum;
-              console.log(`Exact match found for quote on page ${pageNum}`);
-              break;
-            }
-          }
-          
-          // If no exact match, try fuzzy matching for longer quotes
-          if (!found && normalizedQuote.length > 30) {
-            const words = normalizedQuote.split(' ').filter(w => w.length > 0);
-            const requiredWords = Math.floor(words.length * 0.8); // 80% of words must match
-            
-            for (const { pageNum, normalized } of pageTexts) {
-              const matchedWords = words.filter(word => 
-                word.length > 3 && normalized.includes(word)
-              );
-              
-              if (matchedWords.length >= requiredWords) {
-                found = true;
-                foundPage = pageNum;
-                console.log(`Fuzzy match found (${matchedWords.length}/${words.length} words) on page ${pageNum}`);
-                break;
-              }
-            }
-          }
-          
-          quoteVerification.push({
-            quote: promise.direct_quote,
-            found,
-            pageNumber: foundPage
-          });
-          
-          if (!found) {
-            console.warn(`Quote not found in PDF: "${promise.direct_quote.substring(0, 100)}..."`);
-          }
-        }
-      } catch (pdfError) {
-        console.error('Error searching PDF:', pdfError);
-        // Continue anyway, just without verification
-      }
-    }
-
-    // Insert promises with verified page numbers
-    const promisesToInsert = uniquePromises.map((p: any, index: number) => ({
+    // Insert promises WITHOUT page numbers (frontend will handle that)
+    const promisesToInsert = uniquePromises.map((p: any) => ({
       party_id: party.id,
       election_year: electionYear,
       promise_text: p.promise_text,
       summary: p.summary,
       direct_quote: p.direct_quote,
-      page_number: quoteVerification[index]?.pageNumber || null,
+      page_number: null, // Frontend will find this
       manifest_pdf_url: manifestPdfUrl || null,
       measurability_reason: p.measurability_reason,
       status: 'pending-analysis'
@@ -466,22 +372,13 @@ GENERELL PRINCIP: Om texten säger "vi vill/ska/föreslår [göra något konkret
 
     console.log(`Inserted ${insertedPromises.length} unique promises`);
 
-    // Prepare warnings for unverified quotes
-    const unverifiedQuotes = quoteVerification
-      .filter(v => !v.found)
-      .map(v => v.quote.substring(0, 100));
-
     return new Response(
       JSON.stringify({ 
         success: true, 
         count: insertedPromises.length,
         duplicatesRemoved: deletedCount,
         promises: insertedPromises,
-        pdfUrl: manifestPdfUrl,
-        warnings: unverifiedQuotes.length > 0 ? {
-          unverifiedQuotes: unverifiedQuotes,
-          message: `${unverifiedQuotes.length} citat kunde inte verifieras i PDF:en. Detta kan indikera hallucinationer.`
-        } : null
+        pdfUrl: manifestPdfUrl
       }), 
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
