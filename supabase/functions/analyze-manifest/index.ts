@@ -234,10 +234,11 @@ serve(async (req) => {
     
     const aiRequestBody = JSON.stringify({
       model: 'google/gemini-2.5-flash',
+      max_completion_tokens: 40000, // Limit response size to prevent memory issues with large manifests
       messages: [
         {
           role: 'system',
-          content: `Du är en expert på att analysera politiska valmanifest och extrahera mätbara vallöften. 
+          content: `Du är en expert på att analysera politiska valmanifest och extrahera mätbara vallöften.
 
 Din uppgift är att:
 1. Identifiera ALLA konkreta, mätbara vallöften i texten - var GENERÖS med vad som räknas som ett löfte
