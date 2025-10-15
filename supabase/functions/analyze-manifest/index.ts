@@ -317,44 +317,63 @@ Inkludera löften även om de inte har specifika siffror, så länge åtgärden 
         
         console.log(`PDF loaded, ${pdf.numPages} pages`);
         
+        // Function to normalize text for better matching
+        const normalizeText = (text: string) => {
+          return text
+            .toLowerCase()
+            .replace(/\s+/g, ' ') // Normalize whitespace
+            .replace(/- /g, '') // Remove hyphens at line breaks
+            .replace(/\n/g, ' ') // Replace newlines with spaces
+            .trim();
+        };
+        
         // Extract all text from PDF with page numbers
-        const pageTexts: Array<{pageNum: number, text: string}> = [];
+        const pageTexts: Array<{pageNum: number, text: string, normalized: string}> = [];
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
           const textContent = await page.getTextContent();
           const pageText = textContent.items
             .map((item: any) => item.str)
-            .join(' ')
-            .toLowerCase();
-          pageTexts.push({ pageNum: i, text: pageText });
+            .join(' ');
+          
+          pageTexts.push({ 
+            pageNum: i, 
+            text: pageText.toLowerCase(),
+            normalized: normalizeText(pageText)
+          });
         }
         
         // Search for each quote
         for (const promise of uniquePromises) {
           const quote = promise.direct_quote.toLowerCase().trim();
+          const normalizedQuote = normalizeText(promise.direct_quote);
           let found = false;
           let foundPage = null;
           
-          // Try to find the quote in any page
-          for (const { pageNum, text } of pageTexts) {
-            if (text.includes(quote)) {
+          // Try exact match with normalized text
+          for (const { pageNum, normalized } of pageTexts) {
+            if (normalized.includes(normalizedQuote)) {
               found = true;
               foundPage = pageNum;
+              console.log(`Exact match found for quote on page ${pageNum}`);
               break;
             }
           }
           
-          // If exact match not found, try partial match (at least 50% of quote)
-          if (!found && quote.length > 50) {
-            const words = quote.split(' ');
-            const halfLength = Math.floor(words.length / 2);
-            const partialQuote = words.slice(0, halfLength).join(' ');
+          // If no exact match, try fuzzy matching for longer quotes
+          if (!found && normalizedQuote.length > 30) {
+            const words = normalizedQuote.split(' ').filter(w => w.length > 0);
+            const requiredWords = Math.floor(words.length * 0.8); // 80% of words must match
             
-            for (const { pageNum, text } of pageTexts) {
-              if (text.includes(partialQuote)) {
+            for (const { pageNum, normalized } of pageTexts) {
+              const matchedWords = words.filter(word => 
+                word.length > 3 && normalized.includes(word)
+              );
+              
+              if (matchedWords.length >= requiredWords) {
                 found = true;
                 foundPage = pageNum;
-                console.log(`Partial match found for: "${quote.substring(0, 50)}..." on page ${pageNum}`);
+                console.log(`Fuzzy match found (${matchedWords.length}/${words.length} words) on page ${pageNum}`);
                 break;
               }
             }

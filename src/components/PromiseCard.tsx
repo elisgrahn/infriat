@@ -134,29 +134,46 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
       const loadingTask = pdfjs.getDocument(manifestPdfUrl);
       const pdf = await loadingTask.promise;
       
+      // Normalize text by removing extra whitespace, hyphens at line breaks, etc.
+      const normalizeText = (text: string) => {
+        return text
+          .toLowerCase()
+          .replace(/\s+/g, ' ') // Normalize whitespace
+          .replace(/- /g, '') // Remove hyphens at line breaks
+          .replace(/\n/g, ' ') // Replace newlines with spaces
+          .trim();
+      };
+      
       // Search for quote in all pages
       let foundPage: number | null = null;
-      const quote = directQuote.toLowerCase().trim();
+      const normalizedQuote = normalizeText(directQuote);
       
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
         const pageText = textContent.items
           .map((item: any) => item.str)
-          .join(' ')
-          .toLowerCase()
-          .replace(/\s+/g, ' ');
+          .join(' ');
+        
+        const normalizedPageText = normalizeText(pageText);
         
         // Try exact match first
-        if (pageText.includes(quote)) {
+        if (normalizedPageText.includes(normalizedQuote)) {
           foundPage = i;
           break;
         }
         
-        // Try partial match for long quotes (first 50 characters)
-        if (quote.length > 50) {
-          const partialQuote = quote.substring(0, 50);
-          if (pageText.includes(partialQuote)) {
+        // Try fuzzy match for longer quotes
+        if (normalizedQuote.length > 30) {
+          const words = normalizedQuote.split(' ').filter(w => w.length > 0);
+          
+          // Try matching with 80% of words present
+          const requiredWords = Math.floor(words.length * 0.8);
+          const matchedWords = words.filter(word => 
+            word.length > 3 && normalizedPageText.includes(word)
+          );
+          
+          if (matchedWords.length >= requiredWords) {
             foundPage = i;
             break;
           }
