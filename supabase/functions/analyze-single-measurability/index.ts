@@ -104,7 +104,7 @@ Svara ENDAST med ett JSON-objekt: {"score": X, "reason": "kort förklaring"}`,
     if (!response.ok) {
       const errorText = await response.text();
       console.error('AI API error:', response.status, errorText);
-      return new Response(JSON.stringify({ error: 'AI analysis failed' }), {
+      return new Response(JSON.stringify({ error: 'AI-analysen misslyckades. Försök igen.' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -114,7 +114,8 @@ Svara ENDAST med ett JSON-objekt: {"score": X, "reason": "kort förklaring"}`,
     const content = data.choices?.[0]?.message?.content;
     
     if (!content) {
-      return new Response(JSON.stringify({ error: 'No analysis result' }), {
+      console.error('No content in AI response');
+      return new Response(JSON.stringify({ error: 'AI-analysen gav inget resultat. Försök igen.' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -154,8 +155,7 @@ Svara ENDAST med ett JSON-objekt: {"score": X, "reason": "kort förklaring"}`,
 
   } catch (error) {
     console.error('Error in analyze-single-measurability function:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    return new Response(JSON.stringify({ error: 'Analysen misslyckades. Försök igen.' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

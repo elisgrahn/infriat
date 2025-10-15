@@ -58,12 +58,19 @@ serve(async (req) => {
     const { promiseId, context } = await req.json();
     
     if (!promiseId) {
-      throw new Error('Missing promise ID');
+      return new Response(JSON.stringify({ error: 'Ogiltigt vallöfte-ID' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     const GOOGLE_AI_API_KEY = Deno.env.get('GOOGLE_AI_API_KEY');
     if (!GOOGLE_AI_API_KEY) {
-      throw new Error('GOOGLE_AI_API_KEY not configured');
+      console.error('GOOGLE_AI_API_KEY not configured');
+      return new Response(JSON.stringify({ error: 'Tjänsten är inte konfigurerad' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Get the promise
@@ -74,7 +81,11 @@ serve(async (req) => {
       .single();
 
     if (promiseError || !promise) {
-      throw new Error('Promise not found');
+      console.error('Promise fetch error:', promiseError);
+      return new Response(JSON.stringify({ error: 'Vallöftet hittades inte' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     console.log(`Analyzing status for promise: ${promise.promise_text}`);
@@ -133,7 +144,7 @@ Statusdefinitioner:
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Google AI API error:', response.status, errorText);
-      throw new Error(`Google AI API error: ${response.status}`);
+      throw new Error('AI-analysen misslyckades. Försök igen.');
     }
 
     const aiData = await response.json();
@@ -148,7 +159,8 @@ Statusdefinitioner:
       .trim();
       
     if (!textContent) {
-      throw new Error('No content in AI response');
+      console.error('No content in AI response');
+      throw new Error('AI-analysen gav inget svar. Försök igen.');
     }
 
     // Extract status from text response - look for the exact pattern
@@ -207,7 +219,7 @@ Statusdefinitioner:
 
     if (updateError) {
       console.error('Update error:', updateError);
-      throw new Error('Failed to update promise');
+      throw new Error('Kunde inte uppdatera vallöftet. Försök igen.');
     }
 
     console.log(`Updated promise status to: ${analysis.status}`);
@@ -225,7 +237,7 @@ Statusdefinitioner:
   } catch (error) {
     console.error('Error in analyze-promise-status:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), 
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Ett fel uppstod. Försök igen.' }), 
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

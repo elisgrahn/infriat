@@ -61,7 +61,10 @@ serve(async (req) => {
     const { manifestText, txtUrl, pdfBase64, pdfUrl, partyAbbreviation, electionYear } = await req.json();
     
     if (!partyAbbreviation || !electionYear) {
-      throw new Error('Missing required parameters');
+      return new Response(JSON.stringify({ error: 'Parti och valår krävs' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     console.log(`Analyzing manifest for ${partyAbbreviation} ${electionYear}`);
@@ -73,12 +76,13 @@ serve(async (req) => {
       try {
         const txtResponse = await fetch(txtUrl);
         if (!txtResponse.ok) {
-          throw new Error(`Failed to download TXT: HTTP ${txtResponse.status} ${txtResponse.statusText}`);
+          console.error(`Failed to download TXT: HTTP ${txtResponse.status} ${txtResponse.statusText}`);
+          throw new Error('Kunde inte ladda ner TXT-filen. Kontrollera URL:en.');
         }
         finalManifestText = await txtResponse.text();
       } catch (txtError) {
         console.error('TXT download error:', txtError);
-        throw new Error(`Kunde inte ladda ner TXT från URL: ${txtError instanceof Error ? txtError.message : 'Ogiltig URL'}`);
+        throw new Error('Kunde inte ladda ner TXT-filen. Kontrollera att URL:en är korrekt.');
       }
     }
 
@@ -99,10 +103,10 @@ serve(async (req) => {
           contentType: 'application/pdf'
         });
 
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw new Error('Failed to upload PDF');
-      }
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          throw new Error('Kunde inte ladda upp PDF-filen. Försök igen.');
+        }
 
       const { data: { publicUrl } } = supabase.storage
         .from('manifests')
@@ -116,7 +120,8 @@ serve(async (req) => {
       try {
         const pdfResponse = await fetch(pdfUrl);
         if (!pdfResponse.ok) {
-          throw new Error(`Failed to download PDF: HTTP ${pdfResponse.status} ${pdfResponse.statusText}`);
+          console.error(`Failed to download PDF: HTTP ${pdfResponse.status} ${pdfResponse.statusText}`);
+          throw new Error('Kunde inte ladda ner PDF-filen. Kontrollera URL:en.');
         }
         
         const pdfBytes = new Uint8Array(await pdfResponse.arrayBuffer());
@@ -130,7 +135,7 @@ serve(async (req) => {
 
         if (uploadError) {
           console.error('Upload error:', uploadError);
-          throw new Error('Failed to upload PDF');
+          throw new Error('Kunde inte ladda upp PDF-filen. Försök igen.');
         }
 
         const { data: { publicUrl } } = supabase.storage
@@ -141,7 +146,7 @@ serve(async (req) => {
         console.log('PDF uploaded:', publicUrl);
       } catch (pdfError) {
         console.error('PDF download error:', pdfError);
-        throw new Error(`Kunde inte ladda ner PDF från URL: ${pdfError instanceof Error ? pdfError.message : 'Ogiltig URL'}`);
+        throw new Error('Kunde inte ladda ner PDF-filen. Kontrollera att URL:en är korrekt.');
       }
     }
 
@@ -153,13 +158,17 @@ serve(async (req) => {
       .single();
 
     if (partyError || !party) {
-      throw new Error(`Party not found: ${partyAbbreviation}`);
+      console.error('Party not found:', partyAbbreviation, partyError);
+      throw new Error('Partiet hittades inte i databasen.');
     }
 
     // Handle PDF-only mode: just update manifest_pdf_url for existing promises
     if (pdfOnlyMode) {
       if (!manifestPdfUrl) {
-        throw new Error('PDF required for page number updates');
+        return new Response(JSON.stringify({ error: 'PDF krävs för att uppdatera sidnummer' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
 
       console.log('PDF-only mode: updating manifest_pdf_url for existing promises');
@@ -173,7 +182,8 @@ serve(async (req) => {
         .select('id');
 
       if (updateError) {
-        throw new Error('Failed to update promises with PDF URL');
+        console.error('Update error:', updateError);
+        throw new Error('Kunde inte uppdatera vallöften med PDF-URL. Försök igen.');
       }
 
       const updatedCount = updatedPromises?.length || 0;
@@ -292,7 +302,8 @@ VIKTIGT - VAR GENERÖS: Ett löfte är mätbart om det uppfyller minst ett av de
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`AI error for chunk ${chunkNum}: ${response.status} - ${errorText.slice(0, 200)}`);
+        console.error(`AI error for chunk ${chunkNum}:`, response.status, errorText);
+        throw new Error('AI-analysen misslyckades. Försök igen.');
       }
 
       console.log(`Starting to read AI response body for chunk ${chunkNum}...`);
@@ -302,7 +313,7 @@ VIKTIGT - VAR GENERÖS: Ett löfte är mätbart om det uppfyller minst ett av de
         console.log(`AI response body read successfully for chunk ${chunkNum}, length: ${responseText.length}`);
       } catch (readError) {
         console.error(`Failed to read AI response body for chunk ${chunkNum}:`, readError);
-        throw new Error(`Kunde inte läsa AI-svar för chunk ${chunkNum} (möjligen för stort): ${readError instanceof Error ? readError.message : 'Okänt fel'}`);
+        throw new Error('Kunde inte läsa AI-svar. Svaret kan vara för stort. Försök igen.');
       }
 
       let aiData: any;
@@ -312,7 +323,7 @@ VIKTIGT - VAR GENERÖS: Ett löfte är mätbart om det uppfyller minst ett av de
       } catch (parseError) {
         console.error(`Failed to parse AI response for chunk ${chunkNum}:`, parseError);
         console.error(`Response text (first 500 chars):`, responseText.slice(0, 500));
-        throw new Error(`AI returnerade ogiltigt JSON-svar för chunk ${chunkNum}`);
+        throw new Error('AI returnerade ogiltigt svar. Försök igen.');
       }
 
       console.log(`AI response structure for chunk ${chunkNum}:`, {
@@ -325,7 +336,8 @@ VIKTIGT - VAR GENERÖS: Ett löfte är mätbart om det uppfyller minst ett av de
 
       const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
       if (!toolCall) {
-        throw new Error(`No tool call in chunk ${chunkNum} response`);
+        console.error(`No tool call in chunk ${chunkNum} response`);
+        throw new Error('AI returnerade ogiltigt svar. Försök igen.');
       }
 
       console.log(`Tool call extracted for chunk ${chunkNum}:`, {
@@ -340,7 +352,7 @@ VIKTIGT - VAR GENERÖS: Ett löfte är mätbart om det uppfyller minst ett av de
         console.log(`Tool call arguments parsed successfully for chunk ${chunkNum}`);
       } catch (argsError) {
         console.error(`Failed to parse tool call arguments for chunk ${chunkNum}:`, argsError);
-        throw new Error(`Kunde inte läsa löften från AI-svar för chunk ${chunkNum}`);
+        throw new Error('Kunde inte läsa löften från AI-svar. Försök igen.');
       }
 
       console.log(`Extracted promises structure for chunk ${chunkNum}:`, {
@@ -354,7 +366,10 @@ VIKTIGT - VAR GENERÖS: Ett löfte är mätbart om det uppfyller minst ett av de
 
     // Normal mode: analyze manifest text
     if (!finalManifestText) {
-      throw new Error('No manifest text provided');
+      return new Response(JSON.stringify({ error: 'Ingen manifesttext angiven' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // Delete existing promises for this party and year to avoid duplicates
@@ -372,7 +387,11 @@ VIKTIGT - VAR GENERÖS: Ett löfte är mätbart om det uppfyller minst ett av de
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
+      console.error('LOVABLE_API_KEY not configured');
+      return new Response(JSON.stringify({ error: 'Tjänsten är inte konfigurerad' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     console.log(`Starting AI analysis for ${partyAbbreviation} ${electionYear}`);
@@ -601,10 +620,10 @@ GENERELL PRINCIP: Om texten säger "vi vill/ska/föreslår [göra något konkret
       } catch (fetchError) {
         if (fetchError instanceof Error && fetchError.name === 'AbortError') {
           console.error('AI request timeout after 280 seconds');
-          throw new Error('AI-analysen tog för lång tid (timeout efter 280 sekunder). Försök med ett kortare manifest eller dela upp det i flera delar.');
+          throw new Error('AI-analysen tog för lång tid. Försök med ett kortare manifest eller dela upp det i flera delar.');
         }
         console.error('AI fetch error:', fetchError);
-        throw new Error(`Nätverksfel vid AI-anrop: ${fetchError instanceof Error ? fetchError.message : 'Okänt fel'}`);
+        throw new Error('Nätverksfel vid AI-anrop. Kontrollera din anslutning och försök igen.');
       }
 
       if (!response.ok) {
@@ -618,7 +637,7 @@ GENERELL PRINCIP: Om texten säger "vi vill/ska/föreslår [göra något konkret
           throw new Error('AI-krediter slut. Lägg till mer credits i din Lovable workspace.');
         }
         
-        throw new Error(`AI API error: ${response.status} ${response.statusText} - ${errorText.slice(0, 200)}`);
+        throw new Error('AI-analysen misslyckades. Försök igen.');
       }
 
       // Parse AI response with detailed error logging
@@ -632,7 +651,7 @@ GENERELL PRINCIP: Om texten säger "vi vill/ska/föreslår [göra något konkret
         console.log('AI response body read successfully, length:', responseText.length);
       } catch (readError) {
         console.error('Failed to read AI response body:', readError);
-        throw new Error(`Kunde inte läsa AI-svar (möjligen för stort): ${readError instanceof Error ? readError.message : 'Okänt fel'}`);
+        throw new Error('Kunde inte läsa AI-svar. Svaret kan vara för stort. Försök igen.');
       }
 
       // Parse the AI response JSON
@@ -656,19 +675,19 @@ GENERELL PRINCIP: Om texten säger "vi vill/ska/föreslår [göra något konkret
       console.log('Attempting to extract tool call...');
       if (!aiData.choices || !Array.isArray(aiData.choices) || aiData.choices.length === 0) {
         console.error('Invalid AI response structure - no choices array');
-        throw new Error('AI-svar saknar choices array');
+        throw new Error('AI returnerade ogiltigt svar. Försök igen.');
       }
 
       const firstChoice = aiData.choices[0];
       if (!firstChoice.message) {
         console.error('Invalid AI response structure - no message in first choice');
-        throw new Error('AI-svar saknar message i första valet');
+        throw new Error('AI returnerade ogiltigt svar. Försök igen.');
       }
 
       if (!firstChoice.message.tool_calls || !Array.isArray(firstChoice.message.tool_calls) || firstChoice.message.tool_calls.length === 0) {
         console.error('Invalid AI response structure - no tool_calls');
         console.error('Message content:', JSON.stringify(firstChoice.message).slice(0, 500));
-        throw new Error('AI-svar saknar tool_calls. Möjligen har AI:n returnerat ett vanligt meddelande istället.');
+        throw new Error('AI returnerade ogiltigt svar. Försök igen.');
       }
 
       const toolCall = firstChoice.message.tool_calls[0];
@@ -691,12 +710,12 @@ GENERELL PRINCIP: Om texten säger "vi vill/ska/föreslår [göra något konkret
       } catch (argParseError) {
         console.error('Failed to parse tool call arguments:', argParseError);
         console.error('Arguments string (first 500 chars):', toolCall.function.arguments.slice(0, 500));
-        throw new Error('Kunde inte tolka AI:ns löften-data');
+        throw new Error('Kunde inte tolka AI:ns löften-data. Försök igen.');
       }
 
       if (!extractedPromises.promises || !Array.isArray(extractedPromises.promises)) {
         console.error('Invalid promises structure - not an array');
-        throw new Error('AI returnerade ogiltig löftesstruktur');
+        throw new Error('AI returnerade ogiltigt svar. Försök igen.');
       }
 
       uniquePromises = extractedPromises.promises;
@@ -739,12 +758,12 @@ GENERELL PRINCIP: Om texten säger "vi vill/ska/föreslår [göra något konkret
         details: insertError.details,
         hint: insertError.hint
       });
-      throw new Error(`Databasfel vid insättning: ${insertError.message}`);
+      throw new Error('Kunde inte spara löften i databasen. Försök igen.');
     }
 
     if (!insertedPromises || insertedPromises.length === 0) {
       console.error('No promises were inserted (insertedPromises is empty)');
-      throw new Error('Inga löften kunde sparas i databasen');
+      throw new Error('Inga löften kunde sparas i databasen. Försök igen.');
     }
 
     console.log(`Successfully inserted ${insertedPromises.length} unique promises`);
@@ -765,7 +784,7 @@ GENERELL PRINCIP: Om texten säger "vi vill/ska/föreslår [göra något konkret
   } catch (error) {
     console.error('Error in analyze-manifest:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), 
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Ett fel uppstod. Försök igen.' }), 
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
