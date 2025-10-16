@@ -17,6 +17,15 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
+interface GovernmentPeriod {
+  id: string;
+  name: string;
+  start_year: number;
+  end_year: number | null;
+  governing_parties: string[];
+  support_parties: string[] | null;
+}
+
 interface Promise {
   id: string;
   party_id: string;
@@ -53,9 +62,14 @@ const Index = () => {
     const statuses = searchParams.get('statuses');
     return statuses ? statuses.split(',') : [];
   });
+  const [selectedGovStatus, setSelectedGovStatus] = useState<string[]>(() => {
+    const govStatus = searchParams.get('govStatus');
+    return govStatus ? govStatus.split(',') : [];
+  });
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || "");
   const [sortBy, setSortBy] = useState(() => searchParams.get('sort') || "created-desc");
   const [promises, setPromises] = useState<Promise[]>([]);
+  const [governmentPeriods, setGovernmentPeriods] = useState<GovernmentPeriod[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 20;
@@ -85,6 +99,12 @@ const Index = () => {
       params.delete('statuses');
     }
     
+    if (selectedGovStatus.length > 0) {
+      params.set('govStatus', selectedGovStatus.join(','));
+    } else {
+      params.delete('govStatus');
+    }
+    
     if (searchQuery) {
       params.set('search', searchQuery);
     } else {
@@ -98,7 +118,7 @@ const Index = () => {
     }
     
     setSearchParams(params, { replace: true });
-  }, [selectedParties, selectedStatuses, searchQuery, sortBy]);
+  }, [selectedParties, selectedStatuses, selectedGovStatus, searchQuery, sortBy]);
 
   // Scroll to promise if ID in URL - wait until promises are loaded
   useEffect(() => {
@@ -120,6 +140,7 @@ const Index = () => {
 
   useEffect(() => {
     fetchPromises();
+    fetchGovernmentPeriods();
   }, []);
 
   const fetchPromises = async () => {
@@ -138,6 +159,30 @@ const Index = () => {
     }
   };
 
+  const fetchGovernmentPeriods = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('government_periods')
+        .select('*')
+        .order('start_year', { ascending: true });
+
+      if (error) throw error;
+      setGovernmentPeriods(data || []);
+    } catch (error) {
+      // Silently handle error
+    }
+  };
+
+  const getGovernmentStatus = (partyName: string, electionYear: number): 'governing' | 'opposition' => {
+    const period = governmentPeriods.find(p => 
+      electionYear >= p.start_year && (p.end_year === null || electionYear <= p.end_year)
+    );
+    
+    if (!period) return 'opposition';
+    
+    return period.governing_parties.includes(partyName) ? 'governing' : 'opposition';
+  };
+
   const filteredPromises = promises.filter((promise) => {
     const matchesParty = selectedParties.length === 0 || selectedParties.includes(promise.parties.name);
     
@@ -153,12 +198,15 @@ const Index = () => {
     const matchesStatus = selectedStatuses.length === 0 || 
       selectedStatuses.some(status => statusMap[status] === promise.status);
     
+    const govStatus = getGovernmentStatus(promise.parties.name, promise.election_year);
+    const matchesGovStatus = selectedGovStatus.length === 0 || selectedGovStatus.includes(govStatus);
+    
     const matchesSearch =
       searchQuery === "" ||
       promise.promise_text.toLowerCase().includes(searchQuery.toLowerCase()) ||
       promise.parties.name.toLowerCase().includes(searchQuery.toLowerCase());
 
-    return matchesParty && matchesStatus && matchesSearch;
+    return matchesParty && matchesStatus && matchesGovStatus && matchesSearch;
   });
 
   const sortedPromises = [...filteredPromises].sort((a, b) => {
@@ -205,7 +253,7 @@ const Index = () => {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedParties, selectedStatuses, searchQuery, sortBy]);
+  }, [selectedParties, selectedStatuses, selectedGovStatus, searchQuery, sortBy]);
 
   const stats = {
     total: promises.length,
@@ -308,10 +356,12 @@ const Index = () => {
             <PromiseFilters
               selectedParties={selectedParties}
               selectedStatuses={selectedStatuses}
+              selectedGovStatus={selectedGovStatus}
               searchQuery={searchQuery}
               sortBy={sortBy}
               onPartiesChange={setSelectedParties}
               onStatusesChange={setSelectedStatuses}
+              onGovStatusChange={setSelectedGovStatus}
               onSearchChange={setSearchQuery}
               onSortChange={setSortBy}
             />
@@ -348,6 +398,7 @@ const Index = () => {
                         promise={promise.promise_text}
                         party={promise.parties.name}
                         electionYear={promise.election_year}
+                        governmentStatus={getGovernmentStatus(promise.parties.name, promise.election_year)}
                         createdAt={new Date(promise.created_at).toLocaleDateString('sv-SE')}
                         updatedAt={new Date(promise.updated_at).toLocaleDateString('sv-SE')}
                         status={promise.status}

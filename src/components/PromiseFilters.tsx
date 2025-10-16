@@ -7,10 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 interface PromiseFiltersProps {
   selectedParties: string[];
   selectedStatuses: string[];
+  selectedGovStatus: string[];
   searchQuery: string;
   sortBy: string;
   onPartiesChange: (parties: string[]) => void;
   onStatusesChange: (statuses: string[]) => void;
+  onGovStatusChange: (status: string[]) => void;
   onSearchChange: (query: string) => void;
   onSortChange: (sort: string) => void;
 }
@@ -30,10 +32,12 @@ const statuses = ["Infriat", "Delvis infriat", "Pågående", "Försenat", "Brute
 export const PromiseFilters = ({
   selectedParties,
   selectedStatuses,
+  selectedGovStatus,
   searchQuery,
   sortBy,
   onPartiesChange,
   onStatusesChange,
+  onGovStatusChange,
   onSearchChange,
   onSortChange,
 }: PromiseFiltersProps) => {
@@ -97,6 +101,23 @@ export const PromiseFilters = ({
               {status}
             </ToggleGroupItem>
           ))}
+        </ToggleGroup>
+      </div>
+
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-foreground">Regeringsstatus</h3>
+        <ToggleGroup
+          type="multiple"
+          value={selectedGovStatus}
+          onValueChange={onGovStatusChange}
+          className="flex flex-wrap gap-2 justify-start"
+        >
+          <ToggleGroupItem value="governing" className="transition-all text-sm data-[state=on]:bg-blue-600 data-[state=on]:text-white hover:bg-blue-500 hover:text-white">
+            Regering
+          </ToggleGroupItem>
+          <ToggleGroupItem value="opposition" className="transition-all text-sm data-[state=on]:bg-slate-600 data-[state=on]:text-white hover:bg-slate-500 hover:text-white">
+            Opposition
+          </ToggleGroupItem>
         </ToggleGroup>
       </div>
     </div>

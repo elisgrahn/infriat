@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      government_periods: {
+        Row: {
+          created_at: string
+          end_year: number | null
+          governing_parties: string[]
+          id: string
+          name: string
+          start_year: number
+          support_parties: string[] | null
+        }
+        Insert: {
+          created_at?: string
+          end_year?: number | null
+          governing_parties: string[]
+          id?: string
+          name: string
+          start_year: number
+          support_parties?: string[] | null
+        }
+        Update: {
+          created_at?: string
+          end_year?: number | null
+          governing_parties?: string[]
+          id?: string
+          name?: string
+          start_year?: number
+          support_parties?: string[] | null
+        }
+        Relationships: []
+      }
       parties: {
         Row: {
           abbreviation: string

@@ -35,6 +35,7 @@ interface PromiseCardProps {
   promise: string;
   party: string;
   electionYear: number;
+  governmentStatus: 'governing' | 'opposition';
   createdAt: string;
   updatedAt: string;
   status: PromiseStatus;
@@ -100,7 +101,7 @@ const statusConfig = {
   },
 };
 
-export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt, updatedAt, status, description, statusExplanation, statusSources, directQuote, pageNumber, manifestPdfUrl, measurabilityScore, onStatusUpdate }: PromiseCardProps) => {
+export const PromiseCard = ({ promiseId, promise, party, electionYear, governmentStatus, createdAt, updatedAt, status, description, statusExplanation, statusSources, directQuote, pageNumber, manifestPdfUrl, measurabilityScore, onStatusUpdate }: PromiseCardProps) => {
   const config = statusConfig[status];
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isAnalyzingMeasurability, setIsAnalyzingMeasurability] = useState(false);
@@ -290,6 +291,29 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, createdAt
               <Users className="w-3 h-3" />
               {party}
             </Badge>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge 
+                    variant="outline" 
+                    className={governmentStatus === 'governing' 
+                      ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' 
+                      : 'bg-slate-600 text-white border-slate-600 hover:bg-slate-700'
+                    }
+                  >
+                    {governmentStatus === 'governing' ? 'Regering' : 'Opposition'}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="max-w-xs text-xs">
+                    {governmentStatus === 'governing' 
+                      ? 'Partiet satt i regeringen när detta löfte gavs' 
+                      : 'Partiet var i opposition när detta löfte gavs. Oppositionspartier har begränsade möjligheter att genomföra sin politik.'
+                    }
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             {measurabilityScore && (
               <TooltipProvider>
                 <Tooltip>
