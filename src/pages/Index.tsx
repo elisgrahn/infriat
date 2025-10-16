@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { PromiseCard } from "@/components/PromiseCard";
 import { PromiseFilters } from "@/components/PromiseFilters";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { HeroStatsChart } from "@/components/HeroStatsChart";
+import { PartyProgressBars } from "@/components/PartyProgressBars";
+import { TimelineComparison } from "@/components/TimelineComparison";
 import { ShieldCheck, Scale, TrendingUp, Settings, LogIn, LogOut, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -304,7 +307,7 @@ const Index = () => {
               Transparens och ansvar är grunden för ett demokratiskt samhälle.
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-12 max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 pt-12 max-w-6xl mx-auto">
               <div className="group bg-primary-foreground/10 backdrop-blur-md rounded-2xl p-8 border border-primary-foreground/20 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300">
                 <div className="flex items-center justify-center gap-3 mb-3">
                   <Scale className="w-6 h-6 group-hover:rotate-12 transition-transform" />
@@ -325,19 +328,41 @@ const Index = () => {
                 <div className="flex items-center justify-center gap-3 mb-3">
                   <TrendingUp className="w-6 h-6 group-hover:translate-y-[-4px] transition-transform" />
                   <div className="text-4xl font-bold">
-                    {Math.round((stats.fulfilled / stats.total) * 100)}%
+                    {stats.total > 0 ? Math.round((stats.fulfilled / stats.total) * 100) : 0}%
                   </div>
                 </div>
                 <div className="text-sm text-primary-foreground/90 font-medium">Uppfyllelsegrad</div>
               </div>
+
+              {/* Mini chart in hero */}
+              <HeroStatsChart
+                fulfilled={stats.fulfilled}
+                partiallyFulfilled={stats.partiallyFulfilled}
+                inProgress={stats.inProgress}
+                notFulfilled={stats.delayed}
+                broken={stats.broken}
+              />
             </div>
           </div>
         </div>
       </header>
 
+      {/* Timeline and Comparison Section */}
+      <section className="container mx-auto px-4 py-12 bg-muted/30">
+        <TimelineComparison 
+          promises={statsPromises} 
+          governmentPeriods={governmentPeriods}
+        />
+      </section>
+
       {/* Main Content */}
       <main className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Party Progress Bars - Full Width Above Filters */}
+          <div className="lg:col-span-4">
+            <PartyProgressBars promises={statsPromises} />
+          </div>
+
           {/* Filters Sidebar */}
           <aside className="lg:col-span-1">
             <div className="sticky top-8 bg-card rounded-xl p-6 border shadow-sm">

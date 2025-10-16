@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { StatisticsCharts } from "@/components/StatisticsCharts";
+import { EnhancedStatisticsCharts } from "@/components/EnhancedStatisticsCharts";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Promise {
@@ -47,13 +48,16 @@ const Statistics = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-12">
+      <main className="container mx-auto px-4 py-12 space-y-8">
         {loading ? (
           <div className="text-center py-16">
             <p className="text-muted-foreground text-lg">Laddar statistik...</p>
           </div>
         ) : (
-          <StatisticsCharts promises={promises} />
+          <>
+            <EnhancedStatisticsCharts promises={promises} />
+            <StatisticsCharts promises={promises} />
+          </>
         )}
       </main>
     </div>
