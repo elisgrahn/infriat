@@ -244,7 +244,12 @@ export const ManifestUpload = () => {
         });
       }, 30000);
 
+      // Create abort controller with 5 minute timeout
+      const abortController = new AbortController();
+      const timeoutId = setTimeout(() => abortController.abort(), 5 * 60 * 1000);
+
       let data, error;
+      let timedOut = false;
       try {
         const result = await supabase.functions.invoke('analyze-manifest', {
           body: {
@@ -254,37 +259,125 @@ export const ManifestUpload = () => {
             pdfUrl: finalPdfUrl,
             partyAbbreviation: selectedParty,
             electionYear: parseInt(selectedYear)
-          }
+          },
+          signal: abortController.signal
         });
         data = result.data;
         error = result.error;
+      } catch (invokeError: any) {
+        if (invokeError.name === 'AbortError') {
+          timedOut = true;
+          console.log('Request timed out after 5 minutes, checking database...');
+        } else {
+          throw invokeError;
+        }
       } finally {
+        clearTimeout(timeoutId);
         clearTimeout(analysisToastTimer);
         clearTimeout(warningToastTimer);
       }
 
-      if (error) {
-        console.error('Edge function error:', error);
-        console.error('Error details:', JSON.stringify(error, null, 2));
-        
-        // Better error messages based on error type
-        let errorMessage = 'Kunde inte analysera manifestet';
-        
-        if (error.message) {
-          errorMessage = error.message;
-        } else if (typeof error === 'string') {
-          errorMessage = error;
-        }
-        
-        // Special handling for network errors
-        if (errorMessage.includes('NetworkError') || errorMessage.includes('Failed to fetch')) {
-          errorMessage = 'Nätverksfel: Edge-funktionen svarade inte. Detta kan bero på timeout (manifestet är för stort) eller nätverksproblem. Försök med ett kortare manifest.';
-        }
-        
-        throw new Error(errorMessage);
-      }
+      // If we got a timeout or error, check database for newly created promises
+      if (timedOut || error || !data) {
+        toast({
+          title: "⏱️ Verifierar resultat...",
+          description: "Kontrollerar om löften skapades i databasen",
+        });
 
-      if (!data) {
+        try {
+          // Get party ID
+          const { data: party } = await supabase
+            .from('parties')
+            .select('id')
+            .eq('abbreviation', selectedParty)
+            .single();
+
+          if (party) {
+            // Check for promises created in the last 10 minutes
+            const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+            const { data: recentPromises, error: checkError } = await supabase
+              .from('promises')
+              .select('id')
+              .eq('party_id', party.id)
+              .eq('election_year', parseInt(selectedYear))
+              .gte('created_at', tenMinutesAgo);
+
+            if (!checkError && recentPromises && recentPromises.length > 0) {
+              // Success! Promises were created despite timeout
+              toast({
+                title: "✅ Analys lyckades!",
+                description: `${recentPromises.length} vallöften hittades i databasen. Analysen slutfördes trots timeout.`,
+              });
+
+              // Continue with PDF search if available
+              const pdfUrlToSearch = finalPdfUrl || (pdfBase64 ? 'uploaded' : null);
+              if (pdfUrlToSearch && pdfUrlToSearch !== 'uploaded') {
+                // Run PDF search...
+                toast({
+                  title: "🔍 Söker efter sidnummer i PDF...",
+                  description: "Detta kan ta 1-3 minuter beroende på PDF-storlek",
+                });
+
+                try {
+                  const result = await searchPdfForPageNumbers(
+                    pdfUrlToSearch, 
+                    party.id, 
+                    parseInt(selectedYear)
+                  );
+
+                  toast({
+                    title: "✅ Sidnummer uppdaterade!",
+                    description: `${result.updated} av ${result.total} löften fick sidnummer`,
+                  });
+                } catch (pdfError) {
+                  console.error('PDF search error:', pdfError);
+                  toast({
+                    title: "⚠️ Kunde inte söka i PDF",
+                    description: pdfError instanceof Error ? pdfError.message : "Okänt fel vid PDF-sökning",
+                    variant: "destructive"
+                  });
+                }
+              }
+
+              // Reset form
+              setTxtUrl("");
+              setPdfUrl("");
+              setTxtFile(null);
+              setPdfFile(null);
+              setSelectedParty("");
+              setSelectedYear("");
+              
+              return; // Exit early, we're done!
+            }
+          }
+        } catch (checkError) {
+          console.error('Database check error:', checkError);
+        }
+
+        // If we get here, no promises were found
+        if (timedOut) {
+          throw new Error('Analysen tog för lång tid (>5 minuter) och inga löften hittades i databasen. Försök med ett kortare manifest.');
+        }
+        
+        if (error) {
+          console.error('Edge function error:', error);
+          console.error('Error details:', JSON.stringify(error, null, 2));
+          
+          let errorMessage = 'Kunde inte analysera manifestet';
+          
+          if (error.message) {
+            errorMessage = error.message;
+          } else if (typeof error === 'string') {
+            errorMessage = error;
+          }
+          
+          if (errorMessage.includes('NetworkError') || errorMessage.includes('Failed to fetch')) {
+            errorMessage = 'Nätverksfel: Edge-funktionen svarade inte. Detta kan bero på timeout eller nätverksproblem.';
+          }
+          
+          throw new Error(errorMessage);
+        }
+
         throw new Error('Ingen data returnerades från analysen');
       }
 
