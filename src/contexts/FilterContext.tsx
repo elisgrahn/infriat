@@ -29,30 +29,17 @@ interface FilterContextType {
 
 const FilterContext = createContext<FilterContextType | undefined>(undefined);
 
-const ALL_PARTIES = [
-  "Socialdemokraterna",
-  "Moderaterna",
-  "Sverigedemokraterna",
-  "Centerpartiet",
-  "Vänsterpartiet",
-  "Kristdemokraterna",
-  "Liberalerna",
-  "Miljöpartiet",
-];
-
-const ALL_STATUSES = ["Infriat", "Delvis infriat", "Utreds", "Ej infriat", "Brutet"];
-
 export const FilterProvider = ({ children }: { children: ReactNode }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   
   const [selectedParties, setSelectedParties] = useState<string[]>(() => {
     const parties = searchParams.get('parties');
-    return parties ? parties.split(',') : ALL_PARTIES;
+    return parties ? parties.split(',') : [];
   });
   
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(() => {
     const statuses = searchParams.get('statuses');
-    return statuses ? statuses.split(',') : ALL_STATUSES;
+    return statuses ? statuses.split(',') : [];
   });
   
   const [selectedGovStatus, setSelectedGovStatus] = useState<string[]>(() => {
