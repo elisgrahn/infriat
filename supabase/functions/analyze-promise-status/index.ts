@@ -122,11 +122,11 @@ Ge en strukturerad bedömning enligt detta format:
 **Status:** [välj EN av: fulfilled, partially-fulfilled, in-progress, delayed, broken, eller unclear]
 
 Statusdefinitioner:
-- fulfilled: Löftet är helt infriat enligt beskrivning och tidsram
-- partially-fulfilled: Partiet har infriat en del av löftet, men har valt att inte arbeta vidare på det
-- in-progress: Partiet arbetar aktivt med att infria löftet
-- delayed: Partiet har fortfarande för avsikt att infria löftet, men inte enligt ursprungliga tidsplanen
-- broken: Partiet lovade något som de inte kunde hålla
+- fulfilled: Löftet är helt genomfört – beslut fattat och målet uppnått.
+- partially-fulfilled: Regeringen har vidtagit konkreta åtgärder, t.ex. lagt en proposition, ökat utbildningsplatser eller påbörjat reformen, men målet är inte helt nått.
+- in-progress: En utredning, departementspromemoria eller liknande arbete pågår för att möjliggöra reformen, men inga politiska beslut har fattats.
+- delayed: Inga tydliga steg mot genomförande har tagits, men regeringen sitter fortfarande kvar och kan agera.
+- broken: Regeringsperioden är avslutad och löftet har inte uppfyllts.
 - unclear: Det saknas tydligt underlag för att bedöma löftets status
 
 **Förklaring:** [3-5 meningar som förklarar statusen baserat på konkreta åtgärder, lagförslag, beslut och aktuella nyheter]
