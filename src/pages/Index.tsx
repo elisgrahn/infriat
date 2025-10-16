@@ -16,6 +16,7 @@ import {
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useFilters } from "@/contexts/FilterContext";
 
 interface GovernmentPeriod {
   id: string;
@@ -51,26 +52,20 @@ interface Promise {
 const Index = () => {
   const navigate = useNavigate();
   const { user, isAdmin, signOut } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const promiseRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const { 
+    selectedParties, 
+    selectedStatuses, 
+    selectedGovStatus, 
+    searchQuery, 
+    sortBy, 
+    selectedPeriodId,
+    governmentPeriods,
+    setGovernmentPeriods
+  } = useFilters();
   
-  const [selectedParties, setSelectedParties] = useState<string[]>(() => {
-    const parties = searchParams.get('parties');
-    return parties ? parties.split(',') : [];
-  });
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(() => {
-    const statuses = searchParams.get('statuses');
-    return statuses ? statuses.split(',') : [];
-  });
-  const [selectedGovStatus, setSelectedGovStatus] = useState<string[]>(() => {
-    const govStatus = searchParams.get('govStatus');
-    return govStatus ? govStatus.split(',') : [];
-  });
-  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || "");
-  const [sortBy, setSortBy] = useState(() => searchParams.get('sort') || "created-desc");
-  const [selectedPeriodId, setSelectedPeriodId] = useState<string | null>(() => searchParams.get('period') || null);
   const [promises, setPromises] = useState<Promise[]>([]);
-  const [governmentPeriods, setGovernmentPeriods] = useState<GovernmentPeriod[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 20;
@@ -83,49 +78,6 @@ const Index = () => {
     }
   };
 
-  // Update URL when filters change
-  useEffect(() => {
-    const params = new URLSearchParams(searchParams);
-    
-    // Update or remove filter params
-    if (selectedParties.length > 0) {
-      params.set('parties', selectedParties.join(','));
-    } else {
-      params.delete('parties');
-    }
-    
-    if (selectedStatuses.length > 0) {
-      params.set('statuses', selectedStatuses.join(','));
-    } else {
-      params.delete('statuses');
-    }
-    
-    if (selectedGovStatus.length > 0) {
-      params.set('govStatus', selectedGovStatus.join(','));
-    } else {
-      params.delete('govStatus');
-    }
-    
-    if (searchQuery) {
-      params.set('search', searchQuery);
-    } else {
-      params.delete('search');
-    }
-    
-    if (sortBy !== 'created-desc') {
-      params.set('sort', sortBy);
-    } else {
-      params.delete('sort');
-    }
-    
-    if (selectedPeriodId) {
-      params.set('period', selectedPeriodId);
-    } else {
-      params.delete('period');
-    }
-    
-    setSearchParams(params, { replace: true });
-  }, [selectedParties, selectedStatuses, selectedGovStatus, searchQuery, sortBy, selectedPeriodId]);
 
   // Scroll to promise if ID in URL - wait until promises are loaded
   useEffect(() => {
@@ -181,13 +133,25 @@ const Index = () => {
   };
 
   const getGovernmentStatus = (partyName: string, electionYear: number): 'governing' | 'opposition' => {
+    // If a specific period is selected, use that period's data
+    if (selectedPeriodId) {
+      const period = governmentPeriods.find(p => p.id === selectedPeriodId);
+      if (!period) return 'opposition';
+      return period.governing_parties.includes(partyName) || period.support_parties?.includes(partyName) 
+        ? 'governing' 
+        : 'opposition';
+    }
+    
+    // Otherwise, find the period based on election year
     const period = governmentPeriods.find(p => 
       electionYear >= p.start_year && (p.end_year === null || electionYear <= p.end_year)
     );
     
     if (!period) return 'opposition';
     
-    return period.governing_parties.includes(partyName) ? 'governing' : 'opposition';
+    return period.governing_parties.includes(partyName) || period.support_parties?.includes(partyName)
+      ? 'governing' 
+      : 'opposition';
   };
 
   const filteredPromises = promises.filter((promise) => {
@@ -213,7 +177,17 @@ const Index = () => {
       promise.promise_text.toLowerCase().includes(searchQuery.toLowerCase()) ||
       promise.parties.name.toLowerCase().includes(searchQuery.toLowerCase());
 
-    return matchesParty && matchesStatus && matchesGovStatus && matchesSearch;
+    // Filter by selected period
+    let matchesPeriod = true;
+    if (selectedPeriodId) {
+      const period = governmentPeriods.find(p => p.id === selectedPeriodId);
+      if (period) {
+        matchesPeriod = promise.election_year >= period.start_year && 
+                        (period.end_year === null || promise.election_year <= period.end_year);
+      }
+    }
+
+    return matchesParty && matchesStatus && matchesGovStatus && matchesSearch && matchesPeriod;
   });
 
   const sortedPromises = [...filteredPromises].sort((a, b) => {
@@ -360,21 +334,7 @@ const Index = () => {
           <aside className="lg:col-span-1">
             <div className="sticky top-8 bg-card rounded-xl p-6 border shadow-sm">
               <h2 className="text-xl font-bold mb-6 text-foreground">Filtrera</h2>
-            <PromiseFilters
-              selectedParties={selectedParties}
-              selectedStatuses={selectedStatuses}
-              selectedGovStatus={selectedGovStatus}
-              searchQuery={searchQuery}
-              sortBy={sortBy}
-              governmentPeriods={governmentPeriods}
-              selectedPeriodId={selectedPeriodId}
-              onPartiesChange={setSelectedParties}
-              onStatusesChange={setSelectedStatuses}
-              onGovStatusChange={setSelectedGovStatus}
-              onSearchChange={setSearchQuery}
-              onSortChange={setSortBy}
-              onPeriodChange={setSelectedPeriodId}
-            />
+            <PromiseFilters />
             </div>
           </aside>
 

@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { FilterProvider } from "@/contexts/FilterContext";
 import Index from "./pages/Index";
 import Statistics from "./pages/Statistics";
 import Admin from "./pages/Admin";
@@ -17,16 +18,18 @@ const App = () => (
     <ThemeProvider defaultTheme="system" storageKey="infriat-theme">
       <TooltipProvider>
         <BrowserRouter>
-          <Toaster />
-          <Sonner />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/statistik" element={<Statistics />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="/auth" element={<Auth />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <FilterProvider>
+            <Toaster />
+            <Sonner />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/statistik" element={<Statistics />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/auth" element={<Auth />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </FilterProvider>
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>

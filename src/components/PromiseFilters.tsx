@@ -3,32 +3,7 @@ import { Search, Minus, Check } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { partyColors, statusColors } from "@/utils/partyColors";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-
-interface GovernmentPeriod {
-  id: string;
-  name: string;
-  start_year: number;
-  end_year: number | null;
-  governing_parties: string[];
-  support_parties: string[] | null;
-}
-
-interface PromiseFiltersProps {
-  selectedParties: string[];
-  selectedStatuses: string[];
-  selectedGovStatus: string[];
-  searchQuery: string;
-  sortBy: string;
-  governmentPeriods: GovernmentPeriod[];
-  selectedPeriodId: string | null;
-  onPartiesChange: (parties: string[]) => void;
-  onStatusesChange: (statuses: string[]) => void;
-  onGovStatusChange: (status: string[]) => void;
-  onSearchChange: (query: string) => void;
-  onSortChange: (sort: string) => void;
-  onPeriodChange: (periodId: string | null) => void;
-}
+import { useFilters } from "@/contexts/FilterContext";
 
 const parties = [
   "Socialdemokraterna",
@@ -42,21 +17,22 @@ const parties = [
 ];
 const statuses = ["Infriat", "Delvis infriat", "Pågående", "Försenat", "Brutet", "Oklart"];
 
-export const PromiseFilters = ({
-  selectedParties,
-  selectedStatuses,
-  selectedGovStatus,
-  searchQuery,
-  sortBy,
-  governmentPeriods,
-  selectedPeriodId,
-  onPartiesChange,
-  onStatusesChange,
-  onGovStatusChange,
-  onSearchChange,
-  onSortChange,
-  onPeriodChange,
-}: PromiseFiltersProps) => {
+export const PromiseFilters = () => {
+  const {
+    selectedParties,
+    selectedStatuses,
+    selectedGovStatus,
+    searchQuery,
+    sortBy,
+    governmentPeriods,
+    selectedPeriodId,
+    setSelectedParties,
+    setSelectedStatuses,
+    setSelectedGovStatus,
+    setSearchQuery,
+    setSortBy,
+    setSelectedPeriodId,
+  } = useFilters();
   // Get the selected government period, or the most recent one
   const selectedPeriod = selectedPeriodId 
     ? governmentPeriods.find(p => p.id === selectedPeriodId)
@@ -80,7 +56,7 @@ export const PromiseFilters = ({
     
     if (allSelected) {
       // Deselect all parties in this group
-      onPartiesChange(selectedParties.filter(party => !groupParties.includes(party)));
+      setSelectedParties(selectedParties.filter(party => !groupParties.includes(party)));
     } else {
       // Select all parties in this group
       const newSelection = [...selectedParties];
@@ -89,7 +65,7 @@ export const PromiseFilters = ({
           newSelection.push(party);
         }
       });
-      onPartiesChange(newSelection);
+      setSelectedParties(newSelection);
     }
   };
 
@@ -127,7 +103,7 @@ export const PromiseFilters = ({
         <Input
           placeholder="Sök efter löften..."
           value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
+          onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-10"
         />
       </div>
@@ -136,7 +112,7 @@ export const PromiseFilters = ({
         <h3 className="text-sm font-semibold text-foreground">Mandatperiod</h3>
         <Select 
           value={selectedPeriodId || (selectedPeriod?.id || 'all')} 
-          onValueChange={(value) => onPeriodChange(value === 'all' ? null : value)}
+          onValueChange={(value) => setSelectedPeriodId(value === 'all' ? null : value)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Välj mandatperiod..." />
@@ -154,7 +130,7 @@ export const PromiseFilters = ({
 
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-foreground">Sortera efter</h3>
-        <Select value={sortBy} onValueChange={onSortChange}>
+        <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger>
             <SelectValue placeholder="Sortera efter..." />
           </SelectTrigger>
@@ -181,7 +157,7 @@ export const PromiseFilters = ({
               <ToggleGroup
                 type="multiple"
                 value={selectedParties}
-                onValueChange={onPartiesChange}
+                onValueChange={setSelectedParties}
                 className="flex flex-wrap gap-2 justify-start"
               >
                 {governingParties.map((party) => (
@@ -201,7 +177,7 @@ export const PromiseFilters = ({
               <ToggleGroup
                 type="multiple"
                 value={selectedParties}
-                onValueChange={onPartiesChange}
+                onValueChange={setSelectedParties}
                 className="flex flex-wrap gap-2 justify-start"
               >
                 {supportParties.map((party) => (
@@ -221,7 +197,7 @@ export const PromiseFilters = ({
               <ToggleGroup
                 type="multiple"
                 value={selectedParties}
-                onValueChange={onPartiesChange}
+                onValueChange={setSelectedParties}
                 className="flex flex-wrap gap-2 justify-start"
               >
                 {oppositionParties.map((party) => (
@@ -240,7 +216,7 @@ export const PromiseFilters = ({
         <ToggleGroup
           type="multiple"
           value={selectedStatuses}
-          onValueChange={onStatusesChange}
+          onValueChange={setSelectedStatuses}
           className="flex flex-wrap gap-2 justify-start"
         >
           {statuses.map((status) => (
