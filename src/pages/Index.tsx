@@ -155,6 +155,11 @@ const Index = () => {
   };
 
   const filteredPromises = promises.filter((promise) => {
+    // Hide "pending-analysis" status from non-admins
+    if (promise.status === 'pending-analysis' && !isAdmin) {
+      return false;
+    }
+
     const matchesParty = selectedParties.length === 0 || selectedParties.includes(promise.parties.name);
     
     const statusMap: Record<string, string> = {

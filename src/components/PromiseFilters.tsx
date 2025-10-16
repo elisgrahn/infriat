@@ -33,15 +33,11 @@ export const PromiseFilters = () => {
     setSortBy,
     setSelectedPeriodId,
   } = useFilters();
-  // Get the selected government period, or the most recent one
+  // Get the selected government period, or the most recent one (current government)
   const selectedPeriod = selectedPeriodId 
     ? governmentPeriods.find(p => p.id === selectedPeriodId)
     : governmentPeriods.length > 0 
-      ? governmentPeriods.reduce((latest, period) => 
-          (period.end_year === null || (latest.end_year !== null && period.end_year > latest.end_year)) 
-            ? period 
-            : latest
-        )
+      ? governmentPeriods.find(p => p.end_year === null) || governmentPeriods[governmentPeriods.length - 1]
       : null;
 
   // Custom sort order: V, S, MP, C, L, KD, M, SD
