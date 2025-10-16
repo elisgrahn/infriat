@@ -77,15 +77,14 @@ export const ManifestUpload = () => {
       const normalizeText = (text: string) => {
         return text
           .toLowerCase()
-          // CRITICAL: Handle hyphenated words split across lines BEFORE removing line breaks
-          // Matches: "före\ntagande" or "digitali-\nsering" -> "företagande", "digitalisering"
-          .replace(/(\w+)-[\r\n]+(\w+)/g, '$1$2')
-          // Also handle line breaks without hyphen (some PDFs do this)
-          .replace(/(\w+)[\r\n]+(\w+)/g, '$1 $2')
-          // Now remove remaining line breaks and replace with space
+          // CRITICAL: More aggressive handling of hyphenated line breaks
+          // Remove hyphen + any whitespace/newline + continue word
+          .replace(/(\w+)-[\r\n\s]+(\w+)/g, '$1$2')
+          // CRITICAL: Handle line breaks MID-WORD without hyphen (PDF artifact)
+          // If lowercase letter, newline, then lowercase letter -> join them
+          .replace(/([a-zåäö])[\r\n]+([a-zåäö])/g, '$1$2')
+          // Now replace all remaining line breaks with space
           .replace(/[\r\n]+/g, ' ')
-          // Remove hyphenation with spaces (word- word -> wordword)
-          .replace(/(\w+)-\s+(\w+)/g, '$1$2')
           // Normalize all types of quotes
           .replace(/[""]/g, '"')
           .replace(/['']/g, "'")
@@ -94,7 +93,7 @@ export const ManifestUpload = () => {
           // Remove [...] markers and ellipsis
           .replace(/\[\.\.\.]/g, '')
           .replace(/…/g, '')
-          // Remove multiple spaces
+          // Normalize multiple spaces to single space
           .replace(/\s+/g, ' ')
           // Remove punctuation at start/end
           .trim()
