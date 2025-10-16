@@ -156,6 +156,7 @@ export function TimelineComparison({ promises }: TimelineComparisonProps) {
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '8px',
                 }}
+                labelFormatter={(label) => abbrToPartyName[label] || label}
                 formatter={(value: number, name: string, props: any) => {
                   const total = props.payload.total;
                   const percentage = total > 0 ? ((value / total) * 100).toFixed(0) : 0;
@@ -202,9 +203,10 @@ export function TimelineComparison({ promises }: TimelineComparisonProps) {
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '8px',
                 }}
+                labelFormatter={(label) => abbrToPartyName[label] || label}
                 formatter={(value: number, name: string, props: any) => {
-                  const partyName = props.payload.name;
-                  const originalPartyData = partyChartData.find(p => p.name === partyName);
+                  const partyAbbr = props.payload.name;
+                  const originalPartyData = partyChartData.find(p => p.name === partyAbbr);
                   const statusKey = name as keyof typeof originalPartyData;
                   const actualCount = originalPartyData?.[statusKey] || 0;
                   const percentage = (value * 100).toFixed(0);
