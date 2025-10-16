@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { partyColors } from "@/utils/partyColors";
 
 interface Promise {
   election_year: number;
@@ -33,6 +34,52 @@ interface TimelineComparisonProps {
   promises: Promise[];
   governmentPeriods: GovernmentPeriod[];
 }
+
+// Map abbreviations back to full party names for color lookup
+const abbrToPartyName: Record<string, string> = {
+  'S': 'Socialdemokraterna',
+  'M': 'Moderaterna',
+  'SD': 'Sverigedemokraterna',
+  'C': 'Centerpartiet',
+  'V': 'Vänsterpartiet',
+  'KD': 'Kristdemokraterna',
+  'L': 'Liberalerna',
+  'MP': 'Miljöpartiet',
+};
+
+const CustomPartyTick = ({ x, y, payload }: any) => {
+  const abbr = payload.value;
+  const partyName = abbrToPartyName[abbr] || abbr;
+  const colorClasses = partyColors[partyName] || '';
+  
+  // Extract the background color for on state from the class string
+  const bgMatch = colorClasses.match(/data-\[state=on\]:bg-\[(hsl\([^\]]+\))\]/);
+  const bgColor = bgMatch ? bgMatch[1] : 'hsl(var(--muted))';
+  
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <foreignObject x={-30} y={0} width={60} height={32}>
+        <div 
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '24px',
+            backgroundColor: bgColor,
+            color: 'white',
+            borderRadius: '6px',
+            fontSize: '12px',
+            fontWeight: '500',
+            padding: '0 8px',
+            marginTop: '4px',
+          }}
+        >
+          {abbr}
+        </div>
+      </foreignObject>
+    </g>
+  );
+};
 
 export function TimelineComparison({ promises }: TimelineComparisonProps) {
   const [chartType, setChartType] = useState<"bar" | "area">("bar");
@@ -111,7 +158,7 @@ export function TimelineComparison({ promises }: TimelineComparisonProps) {
               <XAxis 
                 dataKey="name" 
                 stroke="hsl(var(--foreground))"
-                tick={{ fill: 'hsl(var(--foreground))' }}
+                tick={(props) => <CustomPartyTick {...props} />}
               />
               <YAxis 
                 stroke="hsl(var(--foreground))"
@@ -155,7 +202,7 @@ export function TimelineComparison({ promises }: TimelineComparisonProps) {
               <XAxis 
                 dataKey="name" 
                 stroke="hsl(var(--foreground))"
-                tick={{ fill: 'hsl(var(--foreground))' }}
+                tick={(props) => <CustomPartyTick {...props} />}
               />
               <YAxis 
                 stroke="hsl(var(--foreground))"
