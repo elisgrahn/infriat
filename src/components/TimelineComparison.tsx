@@ -94,13 +94,13 @@ export function TimelineComparison({ promises }: TimelineComparisonProps) {
           <div>
             <h3 className="text-lg font-semibold">Jämförelse per parti</h3>
             <p className="text-sm text-muted-foreground">
-              {chartType === "bar" ? "Statusfördelning för varje partis vallöften" : "Procentuell statusfördelning per parti"}
+              {chartType === "bar" ? "Antal vallöften per status för varje parti" : "Procentuell statusfördelning per parti"}
             </p>
           </div>
           <Tabs value={chartType} onValueChange={(value) => setChartType(value as "bar" | "area")}>
             <TabsList>
-              <TabsTrigger value="bar">Staplar</TabsTrigger>
-              <TabsTrigger value="area">Area</TabsTrigger>
+              <TabsTrigger value="bar">Antal</TabsTrigger>
+              <TabsTrigger value="area">Procent</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -123,8 +123,26 @@ export function TimelineComparison({ promises }: TimelineComparisonProps) {
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '8px',
                 }}
+                formatter={(value: number, name: string, props: any) => {
+                  const total = props.payload.total;
+                  const percentage = total > 0 ? ((value / total) * 100).toFixed(0) : 0;
+                  return `${value} st (${percentage}%)`;
+                }}
+                itemSorter={(item) => {
+                  const order = ['Infriade', 'Delvis infriade', 'Utreds', 'Ej infriade', 'Brutna'];
+                  return order.indexOf(item.name as string);
+                }}
               />
-              <Legend />
+              <Legend 
+                wrapperStyle={{ paddingTop: '20px' }}
+                payload={[
+                  { value: 'Brutna', type: 'rect', color: COLORS['brutet'] },
+                  { value: 'Ej infriade', type: 'rect', color: COLORS['ej-infriat'] },
+                  { value: 'Utreds', type: 'rect', color: COLORS['utreds'] },
+                  { value: 'Delvis infriade', type: 'rect', color: COLORS['delvis-infriat'] },
+                  { value: 'Infriade', type: 'rect', color: COLORS['infriat'] },
+                ]}
+              />
               <Bar dataKey="Brutna" stackId="a" fill={COLORS['brutet']} fillOpacity={0.8} />
               <Bar dataKey="Ej infriade" stackId="a" fill={COLORS['ej-infriat']} fillOpacity={0.8} />
               <Bar dataKey="Utreds" stackId="a" fill={COLORS['utreds']} fillOpacity={0.8} />
@@ -151,7 +169,14 @@ export function TimelineComparison({ promises }: TimelineComparisonProps) {
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '8px',
                 }}
-                formatter={(value: number) => `${(value * 100).toFixed(1)}%`}
+                formatter={(value: number, name: string, props: any) => {
+                  const partyName = props.payload.name;
+                  const originalPartyData = partyChartData.find(p => p.name === partyName);
+                  const statusKey = name as keyof typeof originalPartyData;
+                  const actualCount = originalPartyData?.[statusKey] || 0;
+                  const percentage = (value * 100).toFixed(0);
+                  return `${percentage}% (${actualCount} st)`;
+                }}
                 itemSorter={(item) => {
                   const order = ['Infriade', 'Delvis infriade', 'Utreds', 'Ej infriade', 'Brutna'];
                   return order.indexOf(item.name as string);
