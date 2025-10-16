@@ -102,11 +102,11 @@ export function TimelineComparison({ promises }: TimelineComparisonProps) {
               }}
             />
             <Legend />
-            <Bar dataKey="Infriade" stackId="a" fill={COLORS['infriat']} />
-            <Bar dataKey="Delvis infriade" stackId="a" fill={COLORS['delvis-infriat']} />
-            <Bar dataKey="Utreds" stackId="a" fill={COLORS['utreds']} />
-            <Bar dataKey="Ej infriade" stackId="a" fill={COLORS['ej-infriat']} />
-            <Bar dataKey="Brutna" stackId="a" fill={COLORS['brutet']} />
+            <Bar dataKey="Brutna" stackId="a" fill={COLORS['brutet']} fillOpacity={0.8} />
+            <Bar dataKey="Ej infriade" stackId="a" fill={COLORS['ej-infriat']} fillOpacity={0.8} />
+            <Bar dataKey="Utreds" stackId="a" fill={COLORS['utreds']} fillOpacity={0.8} />
+            <Bar dataKey="Delvis infriade" stackId="a" fill={COLORS['delvis-infriat']} fillOpacity={0.8} />
+            <Bar dataKey="Infriade" stackId="a" fill={COLORS['infriat']} fillOpacity={0.8} />
           </BarChart>
         </ResponsiveContainer>
       </div>
