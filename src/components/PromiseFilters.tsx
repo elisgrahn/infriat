@@ -21,11 +21,13 @@ interface PromiseFiltersProps {
   searchQuery: string;
   sortBy: string;
   governmentPeriods: GovernmentPeriod[];
+  selectedPeriodId: string | null;
   onPartiesChange: (parties: string[]) => void;
   onStatusesChange: (statuses: string[]) => void;
   onGovStatusChange: (status: string[]) => void;
   onSearchChange: (query: string) => void;
   onSortChange: (sort: string) => void;
+  onPeriodChange: (periodId: string | null) => void;
 }
 
 const parties = [
@@ -47,24 +49,28 @@ export const PromiseFilters = ({
   searchQuery,
   sortBy,
   governmentPeriods,
+  selectedPeriodId,
   onPartiesChange,
   onStatusesChange,
   onGovStatusChange,
   onSearchChange,
   onSortChange,
+  onPeriodChange,
 }: PromiseFiltersProps) => {
-  // Get the most recent government period
-  const latestPeriod = governmentPeriods.length > 0 
-    ? governmentPeriods.reduce((latest, period) => 
-        (period.end_year === null || (latest.end_year !== null && period.end_year > latest.end_year)) 
-          ? period 
-          : latest
-      )
-    : null;
+  // Get the selected government period, or the most recent one
+  const selectedPeriod = selectedPeriodId 
+    ? governmentPeriods.find(p => p.id === selectedPeriodId)
+    : governmentPeriods.length > 0 
+      ? governmentPeriods.reduce((latest, period) => 
+          (period.end_year === null || (latest.end_year !== null && period.end_year > latest.end_year)) 
+            ? period 
+            : latest
+        )
+      : null;
 
   const allParties = parties;
-  const governingParties = latestPeriod?.governing_parties || [];
-  const supportParties = latestPeriod?.support_parties || [];
+  const governingParties = selectedPeriod?.governing_parties || [];
+  const supportParties = selectedPeriod?.support_parties || [];
   const oppositionParties = allParties.filter(
     party => !governingParties.includes(party) && !supportParties.includes(party)
   );
@@ -124,6 +130,26 @@ export const PromiseFilters = ({
           onChange={(e) => onSearchChange(e.target.value)}
           className="pl-10"
         />
+      </div>
+
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-foreground">Mandatperiod</h3>
+        <Select 
+          value={selectedPeriodId || (selectedPeriod?.id || '')} 
+          onValueChange={(value) => onPeriodChange(value === '' ? null : value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Välj mandatperiod..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Alla mandatperioder</SelectItem>
+            {governmentPeriods.map((period) => (
+              <SelectItem key={period.id} value={period.id}>
+                {period.name} ({period.start_year}–{period.end_year || 'nu'})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="space-y-3">

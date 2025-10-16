@@ -68,6 +68,7 @@ const Index = () => {
   });
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || "");
   const [sortBy, setSortBy] = useState(() => searchParams.get('sort') || "created-desc");
+  const [selectedPeriodId, setSelectedPeriodId] = useState<string | null>(() => searchParams.get('period') || null);
   const [promises, setPromises] = useState<Promise[]>([]);
   const [governmentPeriods, setGovernmentPeriods] = useState<GovernmentPeriod[]>([]);
   const [loading, setLoading] = useState(true);
@@ -117,8 +118,14 @@ const Index = () => {
       params.delete('sort');
     }
     
+    if (selectedPeriodId) {
+      params.set('period', selectedPeriodId);
+    } else {
+      params.delete('period');
+    }
+    
     setSearchParams(params, { replace: true });
-  }, [selectedParties, selectedStatuses, selectedGovStatus, searchQuery, sortBy]);
+  }, [selectedParties, selectedStatuses, selectedGovStatus, searchQuery, sortBy, selectedPeriodId]);
 
   // Scroll to promise if ID in URL - wait until promises are loaded
   useEffect(() => {
@@ -253,7 +260,7 @@ const Index = () => {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedParties, selectedStatuses, selectedGovStatus, searchQuery, sortBy]);
+  }, [selectedParties, selectedStatuses, selectedGovStatus, searchQuery, sortBy, selectedPeriodId]);
 
   const stats = {
     total: promises.length,
@@ -360,11 +367,13 @@ const Index = () => {
               searchQuery={searchQuery}
               sortBy={sortBy}
               governmentPeriods={governmentPeriods}
+              selectedPeriodId={selectedPeriodId}
               onPartiesChange={setSelectedParties}
               onStatusesChange={setSelectedStatuses}
               onGovStatusChange={setSelectedGovStatus}
               onSearchChange={setSearchQuery}
               onSortChange={setSortBy}
+              onPeriodChange={setSelectedPeriodId}
             />
             </div>
           </aside>
