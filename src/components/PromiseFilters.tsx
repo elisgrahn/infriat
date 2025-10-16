@@ -44,11 +44,17 @@ export const PromiseFilters = () => {
         )
       : null;
 
+  // Custom sort order: V, S, MP, C, L, KD, M, SD
+  const partyOrder = ["Vänsterpartiet", "Socialdemokraterna", "Miljöpartiet", "Centerpartiet", "Liberalerna", "Kristdemokraterna", "Moderaterna", "Sverigedemokraterna"];
+  const sortParties = (partyList: string[]) => {
+    return [...partyList].sort((a, b) => partyOrder.indexOf(a) - partyOrder.indexOf(b));
+  };
+
   const allParties = parties;
-  const governingParties = selectedPeriod?.governing_parties || [];
-  const supportParties = selectedPeriod?.support_parties || [];
-  const oppositionParties = allParties.filter(
-    party => !governingParties.includes(party) && !supportParties.includes(party)
+  const governingParties = sortParties(selectedPeriod?.governing_parties || []);
+  const supportParties = sortParties(selectedPeriod?.support_parties || []);
+  const oppositionParties = sortParties(
+    allParties.filter(party => !governingParties.includes(party) && !supportParties.includes(party))
   );
 
   const handleGroupToggle = (groupParties: string[]) => {
