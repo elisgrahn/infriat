@@ -1,9 +1,19 @@
 import { Input } from "@/components/ui/input";
-import { Search, Building2, Users2 } from "lucide-react";
+import { Search, ChevronDown } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { partyColors, statusColors } from "@/utils/partyColors";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useState } from "react";
+
+interface GovernmentPeriod {
+  id: string;
+  name: string;
+  start_year: number;
+  end_year: number | null;
+  governing_parties: string[];
+  support_parties: string[] | null;
+}
 
 interface PromiseFiltersProps {
   selectedParties: string[];
@@ -11,6 +21,7 @@ interface PromiseFiltersProps {
   selectedGovStatus: string[];
   searchQuery: string;
   sortBy: string;
+  governmentPeriods: GovernmentPeriod[];
   onPartiesChange: (parties: string[]) => void;
   onStatusesChange: (statuses: string[]) => void;
   onGovStatusChange: (status: string[]) => void;
@@ -36,12 +47,32 @@ export const PromiseFilters = ({
   selectedGovStatus,
   searchQuery,
   sortBy,
+  governmentPeriods,
   onPartiesChange,
   onStatusesChange,
   onGovStatusChange,
   onSearchChange,
   onSortChange,
 }: PromiseFiltersProps) => {
+  const [governingOpen, setGoverningOpen] = useState(true);
+  const [supportOpen, setSupportOpen] = useState(true);
+  const [oppositionOpen, setOppositionOpen] = useState(true);
+
+  // Get the most recent government period
+  const latestPeriod = governmentPeriods.length > 0 
+    ? governmentPeriods.reduce((latest, period) => 
+        (period.end_year === null || (latest.end_year !== null && period.end_year > latest.end_year)) 
+          ? period 
+          : latest
+      )
+    : null;
+
+  const allParties = parties;
+  const governingParties = latestPeriod?.governing_parties || [];
+  const supportParties = latestPeriod?.support_parties || [];
+  const oppositionParties = allParties.filter(
+    party => !governingParties.includes(party) && !supportParties.includes(party)
+  );
   return (
     <div className="space-y-6">
       <div className="relative">
@@ -76,51 +107,74 @@ export const PromiseFilters = ({
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-foreground">Parti</h3>
         
-        <div className="flex gap-2 mb-3">
-          <Button
-            variant={selectedGovStatus.includes('governing') ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => {
-              if (selectedGovStatus.includes('governing')) {
-                onGovStatusChange(selectedGovStatus.filter(s => s !== 'governing'));
-              } else {
-                onGovStatusChange([...selectedGovStatus, 'governing']);
-              }
-            }}
-            className="flex-1 gap-1.5"
-          >
-            <Building2 className="w-3 h-3" />
-            Regeringspartier
-          </Button>
-          <Button
-            variant={selectedGovStatus.includes('opposition') ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => {
-              if (selectedGovStatus.includes('opposition')) {
-                onGovStatusChange(selectedGovStatus.filter(s => s !== 'opposition'));
-              } else {
-                onGovStatusChange([...selectedGovStatus, 'opposition']);
-              }
-            }}
-            className="flex-1 gap-1.5"
-          >
-            <Users2 className="w-3 h-3" />
-            Oppositionspartier
-          </Button>
-        </div>
-        
-        <ToggleGroup
-          type="multiple"
-          value={selectedParties}
-          onValueChange={onPartiesChange}
-          className="flex flex-wrap gap-2 justify-start"
-        >
-          {parties.map((party) => (
-            <ToggleGroupItem key={party} value={party} className={`transition-all text-sm ${partyColors[party]}`}>
-              {party}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
+        {governingParties.length > 0 && (
+          <Collapsible open={governingOpen} onOpenChange={setGoverningOpen}>
+            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors w-full">
+              <ChevronDown className={`w-4 h-4 transition-transform ${governingOpen ? 'rotate-0' : '-rotate-90'}`} />
+              Regeringspartier
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2">
+              <ToggleGroup
+                type="multiple"
+                value={selectedParties}
+                onValueChange={onPartiesChange}
+                className="flex flex-wrap gap-2 justify-start"
+              >
+                {governingParties.map((party) => (
+                  <ToggleGroupItem key={party} value={party} className={`transition-all text-sm ${partyColors[party]}`}>
+                    {party}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+
+        {supportParties.length > 0 && (
+          <Collapsible open={supportOpen} onOpenChange={setSupportOpen}>
+            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors w-full">
+              <ChevronDown className={`w-4 h-4 transition-transform ${supportOpen ? 'rotate-0' : '-rotate-90'}`} />
+              Stödpartier
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2">
+              <ToggleGroup
+                type="multiple"
+                value={selectedParties}
+                onValueChange={onPartiesChange}
+                className="flex flex-wrap gap-2 justify-start"
+              >
+                {supportParties.map((party) => (
+                  <ToggleGroupItem key={party} value={party} className={`transition-all text-sm ${partyColors[party]}`}>
+                    {party}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+
+        {oppositionParties.length > 0 && (
+          <Collapsible open={oppositionOpen} onOpenChange={setOppositionOpen}>
+            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors w-full">
+              <ChevronDown className={`w-4 h-4 transition-transform ${oppositionOpen ? 'rotate-0' : '-rotate-90'}`} />
+              Oppositionspartier
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2">
+              <ToggleGroup
+                type="multiple"
+                value={selectedParties}
+                onValueChange={onPartiesChange}
+                className="flex flex-wrap gap-2 justify-start"
+              >
+                {oppositionParties.map((party) => (
+                  <ToggleGroupItem key={party} value={party} className={`transition-all text-sm ${partyColors[party]}`}>
+                    {party}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </CollapsibleContent>
+          </Collapsible>
+        )}
       </div>
 
       <div className="space-y-3">

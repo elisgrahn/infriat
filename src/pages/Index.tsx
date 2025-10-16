@@ -359,6 +359,7 @@ const Index = () => {
               selectedGovStatus={selectedGovStatus}
               searchQuery={searchQuery}
               sortBy={sortBy}
+              governmentPeriods={governmentPeriods}
               onPartiesChange={setSelectedParties}
               onStatusesChange={setSelectedStatuses}
               onGovStatusChange={setSelectedGovStatus}
