@@ -1,8 +1,9 @@
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, Building2, Users2 } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { partyColors, statusColors } from "@/utils/partyColors";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 
 interface PromiseFiltersProps {
   selectedParties: string[];
@@ -74,6 +75,40 @@ export const PromiseFilters = ({
 
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-foreground">Parti</h3>
+        
+        <div className="flex gap-2 mb-3">
+          <Button
+            variant={selectedGovStatus.includes('governing') ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => {
+              if (selectedGovStatus.includes('governing')) {
+                onGovStatusChange(selectedGovStatus.filter(s => s !== 'governing'));
+              } else {
+                onGovStatusChange([...selectedGovStatus, 'governing']);
+              }
+            }}
+            className="flex-1 gap-1.5"
+          >
+            <Building2 className="w-3 h-3" />
+            Regeringspartier
+          </Button>
+          <Button
+            variant={selectedGovStatus.includes('opposition') ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => {
+              if (selectedGovStatus.includes('opposition')) {
+                onGovStatusChange(selectedGovStatus.filter(s => s !== 'opposition'));
+              } else {
+                onGovStatusChange([...selectedGovStatus, 'opposition']);
+              }
+            }}
+            className="flex-1 gap-1.5"
+          >
+            <Users2 className="w-3 h-3" />
+            Oppositionspartier
+          </Button>
+        </div>
+        
         <ToggleGroup
           type="multiple"
           value={selectedParties}
@@ -101,23 +136,6 @@ export const PromiseFilters = ({
               {status}
             </ToggleGroupItem>
           ))}
-        </ToggleGroup>
-      </div>
-
-      <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-foreground">Regeringsstatus</h3>
-        <ToggleGroup
-          type="multiple"
-          value={selectedGovStatus}
-          onValueChange={onGovStatusChange}
-          className="flex flex-wrap gap-2 justify-start"
-        >
-          <ToggleGroupItem value="governing" className="transition-all text-sm data-[state=on]:bg-blue-600 data-[state=on]:text-white hover:bg-blue-500 hover:text-white">
-            Regering
-          </ToggleGroupItem>
-          <ToggleGroupItem value="opposition" className="transition-all text-sm data-[state=on]:bg-slate-600 data-[state=on]:text-white hover:bg-slate-500 hover:text-white">
-            Opposition
-          </ToggleGroupItem>
         </ToggleGroup>
       </div>
     </div>
