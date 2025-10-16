@@ -39,10 +39,23 @@ interface TimelineComparisonProps {
 export function TimelineComparison({ promises }: TimelineComparisonProps) {
   const [chartType, setChartType] = useState<"bar" | "area">("bar");
 
+  // Mapping from abbreviation to full party name
+  const abbrToPartyName: Record<string, string> = {
+    'S': 'Socialdemokraterna',
+    'M': 'Moderaterna',
+    'SD': 'Sverigedemokraterna',
+    'C': 'Centerpartiet',
+    'V': 'Vänsterpartiet',
+    'KD': 'Kristdemokraterna',
+    'L': 'Liberalerna',
+    'MP': 'Miljöpartiet',
+  };
+
   // Custom tick component for party labels
   const CustomPartyTick = ({ x, y, payload }: any) => {
     const partyAbbr = payload.value;
-    const colorClass = partyColors[partyAbbr]?.replace(/data-\[state=off\][^\s]+ /g, '').replace(/data-\[state=on\][^\s]+ /g, '') || 'bg-muted hover:bg-muted/80 text-white';
+    const partyName = abbrToPartyName[partyAbbr] || partyAbbr;
+    const colorClass = partyColors[partyName]?.replace(/data-\[state=off\][^\s]+ /g, '').replace(/data-\[state=on\][^\s]+ /g, '') || 'bg-muted hover:bg-muted/80 text-white';
     
     return (
       <g transform={`translate(${x},${y})`}>
