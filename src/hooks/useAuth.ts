@@ -82,6 +82,10 @@ export function useAuth() {
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
+    // Clear local state even if server session is already gone
+    setUser(null);
+    setSession(null);
+    setIsAdmin(false);
     return { error };
   };
 
