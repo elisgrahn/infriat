@@ -1,10 +1,9 @@
 import { Input } from "@/components/ui/input";
-import { Search, ChevronDown } from "lucide-react";
+import { Search, Minus, Check } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { partyColors, statusColors } from "@/utils/partyColors";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 interface GovernmentPeriod {
   id: string;
@@ -54,10 +53,6 @@ export const PromiseFilters = ({
   onSearchChange,
   onSortChange,
 }: PromiseFiltersProps) => {
-  const [governingOpen, setGoverningOpen] = useState(true);
-  const [supportOpen, setSupportOpen] = useState(true);
-  const [oppositionOpen, setOppositionOpen] = useState(true);
-
   // Get the most recent government period
   const latestPeriod = governmentPeriods.length > 0 
     ? governmentPeriods.reduce((latest, period) => 
@@ -73,6 +68,52 @@ export const PromiseFilters = ({
   const oppositionParties = allParties.filter(
     party => !governingParties.includes(party) && !supportParties.includes(party)
   );
+
+  const handleGroupToggle = (groupParties: string[]) => {
+    const allSelected = groupParties.every(party => selectedParties.includes(party));
+    
+    if (allSelected) {
+      // Deselect all parties in this group
+      onPartiesChange(selectedParties.filter(party => !groupParties.includes(party)));
+    } else {
+      // Select all parties in this group
+      const newSelection = [...selectedParties];
+      groupParties.forEach(party => {
+        if (!newSelection.includes(party)) {
+          newSelection.push(party);
+        }
+      });
+      onPartiesChange(newSelection);
+    }
+  };
+
+  const getGroupState = (groupParties: string[]): 'all' | 'some' | 'none' => {
+    const selectedCount = groupParties.filter(party => selectedParties.includes(party)).length;
+    if (selectedCount === groupParties.length) return 'all';
+    if (selectedCount > 0) return 'some';
+    return 'none';
+  };
+
+  const GroupToggle = ({ label, parties: groupParties }: { label: string; parties: string[] }) => {
+    const state = getGroupState(groupParties);
+    
+    return (
+      <button
+        onClick={() => handleGroupToggle(groupParties)}
+        className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors mb-2"
+      >
+        <div className={`w-4 h-4 border rounded flex items-center justify-center transition-colors ${
+          state === 'all' ? 'bg-primary border-primary' : 
+          state === 'some' ? 'bg-primary/50 border-primary' : 
+          'border-input'
+        }`}>
+          {state === 'all' && <Check className="w-3 h-3 text-primary-foreground" />}
+          {state === 'some' && <Minus className="w-3 h-3 text-primary-foreground" />}
+        </div>
+        {label}
+      </button>
+    );
+  };
   return (
     <div className="space-y-6">
       <div className="relative">
@@ -108,12 +149,9 @@ export const PromiseFilters = ({
         <h3 className="text-sm font-semibold text-foreground">Parti</h3>
         
         {governingParties.length > 0 && (
-          <Collapsible open={governingOpen} onOpenChange={setGoverningOpen}>
-            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors w-full">
-              <ChevronDown className={`w-4 h-4 transition-transform ${governingOpen ? 'rotate-0' : '-rotate-90'}`} />
-              Regeringspartier
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-2">
+          <div className="space-y-2">
+            <GroupToggle label="Regeringspartier" parties={governingParties} />
+            <div className="pl-6">
               <ToggleGroup
                 type="multiple"
                 value={selectedParties}
@@ -126,17 +164,14 @@ export const PromiseFilters = ({
                   </ToggleGroupItem>
                 ))}
               </ToggleGroup>
-            </CollapsibleContent>
-          </Collapsible>
+            </div>
+          </div>
         )}
 
         {supportParties.length > 0 && (
-          <Collapsible open={supportOpen} onOpenChange={setSupportOpen}>
-            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors w-full">
-              <ChevronDown className={`w-4 h-4 transition-transform ${supportOpen ? 'rotate-0' : '-rotate-90'}`} />
-              Stödpartier
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-2">
+          <div className="space-y-2">
+            <GroupToggle label="Stödpartier" parties={supportParties} />
+            <div className="pl-6">
               <ToggleGroup
                 type="multiple"
                 value={selectedParties}
@@ -149,17 +184,14 @@ export const PromiseFilters = ({
                   </ToggleGroupItem>
                 ))}
               </ToggleGroup>
-            </CollapsibleContent>
-          </Collapsible>
+            </div>
+          </div>
         )}
 
         {oppositionParties.length > 0 && (
-          <Collapsible open={oppositionOpen} onOpenChange={setOppositionOpen}>
-            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors w-full">
-              <ChevronDown className={`w-4 h-4 transition-transform ${oppositionOpen ? 'rotate-0' : '-rotate-90'}`} />
-              Oppositionspartier
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-2">
+          <div className="space-y-2">
+            <GroupToggle label="Oppositionspartier" parties={oppositionParties} />
+            <div className="pl-6">
               <ToggleGroup
                 type="multiple"
                 value={selectedParties}
@@ -172,8 +204,8 @@ export const PromiseFilters = ({
                   </ToggleGroupItem>
                 ))}
               </ToggleGroup>
-            </CollapsibleContent>
-          </Collapsible>
+            </div>
+          </div>
         )}
       </div>
 
