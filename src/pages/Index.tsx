@@ -36,7 +36,7 @@ interface Promise {
   direct_quote: string | null;
   measurability_reason: string | null;
   measurability_score: number | null;
-  status: 'fulfilled' | 'partially-fulfilled' | 'in-progress' | 'delayed' | 'broken' | 'unclear' | 'pending-analysis';
+  status: 'infriat' | 'delvis-infriat' | 'utreds' | 'ej-infriat' | 'brutet' | 'pending-analysis';
   status_explanation: string | null;
   status_sources: string[] | null;
   page_number: number | null;
@@ -158,12 +158,11 @@ const Index = () => {
     const matchesParty = selectedParties.length === 0 || selectedParties.includes(promise.parties.name);
     
     const statusMap: Record<string, string> = {
-      "Infriat": "fulfilled",
-      "Delvis infriat": "partially-fulfilled",
-      "Pågående": "in-progress",
-      "Försenat": "delayed",
-      "Brutet": "broken",
-      "Oklart": "unclear"
+      "Infriat": "infriat",
+      "Delvis infriat": "delvis-infriat",
+      "Utreds": "utreds",
+      "Ej infriat": "ej-infriat",
+      "Brutet": "brutet"
     };
     
     const matchesStatus = selectedStatuses.length === 0 || 
@@ -193,13 +192,12 @@ const Index = () => {
   const sortedPromises = [...filteredPromises].sort((a, b) => {
     // Status ranking based on filter button order
     const statusRank: Record<string, number> = {
-      'fulfilled': 1,
-      'partially-fulfilled': 2,
-      'in-progress': 3,
-      'delayed': 4,
-      'broken': 5,
-      'unclear': 6,
-      'pending-analysis': 7
+      'infriat': 1,
+      'delvis-infriat': 2,
+      'utreds': 3,
+      'ej-infriat': 4,
+      'brutet': 5,
+      'pending-analysis': 6
     };
 
     switch (sortBy) {
@@ -238,11 +236,11 @@ const Index = () => {
 
   const stats = {
     total: promises.length,
-    fulfilled: promises.filter((p) => p.status === "fulfilled").length,
-    partiallyFulfilled: promises.filter((p) => p.status === "partially-fulfilled").length,
-    broken: promises.filter((p) => p.status === "broken").length,
-    inProgress: promises.filter((p) => p.status === "in-progress").length,
-    delayed: promises.filter((p) => p.status === "delayed").length,
+    fulfilled: promises.filter((p) => p.status === "infriat").length,
+    partiallyFulfilled: promises.filter((p) => p.status === "delvis-infriat").length,
+    broken: promises.filter((p) => p.status === "brutet").length,
+    inProgress: promises.filter((p) => p.status === "utreds").length,
+    delayed: promises.filter((p) => p.status === "ej-infriat").length,
   };
 
   return (

@@ -240,12 +240,11 @@ export type Database = {
     Enums: {
       app_role: "admin" | "moderator" | "user"
       promise_status:
-        | "fulfilled"
-        | "partially-fulfilled"
-        | "in-progress"
-        | "delayed"
-        | "broken"
-        | "unclear"
+        | "infriat"
+        | "delvis-infriat"
+        | "utreds"
+        | "ej-infriat"
+        | "brutet"
         | "pending-analysis"
     }
     CompositeTypes: {
@@ -376,12 +375,11 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "moderator", "user"],
       promise_status: [
-        "fulfilled",
-        "partially-fulfilled",
-        "in-progress",
-        "delayed",
-        "broken",
-        "unclear",
+        "infriat",
+        "delvis-infriat",
+        "utreds",
+        "ej-infriat",
+        "brutet",
         "pending-analysis",
       ],
     },

@@ -22,12 +22,10 @@ export const statusColors: Record<string, string> = {
     "data-[state=off]:bg-muted data-[state=off]:text-foreground data-[state=off]:hover:bg-muted/80 data-[state=on]:bg-emerald-700 data-[state=on]:hover:bg-emerald-800 data-[state=on]:text-white",
   "Delvis infriat":
     "data-[state=off]:bg-muted data-[state=off]:text-foreground data-[state=off]:hover:bg-muted/80 data-[state=on]:bg-emerald-400 data-[state=on]:hover:bg-emerald-500 data-[state=on]:text-white",
-  Pågående:
+  Utreds:
     "data-[state=off]:bg-muted data-[state=off]:text-foreground data-[state=off]:hover:bg-muted/80 data-[state=on]:bg-amber-500 data-[state=on]:hover:bg-amber-600 data-[state=on]:text-white",
-  Försenat:
-    "data-[state=off]:bg-muted data-[state=off]:text-foreground data-[state=off]:hover:bg-muted/80 data-[state=on]:bg-rose-400 data-[state=on]:hover:bg-rose-500 data-[state=on]:text-white",
+  "Ej infriat":
+    "data-[state=off]:bg-muted data-[state=off]:text-foreground data-[state=off]:hover:bg-muted/80 data-[state=on]:bg-gray-400 data-[state=on]:hover:bg-gray-500 data-[state=on]:text-white",
   Brutet:
     "data-[state=off]:bg-muted data-[state=off]:text-foreground data-[state=off]:hover:bg-muted/80 data-[state=on]:bg-rose-700 data-[state=on]:hover:bg-rose-800 data-[state=on]:text-white",
-  Oklart:
-    "data-[state=off]:bg-muted data-[state=off]:text-foreground data-[state=off]:hover:bg-muted/80 data-[state=on]:bg-purple-500 data-[state=on]:hover:bg-purple-600 data-[state=on]:text-white",
 };

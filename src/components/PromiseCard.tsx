@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 
-type PromiseStatus = "fulfilled" | "partially-fulfilled" | "in-progress" | "delayed" | "broken" | "unclear" | "pending-analysis";
+type PromiseStatus = "infriat" | "delvis-infriat" | "utreds" | "ej-infriat" | "brutet" | "pending-analysis";
 
 interface PromiseCardProps {
   promiseId: string;
@@ -50,47 +50,40 @@ interface PromiseCardProps {
 }
 
 const statusConfig = {
-  fulfilled: {
+  infriat: {
     label: "Infriat",
-    tooltip: "Löftet är helt infriat enligt beskrivning och tidsram",
+    tooltip: "Löftet är helt genomfört – beslut fattat och målet uppnått",
     variant: "default" as const,
     className: "bg-emerald-700 text-white hover:bg-emerald-800",
     borderColor: "border-l-emerald-700",
   },
-  "partially-fulfilled": {
+  "delvis-infriat": {
     label: "Delvis infriat",
-    tooltip: "Partiet har infriat en del av löftet, men har valt att inte arbeta vidare på det",
+    tooltip: "Regeringen har vidtagit konkreta åtgärder, t.ex. lagt en proposition, ökat utbildningsplatser eller påbörjat reformen, men målet är inte helt nått",
     variant: "default" as const,
     className: "bg-emerald-400 text-white hover:bg-emerald-500",
     borderColor: "border-l-emerald-400",
   },
-  "in-progress": {
-    label: "Pågående",
-    tooltip: "Partiet arbetar aktivt med att infria löftet",
+  utreds: {
+    label: "Utreds",
+    tooltip: "En utredning, departementspromemoria eller liknande arbete pågår för att möjliggöra reformen, men inga politiska beslut har fattats",
     variant: "secondary" as const,
     className: "bg-amber-500 text-white hover:bg-amber-600",
     borderColor: "border-l-amber-500",
   },
-  delayed: {
-    label: "Försenat",
-    tooltip: "Partiet har fortfarande för avsikt att infria löftet, men inte enligt ursprungliga tidsplanen",
+  "ej-infriat": {
+    label: "Ej infriat",
+    tooltip: "Inga tydliga steg mot genomförande har tagits, men regeringen sitter fortfarande kvar och kan agera",
     variant: "default" as const,
-    className: "bg-rose-400 text-white hover:bg-rose-500",
-    borderColor: "border-l-rose-400",
+    className: "bg-gray-400 text-white hover:bg-gray-500",
+    borderColor: "border-l-gray-400",
   },
-  broken: {
+  brutet: {
     label: "Brutet",
-    tooltip: "Partiet lovade något som de inte kunde hålla",
+    tooltip: "Regeringsperioden är avslutad och löftet har inte uppfyllts",
     variant: "destructive" as const,
     className: "bg-rose-700 text-white hover:bg-rose-800",
     borderColor: "border-l-rose-700",
-  },
-  unclear: {
-    label: "Oklart",
-    tooltip: "Det saknas tydligt underlag för att bedöma löftets status",
-    variant: "secondary" as const,
-    className: "bg-purple-500 text-white hover:bg-purple-600",
-    borderColor: "border-l-purple-500",
   },
   "pending-analysis": {
     label: "Under analys",

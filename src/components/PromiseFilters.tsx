@@ -15,7 +15,7 @@ const parties = [
   "Liberalerna",
   "Miljöpartiet",
 ];
-const statuses = ["Infriat", "Delvis infriat", "Pågående", "Försenat", "Brutet", "Oklart"];
+const statuses = ["Infriat", "Delvis infriat", "Utreds", "Ej infriat", "Brutet"];
 
 export const PromiseFilters = () => {
   const {

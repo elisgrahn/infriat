@@ -7,7 +7,7 @@ interface Promise {
   party_id: string;
   election_year: number;
   promise_text: string;
-  status: 'fulfilled' | 'partially-fulfilled' | 'in-progress' | 'delayed' | 'broken' | 'unclear' | 'pending-analysis';
+  status: 'infriat' | 'delvis-infriat' | 'utreds' | 'ej-infriat' | 'brutet' | 'pending-analysis';
   parties: {
     name: string;
     abbreviation: string;

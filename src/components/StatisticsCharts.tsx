@@ -7,7 +7,7 @@ interface Promise {
   party_id: string;
   election_year: number;
   promise_text: string;
-  status: 'fulfilled' | 'partially-fulfilled' | 'in-progress' | 'delayed' | 'broken' | 'unclear' | 'pending-analysis';
+  status: 'infriat' | 'delvis-infriat' | 'utreds' | 'ej-infriat' | 'brutet' | 'pending-analysis';
   parties: {
     name: string;
     abbreviation: string;
@@ -20,22 +20,20 @@ interface StatisticsChartsProps {
 }
 
 const COLORS = {
-  fulfilled: '#047857', // emerald-700
-  'partially-fulfilled': '#34d399', // emerald-400
-  'in-progress': '#f59e0b', // amber-500
-  delayed: '#fb7185', // rose-400
-  broken: '#be123c', // rose-700
-  unclear: '#a855f7', // purple-500
+  infriat: '#047857', // emerald-700
+  'delvis-infriat': '#34d399', // emerald-400
+  utreds: '#f59e0b', // amber-500
+  'ej-infriat': '#9ca3af', // gray-400
+  brutet: '#be123c', // rose-700
   'pending-analysis': 'hsl(var(--muted))',
 };
 
 const STATUS_LABELS = {
-  fulfilled: 'Infriat',
-  'partially-fulfilled': 'Delvis infriat',
-  'in-progress': 'Pågående',
-  delayed: 'Försenat',
-  broken: 'Brutet',
-  unclear: 'Oklart',
+  infriat: 'Infriat',
+  'delvis-infriat': 'Delvis infriat',
+  utreds: 'Utreds',
+  'ej-infriat': 'Ej infriat',
+  brutet: 'Brutet',
   'pending-analysis': 'Under analys',
 };
 
@@ -44,7 +42,7 @@ export const StatisticsCharts = ({ promises }: StatisticsChartsProps) => {
   const yearlyData = promises.reduce((acc, promise) => {
     const year = promise.election_year;
     if (!acc[year]) {
-      acc[year] = { fulfilled: 0, 'partially-fulfilled': 0, 'in-progress': 0, delayed: 0, broken: 0, unclear: 0, 'pending-analysis': 0 };
+      acc[year] = { infriat: 0, 'delvis-infriat': 0, utreds: 0, 'ej-infriat': 0, brutet: 0, 'pending-analysis': 0 };
     }
     acc[year][promise.status]++;
     return acc;
@@ -72,7 +70,7 @@ export const StatisticsCharts = ({ promises }: StatisticsChartsProps) => {
     }
     
     acc[party][year].total++;
-    if (promise.status === 'fulfilled') {
+    if (promise.status === 'infriat') {
       acc[party][year].fulfilled++;
     }
     
