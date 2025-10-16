@@ -210,9 +210,13 @@ serve(async (req) => {
       const fileName = manifestPdfUrl.split('/').pop();
       console.log(`Invoking search-pdf-page-numbers for ${fileName}`);
 
+      // Use service role to call the function internally (both require admin access)
       const { data: searchResult, error: searchError } = await supabase.functions.invoke(
         'search-pdf-page-numbers',
         {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
           body: { 
             partyAbbreviation, 
             electionYear, 
