@@ -181,19 +181,22 @@ Statusdefinitioner:
     }
 
     // Extract status from text response - look for the exact pattern
-    let status: 'fulfilled' | 'partially-fulfilled' | 'in-progress' | 'delayed' | 'broken' | 'unclear' = 'unclear';
+    // Map AI status to database enum values
+    let status: 'infriat' | 'delvis-infriat' | 'utreds' | 'ej-infriat' | 'brutet' = 'utreds';
     
     const lowerText = textContent.toLowerCase();
     if (lowerText.includes('status:** fulfilled') || lowerText.includes('status: fulfilled')) {
-      status = 'fulfilled';
+      status = 'infriat';
     } else if (lowerText.includes('status:** partially-fulfilled') || lowerText.includes('status: partially-fulfilled')) {
-      status = 'partially-fulfilled';
+      status = 'delvis-infriat';
     } else if (lowerText.includes('status:** in-progress') || lowerText.includes('status: in-progress')) {
-      status = 'in-progress';
+      status = 'utreds';
     } else if (lowerText.includes('status:** delayed') || lowerText.includes('status: delayed')) {
-      status = 'delayed';
+      status = 'ej-infriat';
     } else if (lowerText.includes('status:** broken') || lowerText.includes('status: broken')) {
-      status = 'broken';
+      status = 'brutet';
+    } else if (lowerText.includes('status:** unclear') || lowerText.includes('status: unclear')) {
+      status = 'utreds';
     }
     
     // Extract explanation - get text between Status and Källor sections
