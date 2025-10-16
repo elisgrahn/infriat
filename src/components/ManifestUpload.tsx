@@ -73,16 +73,27 @@ export const ManifestUpload = () => {
       const loadingTask = pdfjsLib.getDocument(pdfUrl);
       const pdf = await loadingTask.promise;
 
-      // Normalize text function
+      // Enhanced normalize text function with aggressive normalization
       const normalizeText = (text: string) => {
         return text
           .toLowerCase()
+          // Remove all line breaks and replace with space
+          .replace(/[\r\n]+/g, ' ')
+          // Remove hyphenation (word- word -> wordword)
+          .replace(/(\w+)-\s+(\w+)/g, '$1$2')
+          // Normalize all types of quotes
+          .replace(/[""]/g, '"')
+          .replace(/['']/g, "'")
+          // Normalize all types of dashes
+          .replace(/[–—―]/g, '-')
+          // Remove [...] markers and ellipsis
+          .replace(/\[\.\.\.]/g, '')
+          .replace(/…/g, '')
+          // Remove multiple spaces
           .replace(/\s+/g, ' ')
-          .replace(/- /g, '')
-          .replace(/\n/g, ' ')
-          .replace(/\[\.\.\.]/g, '') // Remove [...] markers
-          .replace(/…/g, '') // Remove ellipsis
-          .trim();
+          // Remove punctuation at start/end
+          .trim()
+          .replace(/^[.,!?;:]+|[.,!?;:]+$/g, '');
       };
 
       // Extract all page texts
@@ -99,53 +110,71 @@ export const ManifestUpload = () => {
         });
       }
 
+      // Enhanced fuzzy match function
+      const fuzzyMatch = (quote: string, pageText: string): boolean => {
+        const normalizedQuote = normalizeText(quote);
+        const normalizedPage = normalizeText(pageText);
+        
+        // For short quotes (< 50 chars), require exact match
+        if (normalizedQuote.length < 50) {
+          return normalizedPage.includes(normalizedQuote);
+        }
+        
+        // Strategy 1: Exact match
+        if (normalizedPage.includes(normalizedQuote)) {
+          return true;
+        }
+        
+        // Strategy 2: First and last sentence (handles truncated quotes)
+        const sentences = normalizedQuote.split(/[.!?]+/).filter(s => s.trim().length > 10);
+        if (sentences.length >= 2) {
+          const firstSentence = sentences[0].trim();
+          const lastSentence = sentences[sentences.length - 1].trim();
+          
+          if (normalizedPage.includes(firstSentence) && normalizedPage.includes(lastSentence)) {
+            return true;
+          }
+        }
+        
+        // Strategy 3: First 20 words (for long quotes)
+        const words = normalizedQuote.split(/\s+/);
+        if (words.length > 20) {
+          const firstWords = words.slice(0, 20).join(' ');
+          if (normalizedPage.includes(firstWords)) {
+            return true;
+          }
+        }
+        
+        // Strategy 4: Unique phrase (at least 8 words in a row)
+        if (words.length >= 8) {
+          const uniquePhrase = words.slice(0, 8).join(' ');
+          if (normalizedPage.includes(uniquePhrase)) {
+            return true;
+          }
+        }
+        
+        return false;
+      };
+
       // Search for each promise
       let updatedCount = 0;
+      console.log(`Searching for ${promises.length} promises in ${pdf.numPages} pages`);
+      
       for (const promise of promises) {
-        const normalizedQuote = normalizeText(promise.direct_quote);
+        const quote = promise.direct_quote;
         let foundPage = null;
 
-        // Try exact match
+        // Search through all pages using enhanced fuzzy matching
         for (const { pageNum, normalized } of pageTexts) {
-          if (normalized.includes(normalizedQuote)) {
+          if (fuzzyMatch(quote, normalized)) {
             foundPage = pageNum;
+            console.log(`✓ Found on page ${foundPage}: "${quote.substring(0, 50)}..."`);
             break;
           }
         }
-
-        // Try fuzzy match for longer quotes
-        if (!foundPage && normalizedQuote.length > 30) {
-          const words = normalizedQuote.split(' ').filter(w => w.length > 0);
-          
-          // Try 70% match first
-          let requiredWords = Math.floor(words.length * 0.7);
-          
-          for (const { pageNum, normalized } of pageTexts) {
-            const matchedWords = words.filter(word => 
-              word.length > 2 && normalized.includes(word)
-            );
-            
-            if (matchedWords.length >= requiredWords) {
-              foundPage = pageNum;
-              break;
-            }
-          }
-          
-          // If still not found, try even more relaxed (60%)
-          if (!foundPage) {
-            requiredWords = Math.floor(words.length * 0.6);
-            
-            for (const { pageNum, normalized } of pageTexts) {
-              const matchedWords = words.filter(word => 
-                word.length > 2 && normalized.includes(word)
-              );
-              
-              if (matchedWords.length >= requiredWords) {
-                foundPage = pageNum;
-                break;
-              }
-            }
-          }
+        
+        if (!foundPage) {
+          console.log(`✗ Not found: "${quote.substring(0, 50)}..."`);
         }
 
         // Update promise with page number if found

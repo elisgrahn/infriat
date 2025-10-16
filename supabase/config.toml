@@ -14,8 +14,3 @@ timeout = 180
 
 [functions.analyze-single-measurability]
 verify_jwt = true
-
-[functions.search-pdf-page-numbers]
-verify_jwt = true
-timeout = 300
-memory_mb = 512

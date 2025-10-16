@@ -206,30 +206,8 @@ serve(async (req) => {
 
       const updatedCount = updatedPromises?.length || 0;
 
-      // Call search-pdf-page-numbers edge function to update page numbers
-      const fileName = manifestPdfUrl.split('/').pop();
-      console.log(`Invoking search-pdf-page-numbers for ${fileName}`);
-
-      // Use service role to call the function internally (both require admin access)
-      const { data: searchResult, error: searchError } = await supabase.functions.invoke(
-        'search-pdf-page-numbers',
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: { 
-            partyAbbreviation, 
-            electionYear, 
-            pdfFileName: fileName 
-          }
-        }
-      );
-
-      if (searchError) {
-        console.error('Error searching PDF for page numbers:', searchError);
-      } else {
-        console.log('Page number search result:', searchResult);
-      }
+      // Page numbers will be searched locally in the browser by the client
+      console.log(`PDF uploaded, page numbers will be searched in browser`);
 
       return new Response(
         JSON.stringify({ 
@@ -237,8 +215,7 @@ serve(async (req) => {
           count: updatedCount,
           pdfOnly: true,
           pdfUrl: manifestPdfUrl,
-          pageNumbers: searchResult || { updated: 0, total: 0 },
-          message: `PDF-URL uppdaterad för ${updatedCount} löften. ${searchResult?.updated || 0} sidnummer hittades.`
+          message: `PDF-URL uppdaterad för ${updatedCount} löften. Sidnummer söks lokalt i webbläsaren.`
         }), 
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
