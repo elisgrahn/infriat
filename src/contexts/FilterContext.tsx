@@ -27,6 +27,22 @@ interface FilterContextType {
   setGovernmentPeriods: (periods: GovernmentPeriod[]) => void;
 }
 
+// Mapping between party names and abbreviations
+const partyNameToAbbr: Record<string, string> = {
+  "Socialdemokraterna": "S",
+  "Moderaterna": "M",
+  "Sverigedemokraterna": "SD",
+  "Centerpartiet": "C",
+  "Vänsterpartiet": "V",
+  "Kristdemokraterna": "KD",
+  "Liberalerna": "L",
+  "Miljöpartiet": "MP",
+};
+
+const partyAbbrToName: Record<string, string> = Object.fromEntries(
+  Object.entries(partyNameToAbbr).map(([name, abbr]) => [abbr, name])
+);
+
 const FilterContext = createContext<FilterContextType | undefined>(undefined);
 
 export const FilterProvider = ({ children }: { children: ReactNode }) => {
@@ -34,7 +50,9 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
   
   const [selectedParties, setSelectedParties] = useState<string[]>(() => {
     const parties = searchParams.get('parties');
-    return parties ? parties.split(',') : [];
+    if (!parties) return [];
+    // Convert abbreviations from URL to party names
+    return parties.split(',').map(abbr => partyAbbrToName[abbr] || abbr).filter(Boolean);
   });
   
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(() => {
@@ -57,7 +75,9 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
     const params = new URLSearchParams(searchParams);
     
     if (selectedParties.length > 0) {
-      params.set('parties', selectedParties.join(','));
+      // Convert party names to abbreviations for URL
+      const abbreviations = selectedParties.map(name => partyNameToAbbr[name] || name).filter(Boolean);
+      params.set('parties', abbreviations.join(','));
     } else {
       params.delete('parties');
     }
