@@ -150,7 +150,7 @@ export function TimelineComparison({ promises }: TimelineComparisonProps) {
               <Bar dataKey="Infriade" stackId="a" fill={COLORS['infriat']} fillOpacity={0.8} />
             </BarChart>
           ) : (
-            <AreaChart data={partyChartDataPercent}>
+            <BarChart data={partyChartDataPercent}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis 
                 dataKey="name" 
@@ -184,21 +184,20 @@ export function TimelineComparison({ promises }: TimelineComparisonProps) {
               />
               <Legend 
                 wrapperStyle={{ paddingTop: '20px' }}
-                iconType="line"
                 payload={[
-                  { value: 'Brutna', type: 'line', color: COLORS['brutet'] },
-                  { value: 'Ej infriade', type: 'line', color: COLORS['ej-infriat'] },
-                  { value: 'Utreds', type: 'line', color: COLORS['utreds'] },
-                  { value: 'Delvis infriade', type: 'line', color: COLORS['delvis-infriat'] },
-                  { value: 'Infriade', type: 'line', color: COLORS['infriat'] },
+                  { value: 'Brutna', type: 'rect', color: COLORS['brutet'] },
+                  { value: 'Ej infriade', type: 'rect', color: COLORS['ej-infriat'] },
+                  { value: 'Utreds', type: 'rect', color: COLORS['utreds'] },
+                  { value: 'Delvis infriade', type: 'rect', color: COLORS['delvis-infriat'] },
+                  { value: 'Infriade', type: 'rect', color: COLORS['infriat'] },
                 ]}
               />
-              <Area type="step" dataKey="Brutna" stackId="1" stroke={COLORS['brutet']} fill={COLORS['brutet']} fillOpacity={0.8} />
-              <Area type="step" dataKey="Ej infriade" stackId="1" stroke={COLORS['ej-infriat']} fill={COLORS['ej-infriat']} fillOpacity={0.8} />
-              <Area type="step" dataKey="Utreds" stackId="1" stroke={COLORS['utreds']} fill={COLORS['utreds']} fillOpacity={0.8} />
-              <Area type="step" dataKey="Delvis infriade" stackId="1" stroke={COLORS['delvis-infriat']} fill={COLORS['delvis-infriat']} fillOpacity={0.8} />
-              <Area type="step" dataKey="Infriade" stackId="1" stroke={COLORS['infriat']} fill={COLORS['infriat']} fillOpacity={0.8} />
-            </AreaChart>
+              <Bar dataKey="Brutna" stackId="a" fill={COLORS['brutet']} fillOpacity={0.8} />
+              <Bar dataKey="Ej infriade" stackId="a" fill={COLORS['ej-infriat']} fillOpacity={0.8} />
+              <Bar dataKey="Utreds" stackId="a" fill={COLORS['utreds']} fillOpacity={0.8} />
+              <Bar dataKey="Delvis infriade" stackId="a" fill={COLORS['delvis-infriat']} fillOpacity={0.8} />
+              <Bar dataKey="Infriade" stackId="a" fill={COLORS['infriat']} fillOpacity={0.8} />
+            </BarChart>
           )}
         </ResponsiveContainer>
       </div>
