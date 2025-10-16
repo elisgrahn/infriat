@@ -119,15 +119,14 @@ ${context ? `Ytterligare kontext: ${context}` : ''}
 
 Ge en strukturerad bedömning enligt detta format:
 
-**Status:** [välj EN av: fulfilled, partially-fulfilled, in-progress, delayed, broken, eller unclear]
+**Status:** [välj EN av: fulfilled, partially-fulfilled, in-progress, not-fulfilled, eller broken]
 
 Statusdefinitioner:
 - fulfilled: Löftet är helt genomfört – beslut fattat och målet uppnått.
 - partially-fulfilled: Regeringen har vidtagit konkreta åtgärder, t.ex. lagt en proposition, ökat utbildningsplatser eller påbörjat reformen, men målet är inte helt nått.
 - in-progress: En utredning, departementspromemoria eller liknande arbete pågår för att möjliggöra reformen, men inga politiska beslut har fattats.
-- delayed: Inga tydliga steg mot genomförande har tagits, men regeringen sitter fortfarande kvar och kan agera.
+- not-fulfilled: Inga tydliga steg mot genomförande har tagits, men regeringen sitter fortfarande kvar och kan agera.
 - broken: Regeringsperioden är avslutad och löftet har inte uppfyllts.
-- unclear: Det saknas tydligt underlag för att bedöma löftets status
 
 **Förklaring:** [3-5 meningar som förklarar statusen baserat på konkreta åtgärder, lagförslag, beslut och aktuella nyheter]
 
@@ -191,12 +190,10 @@ Statusdefinitioner:
       status = 'delvis-infriat';
     } else if (lowerText.includes('status:** in-progress') || lowerText.includes('status: in-progress')) {
       status = 'utreds';
-    } else if (lowerText.includes('status:** delayed') || lowerText.includes('status: delayed')) {
+    } else if (lowerText.includes('status:** not-fulfilled') || lowerText.includes('status: not-fulfilled')) {
       status = 'ej-infriat';
     } else if (lowerText.includes('status:** broken') || lowerText.includes('status: broken')) {
       status = 'brutet';
-    } else if (lowerText.includes('status:** unclear') || lowerText.includes('status: unclear')) {
-      status = 'utreds';
     }
     
     // Extract explanation - get text between Status and Källor sections
