@@ -345,7 +345,7 @@ const Index = () => {
           {/* Party Comparison - Full Width Above Filters */}
           <div className="lg:col-span-4">
             <TimelineComparison 
-              promises={statsPromises} 
+              promises={filteredPromises} 
               governmentPeriods={governmentPeriods}
             />
           </div>
