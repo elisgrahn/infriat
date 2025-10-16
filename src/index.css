@@ -43,6 +43,13 @@ All colors MUST be HSL.
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
+    /* Chart colors for status visualization */
+    --chart-1: 142 76% 36%; /* Infriat - green */
+    --chart-2: 142 76% 56%; /* Delvis infriat - lighter green */
+    --chart-3: 38 92% 50%; /* Utreds - yellow */
+    --chart-4: 210 15% 45%; /* Ej infriat - gray */
+    --chart-5: 0 84% 60%; /* Brutet - red */
+
     --border: 210 20% 90%;
     --input: 210 20% 90%;
     --ring: 207 100% 33%;
@@ -82,6 +89,13 @@ All colors MUST be HSL.
     
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
+
+    /* Chart colors for status visualization */
+    --chart-1: 142 76% 46%; /* Infriat - brighter green for dark mode */
+    --chart-2: 142 76% 66%; /* Delvis infriat - lighter green for dark mode */
+    --chart-3: 38 92% 60%; /* Utreds - brighter yellow for dark mode */
+    --chart-4: 210 15% 55%; /* Ej infriat - lighter gray for dark mode */
+    --chart-5: 0 84% 70%; /* Brutet - lighter red for dark mode */
 
     --border: 210 20% 22%;
     --input: 210 20% 22%;
