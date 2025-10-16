@@ -152,8 +152,22 @@ export function TimelineComparison({ promises }: TimelineComparisonProps) {
                   borderRadius: '8px',
                 }}
                 formatter={(value: number) => `${(value * 100).toFixed(1)}%`}
+                itemSorter={(item) => {
+                  const order = ['Infriade', 'Delvis infriade', 'Utreds', 'Ej infriade', 'Brutna'];
+                  return order.indexOf(item.name as string);
+                }}
               />
-              <Legend />
+              <Legend 
+                wrapperStyle={{ paddingTop: '20px' }}
+                iconType="line"
+                payload={[
+                  { value: 'Brutna', type: 'line', color: COLORS['brutet'] },
+                  { value: 'Ej infriade', type: 'line', color: COLORS['ej-infriat'] },
+                  { value: 'Utreds', type: 'line', color: COLORS['utreds'] },
+                  { value: 'Delvis infriade', type: 'line', color: COLORS['delvis-infriat'] },
+                  { value: 'Infriade', type: 'line', color: COLORS['infriat'] },
+                ]}
+              />
               <Area type="step" dataKey="Brutna" stackId="1" stroke={COLORS['brutet']} fill={COLORS['brutet']} fillOpacity={0.8} />
               <Area type="step" dataKey="Ej infriade" stackId="1" stroke={COLORS['ej-infriat']} fill={COLORS['ej-infriat']} fillOpacity={0.8} />
               <Area type="step" dataKey="Utreds" stackId="1" stroke={COLORS['utreds']} fill={COLORS['utreds']} fillOpacity={0.8} />
