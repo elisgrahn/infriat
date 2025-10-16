@@ -338,20 +338,16 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Timeline and Comparison Section */}
-      <section className="container mx-auto px-4 py-12 bg-muted/30">
-        <TimelineComparison 
-          promises={statsPromises} 
-          governmentPeriods={governmentPeriods}
-        />
-      </section>
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Party Progress Bars - Full Width Above Filters */}
+          {/* Party Comparison - Full Width Above Filters */}
           <div className="lg:col-span-4">
-            <PartyProgressBars promises={statsPromises} />
+            <TimelineComparison 
+              promises={statsPromises} 
+              governmentPeriods={governmentPeriods}
+            />
           </div>
 
           {/* Filters Sidebar */}

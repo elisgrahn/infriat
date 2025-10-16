@@ -88,7 +88,7 @@ export function TimelineComparison({ promises }: TimelineComparisonProps) {
   }));
 
   return (
-    <Card className="p-6 bg-muted/30">
+    <Card className="p-6">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
