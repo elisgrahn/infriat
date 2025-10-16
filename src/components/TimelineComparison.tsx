@@ -63,7 +63,7 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
       <g transform={`translate(${x},${y})`}>
         <foreignObject x={-30} y={0} width={60} height={30}>
           <div className="flex items-center justify-center">
-            <Badge className={`${colorClass} text-xs px-2 py-0.5 rounded-sm`}>
+            <Badge className={`${colorClass} text-xs px-1 py-0.5 rounded-sm`}>
               {partyAbbr}
             </Badge>
           </div>
@@ -102,6 +102,9 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
       return acc;
     }, {} as Record<string, { name: string; total: number; fulfilled: number; partial: number; broken: number; investigating: number; notFulfilled: number; pendingAnalysis: number }>);
 
+  // Political spectrum order from left to right
+  const partyOrder = ['V', 'S', 'MP', 'C', 'L', 'KD', 'M', 'SD'];
+  
   const partyChartData = Object.values(partyData)
     .map(d => ({
       name: d.name,
@@ -113,7 +116,14 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
       ...(isAdmin && { 'Under analys': d.pendingAnalysis }),
       total: d.total,
     }))
-    .sort((a, b) => b.total - a.total);
+    .sort((a, b) => {
+      const indexA = partyOrder.indexOf(a.name);
+      const indexB = partyOrder.indexOf(b.name);
+      // If party not in order array, put it at the end
+      if (indexA === -1) return 1;
+      if (indexB === -1) return -1;
+      return indexA - indexB;
+    });
 
   // Convert to percentage for area chart
   const partyChartDataPercent = partyChartData.map(d => ({
