@@ -399,42 +399,19 @@ export const ManifestUpload = () => {
         variant: data.warnings ? "default" : "default"
       });
 
-      // Automatically search for page numbers if we have a PDF URL
-      // The edge function always returns pdfUrl if a PDF was provided
-      const pdfUrlToSearch = data.pdfUrl;
+      // For PDF-only mode, the edge function already handles page number search
+      const pageNumbersResult = data.pageNumbers;
       
-      if (pdfUrlToSearch && selectedParty && selectedYear) {
-        toast({
-          title: "🔍 Söker efter sidnummer i PDF...",
-          description: "Detta kan ta 1-3 minuter beroende på PDF-storlek",
-        });
-
-        try {
-          // Get party ID
-          const { data: party } = await supabase
-            .from('parties')
-            .select('id')
-            .eq('abbreviation', selectedParty)
-            .single();
-
-          if (party) {
-            const result = await searchPdfForPageNumbers(
-              pdfUrlToSearch, 
-              party.id, 
-              parseInt(selectedYear)
-            );
-
-            toast({
-              title: "✅ Sidnummer uppdaterade!",
-              description: `${result.updated} av ${result.total} löften fick sidnummer`,
-            });
-          }
-        } catch (pdfError) {
-          console.error('PDF search error:', pdfError);
-          console.error('PDF error details:', pdfError);
+      if (data.pdfOnly && pageNumbersResult) {
+        if (pageNumbersResult.updated > 0) {
           toast({
-            title: "⚠️ Kunde inte söka i PDF",
-            description: pdfError instanceof Error ? pdfError.message : "Okänt fel vid PDF-sökning. Kontrollera att PDF:en är korrekt uppladdad.",
+            title: "✅ Sidnummer hittade",
+            description: `${pageNumbersResult.updated} av ${pageNumbersResult.total} löften fick sidnummer från PDF:en`,
+          });
+        } else if (pageNumbersResult.total > 0) {
+          toast({
+            title: "⚠️ Inga sidnummer hittade",
+            description: `Kunde inte matcha några citat i PDF:en (${pageNumbersResult.total} löften hade citat)`,
             variant: "destructive"
           });
         }

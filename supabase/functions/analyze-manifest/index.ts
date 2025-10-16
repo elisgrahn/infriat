@@ -206,13 +206,35 @@ serve(async (req) => {
 
       const updatedCount = updatedPromises?.length || 0;
 
+      // Call search-pdf-page-numbers edge function to update page numbers
+      const fileName = manifestPdfUrl.split('/').pop();
+      console.log(`Invoking search-pdf-page-numbers for ${fileName}`);
+
+      const { data: searchResult, error: searchError } = await supabase.functions.invoke(
+        'search-pdf-page-numbers',
+        {
+          body: { 
+            partyAbbreviation, 
+            electionYear, 
+            pdfFileName: fileName 
+          }
+        }
+      );
+
+      if (searchError) {
+        console.error('Error searching PDF for page numbers:', searchError);
+      } else {
+        console.log('Page number search result:', searchResult);
+      }
+
       return new Response(
         JSON.stringify({ 
           success: true, 
           count: updatedCount,
           pdfOnly: true,
           pdfUrl: manifestPdfUrl,
-          message: `PDF-URL uppdaterad för ${updatedCount} löften. Söker efter sidnummer...`
+          pageNumbers: searchResult || { updated: 0, total: 0 },
+          message: `PDF-URL uppdaterad för ${updatedCount} löften. ${searchResult?.updated || 0} sidnummer hittades.`
         }), 
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
