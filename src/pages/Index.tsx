@@ -239,13 +239,18 @@ const Index = () => {
     setCurrentPage(1);
   }, [selectedParties, selectedStatuses, selectedGovStatus, searchQuery, sortBy, selectedPeriodId]);
 
+  // Filter out pending-analysis for non-admins in stats
+  const statsPromises = isAdmin 
+    ? promises 
+    : promises.filter(p => p.status !== 'pending-analysis');
+
   const stats = {
-    total: promises.length,
-    fulfilled: promises.filter((p) => p.status === "infriat").length,
-    partiallyFulfilled: promises.filter((p) => p.status === "delvis-infriat").length,
-    broken: promises.filter((p) => p.status === "brutet").length,
-    inProgress: promises.filter((p) => p.status === "utreds").length,
-    delayed: promises.filter((p) => p.status === "ej-infriat").length,
+    total: statsPromises.length,
+    fulfilled: statsPromises.filter((p) => p.status === "infriat").length,
+    partiallyFulfilled: statsPromises.filter((p) => p.status === "delvis-infriat").length,
+    broken: statsPromises.filter((p) => p.status === "brutet").length,
+    inProgress: statsPromises.filter((p) => p.status === "utreds").length,
+    delayed: statsPromises.filter((p) => p.status === "ej-infriat").length,
   };
 
   return (
