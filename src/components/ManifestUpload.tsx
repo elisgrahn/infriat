@@ -400,7 +400,8 @@ export const ManifestUpload = () => {
       });
 
       // Automatically search for page numbers if we have a PDF URL
-      const pdfUrlToSearch = data.pdfUrl || data.promises?.[0]?.manifest_pdf_url;
+      // The edge function always returns pdfUrl if a PDF was provided
+      const pdfUrlToSearch = data.pdfUrl;
       
       if (pdfUrlToSearch && selectedParty && selectedYear) {
         toast({
@@ -430,10 +431,10 @@ export const ManifestUpload = () => {
           }
         } catch (pdfError) {
           console.error('PDF search error:', pdfError);
-          console.error('PDF error stack:', pdfError);
+          console.error('PDF error details:', pdfError);
           toast({
             title: "⚠️ Kunde inte söka i PDF",
-            description: pdfError instanceof Error ? pdfError.message : "Okänt fel vid PDF-sökning",
+            description: pdfError instanceof Error ? pdfError.message : "Okänt fel vid PDF-sökning. Kontrollera att PDF:en är korrekt uppladdad.",
             variant: "destructive"
           });
         }
