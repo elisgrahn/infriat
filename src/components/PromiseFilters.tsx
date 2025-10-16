@@ -135,14 +135,14 @@ export const PromiseFilters = ({
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-foreground">Mandatperiod</h3>
         <Select 
-          value={selectedPeriodId || (selectedPeriod?.id || '')} 
-          onValueChange={(value) => onPeriodChange(value === '' ? null : value)}
+          value={selectedPeriodId || (selectedPeriod?.id || 'all')} 
+          onValueChange={(value) => onPeriodChange(value === 'all' ? null : value)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Välj mandatperiod..." />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Alla mandatperioder</SelectItem>
+            <SelectItem value="all">Alla mandatperioder</SelectItem>
             {governmentPeriods.map((period) => (
               <SelectItem key={period.id} value={period.id}>
                 {period.name} ({period.start_year}–{period.end_year || 'nu'})
