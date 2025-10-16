@@ -77,6 +77,16 @@ export function TimelineComparison({ promises }: TimelineComparisonProps) {
     }))
     .sort((a, b) => b.total - a.total);
 
+  // Convert to percentage for area chart
+  const partyChartDataPercent = partyChartData.map(d => ({
+    name: d.name,
+    'Infriade': d.total > 0 ? d['Infriade'] / d.total : 0,
+    'Delvis infriade': d.total > 0 ? d['Delvis infriade'] / d.total : 0,
+    'Utreds': d.total > 0 ? d['Utreds'] / d.total : 0,
+    'Ej infriade': d.total > 0 ? d['Ej infriade'] / d.total : 0,
+    'Brutna': d.total > 0 ? d['Brutna'] / d.total : 0,
+  }));
+
   return (
     <Card className="p-6">
       <div className="space-y-4">
@@ -122,7 +132,7 @@ export function TimelineComparison({ promises }: TimelineComparisonProps) {
               <Bar dataKey="Infriade" stackId="a" fill={COLORS['infriat']} fillOpacity={0.8} />
             </BarChart>
           ) : (
-            <AreaChart data={partyChartData}>
+            <AreaChart data={partyChartDataPercent}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis 
                 dataKey="name" 
@@ -132,6 +142,7 @@ export function TimelineComparison({ promises }: TimelineComparisonProps) {
               <YAxis 
                 stroke="hsl(var(--foreground))"
                 tick={{ fill: 'hsl(var(--foreground))' }}
+                domain={[0, 1]}
                 tickFormatter={(value) => `${(value * 100).toFixed(0)}%`}
               />
               <Tooltip 
