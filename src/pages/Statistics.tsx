@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { StatisticsCharts } from "@/components/StatisticsCharts";
 import { EnhancedStatisticsCharts } from "@/components/EnhancedStatisticsCharts";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Promise {
   id: string;
@@ -19,6 +20,7 @@ interface Promise {
 const Statistics = () => {
   const [promises, setPromises] = useState<Promise[]>([]);
   const [loading, setLoading] = useState(true);
+  const { isAdmin } = useAuth();
 
   useEffect(() => {
     fetchPromises();
@@ -55,7 +57,7 @@ const Statistics = () => {
           </div>
         ) : (
           <>
-            <EnhancedStatisticsCharts promises={promises} />
+            <EnhancedStatisticsCharts promises={promises} isAdmin={isAdmin} />
             <StatisticsCharts promises={promises} />
           </>
         )}

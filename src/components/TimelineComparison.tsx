@@ -29,14 +29,16 @@ const COLORS = {
   'utreds': 'hsl(var(--chart-3))',
   'ej-infriat': 'hsl(var(--chart-4))',
   'brutet': 'hsl(var(--chart-5))',
+  'pending-analysis': 'hsl(var(--muted-foreground))',
 };
 
 interface TimelineComparisonProps {
   promises: Promise[];
   governmentPeriods: GovernmentPeriod[];
+  isAdmin?: boolean;
 }
 
-export function TimelineComparison({ promises }: TimelineComparisonProps) {
+export function TimelineComparison({ promises, isAdmin = false }: TimelineComparisonProps) {
   const [chartType, setChartType] = useState<"bar" | "area">("bar");
 
   // Mapping from abbreviation to full party name
@@ -72,7 +74,7 @@ export function TimelineComparison({ promises }: TimelineComparisonProps) {
   
   // Party comparison bar chart with status breakdown
   const partyData = promises
-    .filter(p => p.status !== 'pending-analysis')
+    .filter(p => isAdmin || p.status !== 'pending-analysis')
     .reduce((acc, promise) => {
       const abbr = promise.parties.abbreviation;
       
@@ -85,6 +87,7 @@ export function TimelineComparison({ promises }: TimelineComparisonProps) {
           broken: 0,
           investigating: 0,
           notFulfilled: 0,
+          pendingAnalysis: 0,
         };
       }
       
@@ -94,9 +97,10 @@ export function TimelineComparison({ promises }: TimelineComparisonProps) {
       if (promise.status === 'brutet') acc[abbr].broken++;
       if (promise.status === 'utreds') acc[abbr].investigating++;
       if (promise.status === 'ej-infriat') acc[abbr].notFulfilled++;
+      if (promise.status === 'pending-analysis') acc[abbr].pendingAnalysis++;
       
       return acc;
-    }, {} as Record<string, { name: string; total: number; fulfilled: number; partial: number; broken: number; investigating: number; notFulfilled: number }>);
+    }, {} as Record<string, { name: string; total: number; fulfilled: number; partial: number; broken: number; investigating: number; notFulfilled: number; pendingAnalysis: number }>);
 
   const partyChartData = Object.values(partyData)
     .map(d => ({
@@ -106,6 +110,7 @@ export function TimelineComparison({ promises }: TimelineComparisonProps) {
       'Utreds': d.investigating,
       'Ej infriade': d.notFulfilled,
       'Brutna': d.broken,
+      ...(isAdmin && { 'Under analys': d.pendingAnalysis }),
       total: d.total,
     }))
     .sort((a, b) => b.total - a.total);
@@ -118,6 +123,7 @@ export function TimelineComparison({ promises }: TimelineComparisonProps) {
     'Utreds': d.total > 0 ? d['Utreds'] / d.total : 0,
     'Ej infriade': d.total > 0 ? d['Ej infriade'] / d.total : 0,
     'Brutna': d.total > 0 ? d['Brutna'] / d.total : 0,
+    ...(isAdmin && { 'Under analys': d.total > 0 ? (d['Under analys'] || 0) / d.total : 0 }),
   }));
 
   return (
@@ -164,13 +170,14 @@ export function TimelineComparison({ promises }: TimelineComparisonProps) {
                   return `${value} st (${percentage}%)`;
                 }}
                 itemSorter={(item) => {
-                  const order = ['Infriade', 'Delvis infriade', 'Utreds', 'Ej infriade', 'Brutna'];
+                  const order = ['Infriade', 'Delvis infriade', 'Utreds', 'Ej infriade', 'Brutna', 'Under analys'];
                   return order.indexOf(item.name as string);
                 }}
               />
               <Legend 
                 wrapperStyle={{ paddingTop: '20px' }}
                 payload={[
+                  ...(isAdmin ? [{ value: 'Under analys', type: 'rect' as const, color: COLORS['pending-analysis'] }] : []),
                   { value: 'Brutna', type: 'rect', color: COLORS['brutet'] },
                   { value: 'Ej infriade', type: 'rect', color: COLORS['ej-infriat'] },
                   { value: 'Utreds', type: 'rect', color: COLORS['utreds'] },
@@ -178,6 +185,7 @@ export function TimelineComparison({ promises }: TimelineComparisonProps) {
                   { value: 'Infriade', type: 'rect', color: COLORS['infriat'] },
                 ]}
               />
+              {isAdmin && <Bar dataKey="Under analys" stackId="a" fill={COLORS['pending-analysis']} fillOpacity={0.8} />}
               <Bar dataKey="Brutna" stackId="a" fill={COLORS['brutet']} fillOpacity={0.8} />
               <Bar dataKey="Ej infriade" stackId="a" fill={COLORS['ej-infriat']} fillOpacity={0.8} />
               <Bar dataKey="Utreds" stackId="a" fill={COLORS['utreds']} fillOpacity={0.8} />
@@ -215,13 +223,14 @@ export function TimelineComparison({ promises }: TimelineComparisonProps) {
                   return `${percentage}% (${actualCount} st)`;
                 }}
                 itemSorter={(item) => {
-                  const order = ['Infriade', 'Delvis infriade', 'Utreds', 'Ej infriade', 'Brutna'];
+                  const order = ['Infriade', 'Delvis infriade', 'Utreds', 'Ej infriade', 'Brutna', 'Under analys'];
                   return order.indexOf(item.name as string);
                 }}
               />
               <Legend 
                 wrapperStyle={{ paddingTop: '20px' }}
                 payload={[
+                  ...(isAdmin ? [{ value: 'Under analys', type: 'rect' as const, color: COLORS['pending-analysis'] }] : []),
                   { value: 'Brutna', type: 'rect', color: COLORS['brutet'] },
                   { value: 'Ej infriade', type: 'rect', color: COLORS['ej-infriat'] },
                   { value: 'Utreds', type: 'rect', color: COLORS['utreds'] },
@@ -229,6 +238,7 @@ export function TimelineComparison({ promises }: TimelineComparisonProps) {
                   { value: 'Infriade', type: 'rect', color: COLORS['infriat'] },
                 ]}
               />
+              {isAdmin && <Bar dataKey="Under analys" stackId="a" fill={COLORS['pending-analysis']} fillOpacity={0.8} />}
               <Bar dataKey="Brutna" stackId="a" fill={COLORS['brutet']} fillOpacity={0.8} />
               <Bar dataKey="Ej infriade" stackId="a" fill={COLORS['ej-infriat']} fillOpacity={0.8} />
               <Bar dataKey="Utreds" stackId="a" fill={COLORS['utreds']} fillOpacity={0.8} />

@@ -16,6 +16,7 @@ interface Promise {
 
 interface EnhancedStatisticsChartsProps {
   promises: Promise[];
+  isAdmin?: boolean;
 }
 
 const COLORS = {
