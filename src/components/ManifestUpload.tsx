@@ -428,19 +428,53 @@ export const ManifestUpload = () => {
         variant: data.warnings ? "default" : "default"
       });
 
-      // For PDF-only mode, the edge function already handles page number search
-      const pageNumbersResult = data.pageNumbers;
-      
-      if (data.pdfOnly && pageNumbersResult) {
-        if (pageNumbersResult.updated > 0) {
+      // For PDF-only mode, run page number search locally
+      if (data.pdfOnly && data.pdfUrl) {
+        toast({
+          title: "🔍 Söker efter sidnummer i PDF...",
+          description: "Detta kan ta 1-3 minuter beroende på PDF-storlek",
+        });
+
+        try {
+          // Get party ID
+          const { data: party } = await supabase
+            .from('parties')
+            .select('id')
+            .eq('abbreviation', selectedParty)
+            .single();
+
+          if (!party) {
+            throw new Error('Kunde inte hitta parti');
+          }
+
+          const result = await searchPdfForPageNumbers(
+            data.pdfUrl,
+            party.id,
+            parseInt(selectedYear)
+          );
+
+          if (result.updated > 0) {
+            toast({
+              title: "✅ Sidnummer hittade!",
+              description: `${result.updated} av ${result.total} löften fick sidnummer från PDF:en`,
+            });
+          } else if (result.total > 0) {
+            toast({
+              title: "⚠️ Inga sidnummer hittade",
+              description: `Kunde inte matcha några citat i PDF:en (${result.total} löften hade citat). Detta kan bero på att citaten är annorlunda formaterade i PDF:en.`,
+              variant: "destructive"
+            });
+          } else {
+            toast({
+              title: "ℹ️ Inga citat att söka",
+              description: "Inga löften med direktcitat hittades",
+            });
+          }
+        } catch (pdfError) {
+          console.error('PDF search error:', pdfError);
           toast({
-            title: "✅ Sidnummer hittade",
-            description: `${pageNumbersResult.updated} av ${pageNumbersResult.total} löften fick sidnummer från PDF:en`,
-          });
-        } else if (pageNumbersResult.total > 0) {
-          toast({
-            title: "⚠️ Inga sidnummer hittade",
-            description: `Kunde inte matcha några citat i PDF:en (${pageNumbersResult.total} löften hade citat)`,
+            title: "⚠️ Kunde inte söka i PDF",
+            description: pdfError instanceof Error ? pdfError.message : "Okänt fel vid PDF-sökning",
             variant: "destructive"
           });
         }
