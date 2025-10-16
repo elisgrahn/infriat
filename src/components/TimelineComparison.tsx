@@ -149,6 +149,7 @@ export function TimelineComparison({ promises }: TimelineComparisonProps) {
               <YAxis 
                 stroke="hsl(var(--foreground))"
                 tick={{ fill: 'hsl(var(--foreground))' }}
+                width={40}
               />
               <Tooltip 
                 contentStyle={{ 
@@ -196,6 +197,7 @@ export function TimelineComparison({ promises }: TimelineComparisonProps) {
                 tick={{ fill: 'hsl(var(--foreground))' }}
                 domain={[0, 1]}
                 tickFormatter={(value) => `${(value * 100).toFixed(0)}%`}
+                width={40}
               />
               <Tooltip 
                 contentStyle={{ 
