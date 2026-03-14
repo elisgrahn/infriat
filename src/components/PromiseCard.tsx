@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Calendar, Users, RefreshCw, ExternalLink, FileText, Clock, Upload, Trash2, Search, Target, Share2, Check, MoreVertical } from "lucide-react";
+import { SourcesList } from "@/components/SourcesList";
+import { CommunityNotes } from "@/components/CommunityNotes";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   DropdownMenu,
