@@ -17,6 +17,19 @@ export const partyColors: Record<string, string> = {
     "data-[state=off]:bg-muted data-[state=off]:text-foreground data-[state=off]:hover:bg-muted/80 data-[state=on]:bg-[hsl(120,39%,65%)] data-[state=on]:hover:bg-[hsl(120,39%,60%)] data-[state=on]:text-white bg-[hsl(120,39%,65%)] hover:bg-[hsl(120,39%,60%)] text-white",
 };
 
+/**
+ * Strips toggle-group data-state selectors so the class string can be used
+ * on plain elements (Badges, chart ticks, etc.) outside of ToggleGroup.
+ */
+export function getBadgeColor(partyName: string): string {
+  return (
+    partyColors[partyName]
+      ?.replace(/data-\[state=off\][^\s]+ /g, "")
+      .replace(/data-\[state=on\][^\s]+ /g, "") ||
+    "bg-muted hover:bg-muted/80 text-white"
+  );
+}
+
 export const statusColors: Record<string, string> = {
   Infriat:
     "data-[state=off]:bg-muted data-[state=off]:text-foreground data-[state=off]:hover:bg-muted/80 data-[state=on]:bg-emerald-700 data-[state=on]:hover:bg-emerald-800 data-[state=on]:text-white",

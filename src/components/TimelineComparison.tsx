@@ -3,7 +3,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import { partyColors } from "@/utils/partyColors";
+import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
+import { getBadgeColor } from "@/utils/partyColors";
 
 interface Promise {
   election_year: number;
@@ -22,15 +23,6 @@ interface GovernmentPeriod {
   governing_parties: string[];
   support_parties: string[] | null;
 }
-
-const COLORS = {
-  'infriat': 'hsl(var(--chart-1))',
-  'delvis-infriat': 'hsl(var(--chart-2))',
-  'utreds': 'hsl(var(--chart-3))',
-  'ej-infriat': 'hsl(var(--chart-4))',
-  'brutet': 'hsl(var(--chart-5))',
-  'pending-analysis': 'hsl(var(--muted-foreground))',
-};
 
 interface TimelineComparisonProps {
   promises: Promise[];
@@ -57,7 +49,7 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
   const CustomPartyTick = ({ x, y, payload }: any) => {
     const partyAbbr = payload.value;
     const partyName = abbrToPartyName[partyAbbr] || partyAbbr;
-    const colorClass = partyColors[partyName]?.replace(/data-\[state=off\][^\s]+ /g, '').replace(/data-\[state=on\][^\s]+ /g, '') || 'bg-muted hover:bg-muted/80 text-white';
+    const colorClass = getBadgeColor(partyName);
     
     return (
       <g transform={`translate(${x},${y})`}>
@@ -187,20 +179,20 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
               <Legend 
                 wrapperStyle={{ paddingTop: '20px' }}
                 payload={[
-                  ...(isAdmin ? [{ value: 'Under analys', type: 'rect' as const, color: COLORS['pending-analysis'] }] : []),
-                  { value: 'Brutna', type: 'rect', color: COLORS['brutet'] },
-                  { value: 'Ej infriade', type: 'rect', color: COLORS['ej-infriat'] },
-                  { value: 'Utreds', type: 'rect', color: COLORS['utreds'] },
-                  { value: 'Delvis infriade', type: 'rect', color: COLORS['delvis-infriat'] },
-                  { value: 'Infriade', type: 'rect', color: COLORS['infriat'] },
+                  ...(isAdmin ? [{ value: 'Under analys', type: 'rect' as const, color: STATUS_CONFIG['pending-analysis' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' }] : []),
+                  { value: 'Brutna', type: 'rect', color: STATUS_CONFIG['brutet' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' },
+                  { value: 'Ej infriade', type: 'rect', color: STATUS_CONFIG['ej-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' },
+                  { value: 'Utreds', type: 'rect', color: STATUS_CONFIG['utreds' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' },
+                  { value: 'Delvis infriade', type: 'rect', color: STATUS_CONFIG['delvis-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' },
+                  { value: 'Infriade', type: 'rect', color: STATUS_CONFIG['infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' },
                 ]}
               />
-              {isAdmin && <Bar dataKey="Under analys" stackId="a" fill={COLORS['pending-analysis']} fillOpacity={0.8} />}
-              <Bar dataKey="Brutna" stackId="a" fill={COLORS['brutet']} fillOpacity={0.8} />
-              <Bar dataKey="Ej infriade" stackId="a" fill={COLORS['ej-infriat']} fillOpacity={0.8} />
-              <Bar dataKey="Utreds" stackId="a" fill={COLORS['utreds']} fillOpacity={0.8} />
-              <Bar dataKey="Delvis infriade" stackId="a" fill={COLORS['delvis-infriat']} fillOpacity={0.8} />
-              <Bar dataKey="Infriade" stackId="a" fill={COLORS['infriat']} fillOpacity={0.8} />
+              {isAdmin && <Bar dataKey="Under analys" stackId="a" fill={STATUS_CONFIG['pending-analysis' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />}
+              <Bar dataKey="Brutna" stackId="a" fill={STATUS_CONFIG['brutet' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
+              <Bar dataKey="Ej infriade" stackId="a" fill={STATUS_CONFIG['ej-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
+              <Bar dataKey="Utreds" stackId="a" fill={STATUS_CONFIG['utreds' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
+              <Bar dataKey="Delvis infriade" stackId="a" fill={STATUS_CONFIG['delvis-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
+              <Bar dataKey="Infriade" stackId="a" fill={STATUS_CONFIG['infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
             </BarChart>
           ) : (
             <BarChart data={partyChartDataPercent}>
@@ -240,20 +232,20 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
               <Legend 
                 wrapperStyle={{ paddingTop: '20px' }}
                 payload={[
-                  ...(isAdmin ? [{ value: 'Under analys', type: 'rect' as const, color: COLORS['pending-analysis'] }] : []),
-                  { value: 'Brutna', type: 'rect', color: COLORS['brutet'] },
-                  { value: 'Ej infriade', type: 'rect', color: COLORS['ej-infriat'] },
-                  { value: 'Utreds', type: 'rect', color: COLORS['utreds'] },
-                  { value: 'Delvis infriade', type: 'rect', color: COLORS['delvis-infriat'] },
-                  { value: 'Infriade', type: 'rect', color: COLORS['infriat'] },
+                  ...(isAdmin ? [{ value: 'Under analys', type: 'rect' as const, color: STATUS_CONFIG['pending-analysis' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' }] : []),
+                  { value: 'Brutna', type: 'rect', color: STATUS_CONFIG['brutet' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' },
+                  { value: 'Ej infriade', type: 'rect', color: STATUS_CONFIG['ej-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' },
+                  { value: 'Utreds', type: 'rect', color: STATUS_CONFIG['utreds' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' },
+                  { value: 'Delvis infriade', type: 'rect', color: STATUS_CONFIG['delvis-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' },
+                  { value: 'Infriade', type: 'rect', color: STATUS_CONFIG['infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' },
                 ]}
               />
-              {isAdmin && <Bar dataKey="Under analys" stackId="a" fill={COLORS['pending-analysis']} fillOpacity={0.8} />}
-              <Bar dataKey="Brutna" stackId="a" fill={COLORS['brutet']} fillOpacity={0.8} />
-              <Bar dataKey="Ej infriade" stackId="a" fill={COLORS['ej-infriat']} fillOpacity={0.8} />
-              <Bar dataKey="Utreds" stackId="a" fill={COLORS['utreds']} fillOpacity={0.8} />
-              <Bar dataKey="Delvis infriade" stackId="a" fill={COLORS['delvis-infriat']} fillOpacity={0.8} />
-              <Bar dataKey="Infriade" stackId="a" fill={COLORS['infriat']} fillOpacity={0.8} />
+              {isAdmin && <Bar dataKey="Under analys" stackId="a" fill={STATUS_CONFIG['pending-analysis' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />}
+              <Bar dataKey="Brutna" stackId="a" fill={STATUS_CONFIG['brutet' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
+              <Bar dataKey="Ej infriade" stackId="a" fill={STATUS_CONFIG['ej-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
+              <Bar dataKey="Utreds" stackId="a" fill={STATUS_CONFIG['utreds' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
+              <Bar dataKey="Delvis infriade" stackId="a" fill={STATUS_CONFIG['delvis-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
+              <Bar dataKey="Infriade" stackId="a" fill={STATUS_CONFIG['infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
             </BarChart>
           )}
         </ResponsiveContainer>

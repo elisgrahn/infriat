@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
 
 interface SuggestionWithPromise {
   id: string;
@@ -22,15 +23,6 @@ interface SuggestionWithPromise {
   current_status: string;
   party_name: string;
 }
-
-const statusLabels: Record<string, string> = {
-  'infriat': 'Infriat',
-  'delvis-infriat': 'Delvis infriat',
-  'utreds': 'Utreds',
-  'ej-infriat': 'Ej infriat',
-  'brutet': 'Brutet',
-  'pending-analysis': 'Under analys',
-};
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -156,19 +148,35 @@ const Admin = () => {
         <div className="max-w-4xl mx-auto space-y-8">
           <div>
             <h1 className="text-4xl font-bold mb-2">Admin</h1>
-            <p className="text-muted-foreground">Ladda upp och analysera valmanifest</p>
+            <p className="text-muted-foreground">
+              Ladda upp och analysera valmanifest
+            </p>
           </div>
 
           <ManifestUpload />
 
           <div className="flex gap-4">
-            <Button onClick={() => handleAnalyzeMeasurability(false)} disabled={isAnalyzingMeasurability} variant="outline" className="flex-1">
+            <Button
+              onClick={() => handleAnalyzeMeasurability(false)}
+              disabled={isAnalyzingMeasurability}
+              variant="outline"
+              className="flex-1"
+            >
               <Target className="w-4 h-4 mr-2" />
-              {isAnalyzingMeasurability ? "Analyserar..." : "Analysera mätbarhet (nya)"}
+              {isAnalyzingMeasurability
+                ? "Analyserar..."
+                : "Analysera mätbarhet (nya)"}
             </Button>
-            <Button onClick={() => handleAnalyzeMeasurability(true)} disabled={isAnalyzingMeasurability} variant="outline" className="flex-1">
+            <Button
+              onClick={() => handleAnalyzeMeasurability(true)}
+              disabled={isAnalyzingMeasurability}
+              variant="outline"
+              className="flex-1"
+            >
               <Target className="w-4 h-4 mr-2" />
-              {isAnalyzingMeasurability ? "Analyserar..." : "Återanalysera alla"}
+              {isAnalyzingMeasurability
+                ? "Analyserar..."
+                : "Återanalysera alla"}
             </Button>
           </div>
 
@@ -178,7 +186,9 @@ const Admin = () => {
             {loadingSuggestions ? (
               <p className="text-muted-foreground">Laddar förslag...</p>
             ) : suggestions.length === 0 ? (
-              <p className="text-muted-foreground">Inga förslag att granska just nu.</p>
+              <p className="text-muted-foreground">
+                Inga förslag att granska just nu.
+              </p>
             ) : (
               <div className="space-y-4">
                 {suggestions.map((s) => (
@@ -186,30 +196,69 @@ const Admin = () => {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 space-y-2">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <Badge variant="outline" className="text-xs">{s.party_name}</Badge>
-                          <span className="text-xs text-muted-foreground">Nuvarande:</span>
-                          <Badge variant="secondary" className="text-xs">{statusLabels[s.current_status] || s.current_status}</Badge>
-                          <span className="text-xs text-muted-foreground">→</span>
-                          <Badge className="text-xs bg-primary text-primary-foreground">{statusLabels[s.suggested_status] || s.suggested_status}</Badge>
-                          <span className="text-xs text-muted-foreground">👍 {s.upvotes} 👎 {s.downvotes}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {s.party_name}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            Nuvarande:
+                          </span>
+                          <Badge variant="secondary" className="text-xs">
+                            {STATUS_CONFIG[s.current_status as PromiseStatus]
+                              ?.label || s.current_status}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            →
+                          </span>
+                          <Badge className="text-xs bg-primary text-primary-foreground">
+                            {STATUS_CONFIG[s.suggested_status as PromiseStatus]
+                              ?.label || s.suggested_status}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            👍 {s.upvotes} 👎 {s.downvotes}
+                          </span>
                         </div>
-                        <p className="text-sm text-foreground font-medium">{s.promise_text}</p>
-                        <p className="text-sm text-muted-foreground">{s.explanation}</p>
+                        <p className="text-sm text-foreground font-medium">
+                          {s.promise_text}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {s.explanation}
+                        </p>
                         {s.sources && s.sources.length > 0 && (
                           <div className="flex flex-wrap gap-2">
                             {s.sources.map((src, i) => (
-                              <a key={i} href={src} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
-                                {(() => { try { return new URL(src).hostname; } catch { return src; } })()}
+                              <a
+                                key={i}
+                                href={src}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-primary hover:underline"
+                              >
+                                {(() => {
+                                  try {
+                                    return new URL(src).hostname;
+                                  } catch {
+                                    return src;
+                                  }
+                                })()}
                               </a>
                             ))}
                           </div>
                         )}
                       </div>
                       <div className="flex gap-2 shrink-0">
-                        <Button size="sm" onClick={() => handleApply(s)} className="gap-1">
+                        <Button
+                          size="sm"
+                          onClick={() => handleApply(s)}
+                          className="gap-1"
+                        >
                           <Check className="w-3 h-3" /> Tillämpa
                         </Button>
-                        <Button size="sm" variant="outline" onClick={() => handleDismiss(s.id)} className="gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleDismiss(s.id)}
+                          className="gap-1"
+                        >
                           <X className="w-3 h-3" /> Avfärda
                         </Button>
                       </div>

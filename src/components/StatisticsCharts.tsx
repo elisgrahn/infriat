@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer } from "recharts";
+import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
 
 interface Promise {
   id: string;
@@ -19,23 +20,6 @@ interface StatisticsChartsProps {
   promises: Promise[];
 }
 
-const COLORS = {
-  infriat: '#047857', // emerald-700
-  'delvis-infriat': '#34d399', // emerald-400
-  utreds: '#f59e0b', // amber-500
-  'ej-infriat': '#9ca3af', // gray-400
-  brutet: '#be123c', // rose-700
-  'pending-analysis': 'hsl(var(--muted))',
-};
-
-const STATUS_LABELS = {
-  infriat: 'Infriat',
-  'delvis-infriat': 'Delvis infriat',
-  utreds: 'Utreds',
-  'ej-infriat': 'Ej infriat',
-  brutet: 'Brutet',
-  'pending-analysis': 'Under analys',
-};
 
 export const StatisticsCharts = ({ promises }: StatisticsChartsProps) => {
   // Prepare data for pie chart (status distribution per year)
@@ -50,11 +34,11 @@ export const StatisticsCharts = ({ promises }: StatisticsChartsProps) => {
 
   const pieData = Object.entries(yearlyData).flatMap(([year, statuses]) =>
     Object.entries(statuses).map(([status, count]) => ({
-      name: `${STATUS_LABELS[status as keyof typeof STATUS_LABELS]} (${year})`,
+      name: `${STATUS_CONFIG[status as PromiseStatus]?.label ?? status} (${year})`,
       value: count,
       status,
       year,
-    }))
+    })),
   );
 
   // Prepare data for line chart (party performance over time)
@@ -112,17 +96,22 @@ export const StatisticsCharts = ({ promises }: StatisticsChartsProps) => {
       <Card>
         <CardHeader>
           <CardTitle>Uppfyllelsegrad över tid</CardTitle>
-          <CardDescription>Jämförelse mellan partier (% uppfyllda löften)</CardDescription>
+          <CardDescription>
+            Jämförelse mellan partier (% uppfyllda löften)
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <ChartContainer
-            config={parties.reduce((acc, party, idx) => ({
-              ...acc,
-              [party]: {
-                label: party,
-                color: partyColors[idx % partyColors.length],
-              }
-            }), {})}
+            config={parties.reduce(
+              (acc, party, idx) => ({
+                ...acc,
+                [party]: {
+                  label: party,
+                  color: partyColors[idx % partyColors.length],
+                },
+              }),
+              {},
+            )}
             className="h-[300px]"
           >
             <ResponsiveContainer width="100%" height="100%">
@@ -158,8 +147,14 @@ export const StatisticsCharts = ({ promises }: StatisticsChartsProps) => {
             config={{
               kept: { label: "Uppfyllt", color: "hsl(var(--success))" },
               broken: { label: "Brutet", color: "hsl(var(--destructive))" },
-              "in-progress": { label: "Pågående", color: "hsl(var(--warning))" },
-              "pending-analysis": { label: "Under analys", color: "hsl(var(--muted))" },
+              "in-progress": {
+                label: "Pågående",
+                color: "hsl(var(--warning))",
+              },
+              "pending-analysis": {
+                label: "Under analys",
+                color: "hsl(var(--muted))",
+              },
             }}
             className="h-[300px]"
           >
@@ -170,13 +165,21 @@ export const StatisticsCharts = ({ promises }: StatisticsChartsProps) => {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) =>
+                    `${name}: ${(percent * 100).toFixed(0)}%`
+                  }
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
                 >
                   {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[entry.status as keyof typeof COLORS]} />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={
+                        STATUS_CONFIG[entry.status as PromiseStatus]
+                          ?.chartColor ?? "hsl(var(--muted))"
+                      }
+                    />
                   ))}
                 </Pie>
                 <ChartTooltip content={<ChartTooltipContent />} />

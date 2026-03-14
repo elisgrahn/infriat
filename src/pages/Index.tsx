@@ -3,6 +3,8 @@ import { PromiseCard } from "@/components/PromiseCard";
 import { PromiseFilters } from "@/components/PromiseFilters";
 import { PartyProgressBars } from "@/components/PartyProgressBars";
 import { TimelineComparison } from "@/components/TimelineComparison";
+import { HeroStatCard } from "@/components/HeroStatCard";
+import { PromisePagination } from "@/components/PromisePagination";
 import {
   ShieldCheck,
   Scale,
@@ -18,15 +20,6 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -290,40 +283,21 @@ const Index = () => {
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-12 max-w-4xl mx-auto">
-              <div className="group bg-primary-foreground/10 backdrop-blur-md rounded-2xl p-8 border border-primary-foreground/20 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300">
-                <div className="flex items-center justify-center gap-3 mb-3">
-                  <Scale className="w-6 h-6 group-hover:rotate-12 transition-transform" />
-                  <div className="text-4xl font-bold">{stats.total}</div>
-                </div>
-                <div className="text-sm text-primary-foreground/90 font-medium">
-                  Totalt antal löften
-                </div>
-              </div>
-
-              <div className="group bg-primary-foreground/10 backdrop-blur-md rounded-2xl p-8 border border-primary-foreground/20 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300">
-                <div className="flex items-center justify-center gap-3 mb-3">
-                  <ShieldCheck className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                  <div className="text-4xl font-bold">{stats.fulfilled}</div>
-                </div>
-                <div className="text-sm text-primary-foreground/90 font-medium">
-                  Infriade löften
-                </div>
-              </div>
-
-              <div className="group bg-primary-foreground/10 backdrop-blur-md rounded-2xl p-8 border border-primary-foreground/20 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300">
-                <div className="flex items-center justify-center gap-3 mb-3">
-                  <TrendingUp className="w-6 h-6 group-hover:translate-y-[-4px] transition-transform" />
-                  <div className="text-4xl font-bold">
-                    {stats.total > 0
-                      ? Math.round((stats.fulfilled / stats.total) * 100)
-                      : 0}
-                    %
-                  </div>
-                </div>
-                <div className="text-sm text-primary-foreground/90 font-medium">
-                  Uppfyllelsegrad
-                </div>
-              </div>
+              <HeroStatCard
+                icon={Scale}
+                value={stats.total}
+                label="Totalt antal löften"
+              />
+              <HeroStatCard
+                icon={ShieldCheck}
+                value={stats.fulfilled}
+                label="Infriade löften"
+              />
+              <HeroStatCard
+                icon={TrendingUp}
+                value={`${stats.total > 0 ? Math.round((stats.fulfilled / stats.total) * 100) : 0}%`}
+                label="Uppfyllelsegrad"
+              />
             </div>
           </div>
         </div>
@@ -429,106 +403,11 @@ const Index = () => {
                   ))}
                 </div>
 
-                {totalPages > 1 && (
-                  <Pagination className="mt-8">
-                    <PaginationContent>
-                      <PaginationItem>
-                        <PaginationPrevious
-                          onClick={() =>
-                            setCurrentPage((p) => Math.max(1, p - 1))
-                          }
-                          className={
-                            currentPage === 1
-                              ? "pointer-events-none opacity-50"
-                              : "cursor-pointer"
-                          }
-                        />
-                      </PaginationItem>
-
-                      {/* First page */}
-                      {currentPage > 2 && (
-                        <PaginationItem>
-                          <PaginationLink
-                            onClick={() => setCurrentPage(1)}
-                            className="cursor-pointer"
-                          >
-                            1
-                          </PaginationLink>
-                        </PaginationItem>
-                      )}
-
-                      {/* Ellipsis before */}
-                      {currentPage > 3 && (
-                        <PaginationItem>
-                          <PaginationEllipsis />
-                        </PaginationItem>
-                      )}
-
-                      {/* Previous page */}
-                      {currentPage > 1 && (
-                        <PaginationItem>
-                          <PaginationLink
-                            onClick={() => setCurrentPage(currentPage - 1)}
-                            className="cursor-pointer"
-                          >
-                            {currentPage - 1}
-                          </PaginationLink>
-                        </PaginationItem>
-                      )}
-
-                      {/* Current page */}
-                      <PaginationItem>
-                        <PaginationLink isActive className="cursor-pointer">
-                          {currentPage}
-                        </PaginationLink>
-                      </PaginationItem>
-
-                      {/* Next page */}
-                      {currentPage < totalPages && (
-                        <PaginationItem>
-                          <PaginationLink
-                            onClick={() => setCurrentPage(currentPage + 1)}
-                            className="cursor-pointer"
-                          >
-                            {currentPage + 1}
-                          </PaginationLink>
-                        </PaginationItem>
-                      )}
-
-                      {/* Ellipsis after */}
-                      {currentPage < totalPages - 2 && (
-                        <PaginationItem>
-                          <PaginationEllipsis />
-                        </PaginationItem>
-                      )}
-
-                      {/* Last page */}
-                      {currentPage < totalPages - 1 && (
-                        <PaginationItem>
-                          <PaginationLink
-                            onClick={() => setCurrentPage(totalPages)}
-                            className="cursor-pointer"
-                          >
-                            {totalPages}
-                          </PaginationLink>
-                        </PaginationItem>
-                      )}
-
-                      <PaginationItem>
-                        <PaginationNext
-                          onClick={() =>
-                            setCurrentPage((p) => Math.min(totalPages, p + 1))
-                          }
-                          className={
-                            currentPage === totalPages
-                              ? "pointer-events-none opacity-50"
-                              : "cursor-pointer"
-                          }
-                        />
-                      </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
-                )}
+                <PromisePagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
               </>
             )}
           </div>

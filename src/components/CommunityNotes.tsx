@@ -8,8 +8,7 @@ import { ThumbsUp, ThumbsDown, MessageSquare, Plus, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-
-type PromiseStatus = "infriat" | "delvis-infriat" | "utreds" | "ej-infriat" | "brutet";
+import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
 
 interface Suggestion {
   id: string;
@@ -28,21 +27,6 @@ interface UserVote {
   vote_type: string;
 }
 
-const statusLabels: Record<PromiseStatus, string> = {
-  'infriat': 'Infriat',
-  'delvis-infriat': 'Delvis infriat',
-  'utreds': 'Utreds',
-  'ej-infriat': 'Ej infriat',
-  'brutet': 'Brutet',
-};
-
-const statusColors: Record<PromiseStatus, string> = {
-  'infriat': 'bg-emerald-700 text-white',
-  'delvis-infriat': 'bg-emerald-400 text-white',
-  'utreds': 'bg-amber-500 text-white',
-  'ej-infriat': 'bg-gray-400 text-white',
-  'brutet': 'bg-rose-700 text-white',
-};
 
 interface CommunityNotesProps {
   promiseId: string;
@@ -193,40 +177,69 @@ export const CommunityNotes = ({ promiseId }: CommunityNotesProps) => {
       {suggestions.length > 0 && (
         <div className="space-y-2">
           {suggestions.map((suggestion) => {
-            const userVote = userVotes.find(v => v.suggestion_id === suggestion.id);
+            const userVote = userVotes.find(
+              (v) => v.suggestion_id === suggestion.id,
+            );
             return (
-              <div key={suggestion.id} className="bg-muted/30 rounded-lg p-3 space-y-2 border border-border/50">
+              <div
+                key={suggestion.id}
+                className="bg-muted/30 rounded-lg p-3 space-y-2 border border-border/50"
+              >
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Badge className={statusColors[suggestion.suggested_status as PromiseStatus] || 'bg-muted text-muted-foreground'}>
-                    {statusLabels[suggestion.suggested_status as PromiseStatus] || suggestion.suggested_status}
+                  <Badge
+                    className={
+                      STATUS_CONFIG[
+                        suggestion.suggested_status as PromiseStatus
+                      ]?.badgeClassName || "bg-muted text-muted-foreground"
+                    }
+                  >
+                    {STATUS_CONFIG[suggestion.suggested_status as PromiseStatus]
+                      ?.label || suggestion.suggested_status}
                   </Badge>
                   <span className="text-[10px] text-muted-foreground">
-                    {new Date(suggestion.created_at).toLocaleDateString('sv-SE')}
+                    {new Date(suggestion.created_at).toLocaleDateString(
+                      "sv-SE",
+                    )}
                   </span>
                 </div>
-                <p className="text-sm text-foreground">{suggestion.explanation}</p>
+                <p className="text-sm text-foreground">
+                  {suggestion.explanation}
+                </p>
                 {suggestion.sources && suggestion.sources.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {suggestion.sources.map((src, i) => (
-                      <a key={i} href={src} target="_blank" rel="noopener noreferrer"
-                        className="text-[10px] text-primary hover:underline">
-                        {(() => { try { return new URL(src).hostname; } catch { return src; } })()}
+                      <a
+                        key={i}
+                        href={src}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[10px] text-primary hover:underline"
+                      >
+                        {(() => {
+                          try {
+                            return new URL(src).hostname;
+                          } catch {
+                            return src;
+                          }
+                        })()}
                       </a>
                     ))}
                   </div>
                 )}
                 <div className="flex items-center gap-3">
                   <Button
-                    variant="ghost" size="sm"
-                    className={`h-6 text-xs gap-1 ${userVote?.vote_type === 'up' ? 'text-emerald-600' : ''}`}
-                    onClick={() => handleVote(suggestion.id, 'up')}
+                    variant="ghost"
+                    size="sm"
+                    className={`h-6 text-xs gap-1 ${userVote?.vote_type === "up" ? "text-emerald-600" : ""}`}
+                    onClick={() => handleVote(suggestion.id, "up")}
                   >
                     <ThumbsUp className="w-3 h-3" /> {suggestion.upvotes}
                   </Button>
                   <Button
-                    variant="ghost" size="sm"
-                    className={`h-6 text-xs gap-1 ${userVote?.vote_type === 'down' ? 'text-rose-600' : ''}`}
-                    onClick={() => handleVote(suggestion.id, 'down')}
+                    variant="ghost"
+                    size="sm"
+                    className={`h-6 text-xs gap-1 ${userVote?.vote_type === "down" ? "text-rose-600" : ""}`}
+                    onClick={() => handleVote(suggestion.id, "down")}
                   >
                     <ThumbsDown className="w-3 h-3" /> {suggestion.downvotes}
                   </Button>
@@ -239,7 +252,12 @@ export const CommunityNotes = ({ promiseId }: CommunityNotesProps) => {
 
       {/* Form for logged-in non-admin users */}
       {user && !isAdmin && !showForm && (
-        <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => setShowForm(true)}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-xs gap-1"
+          onClick={() => setShowForm(true)}
+        >
           <Plus className="w-3 h-3" /> Föreslå en korrigering
         </Button>
       )}
@@ -248,34 +266,53 @@ export const CommunityNotes = ({ promiseId }: CommunityNotesProps) => {
         <div className="space-y-3 bg-muted/20 rounded-lg p-3 border border-border/50">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">Föreslå ny status</span>
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setShowForm(false)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={() => setShowForm(false)}
+            >
               <X className="w-3 h-3" />
             </Button>
           </div>
-          <Select value={formStatus} onValueChange={v => setFormStatus(v as PromiseStatus)}>
+          <Select
+            value={formStatus}
+            onValueChange={(v) => setFormStatus(v as PromiseStatus)}
+          >
             <SelectTrigger className="h-8 text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {Object.entries(statusLabels).map(([value, label]) => (
-                <SelectItem key={value} value={value}>{label}</SelectItem>
-              ))}
+              {(
+                Object.entries(STATUS_CONFIG) as [
+                  PromiseStatus,
+                  (typeof STATUS_CONFIG)[PromiseStatus],
+                ][]
+              )
+                .filter(([key]) => key !== "pending-analysis")
+                .map(([value, cfg]) => (
+                  <SelectItem key={value} value={value}>
+                    {cfg.label}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
           <Textarea
             placeholder="Förklara varför du föreslår denna status..."
             value={formExplanation}
-            onChange={e => setFormExplanation(e.target.value)}
+            onChange={(e) => setFormExplanation(e.target.value)}
             className="text-sm min-h-[60px]"
           />
           <div className="space-y-1">
-            <span className="text-xs text-muted-foreground">Källor (valfritt, max 3)</span>
+            <span className="text-xs text-muted-foreground">
+              Källor (valfritt, max 3)
+            </span>
             {formSources.map((src, i) => (
               <div key={i} className="flex gap-1">
                 <Input
                   placeholder="https://..."
                   value={src}
-                  onChange={e => {
+                  onChange={(e) => {
                     const updated = [...formSources];
                     updated[i] = e.target.value;
                     setFormSources(updated);
@@ -283,27 +320,46 @@ export const CommunityNotes = ({ promiseId }: CommunityNotesProps) => {
                   className="h-7 text-xs"
                 />
                 {formSources.length > 1 && (
-                  <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => setFormSources(prev => prev.filter((_, j) => j !== i))}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0"
+                    onClick={() =>
+                      setFormSources((prev) => prev.filter((_, j) => j !== i))
+                    }
+                  >
                     <X className="w-3 h-3" />
                   </Button>
                 )}
               </div>
             ))}
             {formSources.length < 3 && (
-              <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1" onClick={() => setFormSources(prev => [...prev, ''])}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 text-[10px] gap-1"
+                onClick={() => setFormSources((prev) => [...prev, ""])}
+              >
                 <Plus className="w-3 h-3" /> Lägg till källa
               </Button>
             )}
           </div>
-          <Button size="sm" onClick={handleSubmit} disabled={submitting || !formExplanation.trim()}>
-            {submitting ? 'Skickar...' : 'Skicka förslag'}
+          <Button
+            size="sm"
+            onClick={handleSubmit}
+            disabled={submitting || !formExplanation.trim()}
+          >
+            {submitting ? "Skickar..." : "Skicka förslag"}
           </Button>
         </div>
       )}
 
       {!user && (
         <p className="text-xs text-muted-foreground italic">
-          <a href="/auth" className="text-primary hover:underline">Logga in</a> för att föreslå en korrigering
+          <a href="/auth" className="text-primary hover:underline">
+            Logga in
+          </a>{" "}
+          för att föreslå en korrigering
         </p>
       )}
     </div>
