@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Calendar, Users, RefreshCw, ExternalLink, FileText, Clock, Upload, Trash2, Search, Target, Share2, Check, MoreVertical } from "lucide-react";
+import { SourcesList } from "@/components/SourcesList";
+import { CommunityNotes } from "@/components/CommunityNotes";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   DropdownMenu,
@@ -434,7 +436,7 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, governmen
             </p>
           )}
 
-          {(directQuote || (statusExplanation && status !== 'pending-analysis') || (statusSources && statusSources.length > 0)) && (
+          {(directQuote || (statusExplanation && status !== 'pending-analysis') || true) && (
             <Accordion type="single" collapsible className="w-full">
               {directQuote && (
                 <AccordionItem value="quote">
@@ -480,41 +482,23 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, governmen
                 </AccordionItem>
               )}
 
-              {statusSources && statusSources.length > 0 && (
-                <AccordionItem value="sources">
-                  <AccordionTrigger className="text-sm font-medium">
-                    Källor ({statusSources.length})
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <ul className="space-y-2">
-                      {statusSources.map((source, idx) => {
-                        let displayText = source;
-                        try {
-                          const url = new URL(source);
-                          displayText = `${url.hostname}${url.pathname.slice(0, 40)}${url.pathname.length > 40 ? '...' : ''}`;
-                        } catch {
-                          // If not a valid URL, use the source as-is
-                          displayText = source.length > 60 ? source.slice(0, 60) + '...' : source;
-                        }
-                        
-                        return (
-                          <li key={idx} className="text-sm">
-                            <a 
-                              href={source} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-primary hover:underline inline-flex items-center gap-1 break-words"
-                            >
-                              <ExternalLink className="w-3 h-3 shrink-0" />
-                              <span className="break-all">{displayText}</span>
-                            </a>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </AccordionContent>
-                </AccordionItem>
-              )}
+              <AccordionItem value="sources">
+                <AccordionTrigger className="text-sm font-medium">
+                  Källor
+                </AccordionTrigger>
+                <AccordionContent>
+                  <SourcesList promiseId={promiseId} isAdmin={isAdmin} />
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="community">
+                <AccordionTrigger className="text-sm font-medium">
+                  Medborgarförslag
+                </AccordionTrigger>
+                <AccordionContent>
+                  <CommunityNotes promiseId={promiseId} />
+                </AccordionContent>
+              </AccordionItem>
             </Accordion>
           )}
           
