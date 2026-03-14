@@ -3,7 +3,25 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Calendar, Users, RefreshCw, ExternalLink, FileText, Clock, Upload, Trash2, Search, Target, Share2, Check, MoreVertical } from "lucide-react";
+import {
+  Calendar,
+  CircleCheckBig,
+  Users,
+  RefreshCw,
+  ExternalLink,
+  FileText,
+  Clock,
+  Upload,
+  Trash2,
+  Search,
+  Ruler,
+  Share2,
+  Check,
+  MoreVertical,
+  SearchX,
+  SearchCheck,
+  X,
+} from "lucide-react";
 import { SourcesList } from "@/components/SourcesList";
 import { CommunityNotes } from "@/components/CommunityNotes";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -28,6 +46,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
 
 
 type PromiseStatus = "infriat" | "delvis-infriat" | "utreds" | "ej-infriat" | "brutet" | "pending-analysis";
@@ -54,6 +73,7 @@ interface PromiseCardProps {
 const statusConfig = {
   infriat: {
     label: "Infriat",
+    icon: CircleCheckBig,
     tooltip: "Löftet är helt genomfört – beslut fattat och målet uppnått",
     variant: "default" as const,
     className: "bg-emerald-700 text-white hover:bg-emerald-800",
@@ -61,27 +81,34 @@ const statusConfig = {
   },
   "delvis-infriat": {
     label: "Delvis infriat",
-    tooltip: "Regeringen har vidtagit konkreta åtgärder, t.ex. lagt en proposition, ökat utbildningsplatser eller påbörjat reformen, men målet är inte helt nått",
+    icon: SearchCheck,
+    tooltip:
+      "Regeringen har vidtagit konkreta åtgärder, t.ex. lagt en proposition, ökat utbildningsplatser eller påbörjat reformen, men målet är inte helt nått",
     variant: "default" as const,
     className: "bg-emerald-400 text-white hover:bg-emerald-500",
     borderColor: "border-l-emerald-400",
   },
   utreds: {
     label: "Utreds",
-    tooltip: "En utredning, departementspromemoria eller liknande arbete pågår för att möjliggöra reformen, men inga politiska beslut har fattats",
+    icon: Search,
+    tooltip:
+      "En utredning, departementspromemoria eller liknande arbete pågår för att möjliggöra reformen, men inga politiska beslut har fattats",
     variant: "secondary" as const,
     className: "bg-amber-500 text-white hover:bg-amber-600",
     borderColor: "border-l-amber-500",
   },
   "ej-infriat": {
     label: "Ej infriat",
-    tooltip: "Inga tydliga steg mot genomförande har tagits, men regeringen sitter fortfarande kvar och kan agera",
+    icon: SearchX,
+    tooltip:
+      "Inga tydliga steg mot genomförande har tagits, men regeringen sitter fortfarande kvar och kan agera",
     variant: "default" as const,
     className: "bg-gray-400 text-white hover:bg-gray-500",
     borderColor: "border-l-gray-400",
   },
   brutet: {
     label: "Brutet",
+    icon: X,
     tooltip: "Regeringsperioden är avslutad och löftet har inte uppfyllts",
     variant: "destructive" as const,
     className: "bg-rose-700 text-white hover:bg-rose-800",
@@ -89,6 +116,7 @@ const statusConfig = {
   },
   "pending-analysis": {
     label: "Under analys",
+    icon: Search,
     tooltip: "Löftets status analyseras för närvarande",
     variant: "secondary" as const,
     className: "bg-muted text-muted-foreground hover:bg-muted/90",
@@ -98,6 +126,7 @@ const statusConfig = {
 
 export const PromiseCard = ({ promiseId, promise, party, electionYear, governmentStatus, createdAt, updatedAt, status, description, statusExplanation, statusSources, directQuote, pageNumber, manifestPdfUrl, measurabilityScore, onStatusUpdate }: PromiseCardProps) => {
   const config = statusConfig[status];
+  const StatusIcon = config.icon;
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isAnalyzingMeasurability, setIsAnalyzingMeasurability] = useState(false);
   const [isReanalyzingPage, setIsReanalyzingPage] = useState(false);
@@ -265,101 +294,117 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, governmen
   };
 
   return (
-    <Card className={`p-6 hover:shadow-lg transition-all duration-300 border-l-4 ${config.borderColor}`}>
+    <Card
+      className={`p-6 hover:shadow-lg transition-all duration-300 border-l-4 ${config.borderColor}`}
+    >
       <div className="flex flex-col gap-4">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 space-y-3">
             <div className="flex items-start gap-3 flex-wrap">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge className={config.className}>
-                    {config.label}
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="max-w-xs">{config.tooltip}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <Badge className={`gap-1.5 ${partyColors[party]?.replace(/data-\[state=off\][^\s]+ /g, '').replace(/data-\[state=on\][^\s]+ /g, '') || 'bg-muted hover:bg-muted/80 text-white'}`}>
-              <Users className="w-3 h-3" />
-              {party}
-            </Badge>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge 
-                    variant="outline" 
-                    className={governmentStatus === 'governing' 
-                      ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' 
-                      : 'bg-slate-600 text-white border-slate-600 hover:bg-slate-700'
-                    }
-                  >
-                    {governmentStatus === 'governing' ? 'Regering' : 'Opposition'}
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="max-w-xs text-xs">
-                    {governmentStatus === 'governing' 
-                      ? 'Partiet satt i regeringen när detta löfte gavs' 
-                      : 'Partiet var i opposition när detta löfte gavs. Oppositionspartier har begränsade möjligheter att genomföra sin politik.'
-                    }
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            {measurabilityScore && (
               <TooltipProvider>
                 <Tooltip>
-                  <TooltipTrigger>
-                    <div className="relative overflow-hidden rounded-md border border-border">
-                      <div 
-                        className="absolute inset-0 bg-gradient-to-r from-rose-500/20 via-amber-500/20 to-emerald-500/20"
-                        style={{
-                          clipPath: `inset(0 ${100 - (measurabilityScore / 5) * 100}% 0 0)`
-                        }}
-                      />
-                      <Badge 
-                        variant="outline" 
-                        className={`gap-1.5 relative bg-background/80 backdrop-blur-sm border-0 ${
-                          measurabilityScore === 5 ? 'text-emerald-600' :
-                          measurabilityScore >= 4 ? 'text-emerald-500' :
-                          measurabilityScore === 3 ? 'text-amber-500' :
-                          measurabilityScore === 2 ? 'text-orange-500' :
-                          'text-rose-500'
-                        }`}
-                      >
-                        <Target className="w-3 h-3" />
-                        Mätbarhet: {measurabilityScore}/5
-                      </Badge>
-                    </div>
+                  <TooltipTrigger asChild>
+                    <Badge className={cn(config.className, "gap-1.5")}>
+                      <StatusIcon className="w-3 h-3" />
+                      {config.label}
+                    </Badge>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="text-xs max-w-[200px]">
-                      {measurabilityScore === 5 && "Extremt mätbart - Specifika siffror + tidsram"}
-                      {measurabilityScore === 4 && "Mycket mätbart - Konkreta mål eller tidsram"}
-                      {measurabilityScore === 3 && "Måttligt mätbart - Tydlig verifierbar åtgärd"}
-                      {measurabilityScore === 2 && "Svagt mätbart - Relativa förändringar"}
-                      {measurabilityScore === 1 && "Nästan omätbart - Vaga formuleringar"}
+                    <p className="max-w-xs">{config.tooltip}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <Badge
+                className={`gap-1.5 ${partyColors[party]?.replace(/data-\[state=off\][^\s]+ /g, "").replace(/data-\[state=on\][^\s]+ /g, "") || "bg-muted hover:bg-muted/80 text-white"}`}
+              >
+                <Users className="w-3 h-3" />
+                {party}
+              </Badge>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge
+                      variant="outline"
+                      className={
+                        governmentStatus === "governing"
+                          ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+                          : "bg-slate-600 text-white border-slate-600 hover:bg-slate-700"
+                      }
+                    >
+                      {governmentStatus === "governing"
+                        ? "Regering"
+                        : "Opposition"}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs text-xs">
+                      {governmentStatus === "governing"
+                        ? "Partiet satt i regeringen när detta löfte gavs"
+                        : "Partiet var i opposition när detta löfte gavs. Oppositionspartier har begränsade möjligheter att genomföra sin politik."}
                     </p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-            )}
+              {measurabilityScore && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <div className="relative overflow-hidden rounded-md border border-border">
+                        <div
+                          className="absolute inset-0 bg-gradient-to-r from-rose-500/20 via-amber-500/20 to-emerald-500/20"
+                          style={{
+                            clipPath: `inset(0 ${100 - (measurabilityScore / 5) * 100}% 0 0)`,
+                          }}
+                        />
+                        <Badge
+                          variant="outline"
+                          className={`gap-1.5 relative bg-background/80 backdrop-blur-sm border-0 ${
+                            measurabilityScore === 5
+                              ? "text-emerald-600"
+                              : measurabilityScore >= 4
+                                ? "text-emerald-500"
+                                : measurabilityScore === 3
+                                  ? "text-amber-500"
+                                  : measurabilityScore === 2
+                                    ? "text-orange-500"
+                                    : "text-rose-500"
+                          }`}
+                        >
+                          <Ruler className="w-3 h-3" />
+                          Mätbarhet: {measurabilityScore}/5
+                        </Badge>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs max-w-[200px]">
+                        {measurabilityScore === 5 &&
+                          "Extremt mätbart - Specifika siffror + tidsram"}
+                        {measurabilityScore === 4 &&
+                          "Mycket mätbart - Konkreta mål eller tidsram"}
+                        {measurabilityScore === 3 &&
+                          "Måttligt mätbart - Tydlig verifierbar åtgärd"}
+                        {measurabilityScore === 2 &&
+                          "Svagt mätbart - Relativa förändringar"}
+                        {measurabilityScore === 1 &&
+                          "Nästan omätbart - Vaga formuleringar"}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
             </div>
           </div>
-          
+
           <div className="flex gap-2 shrink-0">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={handleShare}
-                  >
-                    {copied ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
+                  <Button variant="outline" size="icon" onClick={handleShare}>
+                    {copied ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      <Share2 className="w-4 h-4" />
+                    )}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -367,7 +412,7 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, governmen
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            
+
             {isAdmin && !loading && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -376,26 +421,52 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, governmen
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleAnalyze} disabled={isAnalyzing}>
-                    <RefreshCw className={`w-4 h-4 mr-2 ${isAnalyzing ? 'animate-spin' : ''}`} />
-                    {isAnalyzing ? 'Analyserar...' : status === 'pending-analysis' ? 'Analysera status' : 'Analysera om status'}
+                  <DropdownMenuItem
+                    onClick={handleAnalyze}
+                    disabled={isAnalyzing}
+                  >
+                    <RefreshCw
+                      className={`w-4 h-4 mr-2 ${isAnalyzing ? "animate-spin" : ""}`}
+                    />
+                    {isAnalyzing
+                      ? "Analyserar..."
+                      : status === "pending-analysis"
+                        ? "Analysera status"
+                        : "Analysera om status"}
                   </DropdownMenuItem>
-                  
-                  <DropdownMenuItem onClick={handleAnalyzeMeasurability} disabled={isAnalyzingMeasurability}>
-                    <Target className={`w-4 h-4 mr-2 ${isAnalyzingMeasurability ? 'animate-spin' : ''}`} />
-                    {isAnalyzingMeasurability ? 'Analyserar...' : measurabilityScore ? 'Analysera om mätbarhet' : 'Analysera mätbarhet'}
+
+                  <DropdownMenuItem
+                    onClick={handleAnalyzeMeasurability}
+                    disabled={isAnalyzingMeasurability}
+                  >
+                    <Ruler
+                      className={`w-4 h-4 mr-2 ${isAnalyzingMeasurability ? "animate-spin" : ""}`}
+                    />
+                    {isAnalyzingMeasurability
+                      ? "Analyserar..."
+                      : measurabilityScore
+                        ? "Analysera om mätbarhet"
+                        : "Analysera mätbarhet"}
                   </DropdownMenuItem>
-                  
+
                   {directQuote && manifestPdfUrl && (
-                    <DropdownMenuItem onClick={handleReanalyzePage} disabled={isReanalyzingPage}>
-                      <Search className={`w-4 h-4 mr-2 ${isReanalyzingPage ? 'animate-spin' : ''}`} />
-                      {isReanalyzingPage ? 'Söker...' : 'Hitta sidnummer'}
+                    <DropdownMenuItem
+                      onClick={handleReanalyzePage}
+                      disabled={isReanalyzingPage}
+                    >
+                      <Search
+                        className={`w-4 h-4 mr-2 ${isReanalyzingPage ? "animate-spin" : ""}`}
+                      />
+                      {isReanalyzingPage ? "Söker..." : "Hitta sidnummer"}
                     </DropdownMenuItem>
                   )}
-                  
+
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                      <DropdownMenuItem
+                        onSelect={(e) => e.preventDefault()}
+                        className="text-destructive focus:text-destructive"
+                      >
                         <Trash2 className="w-4 h-4 mr-2" />
                         Radera
                       </DropdownMenuItem>
@@ -404,7 +475,8 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, governmen
                       <AlertDialogHeader>
                         <AlertDialogTitle>Är du säker?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Detta kommer permanent radera vallöftet. Denna åtgärd kan inte ångras.
+                          Detta kommer permanent radera vallöftet. Denna åtgärd
+                          kan inte ångras.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -414,7 +486,7 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, governmen
                           disabled={isDeleting}
                           className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
-                          {isDeleting ? 'Raderar...' : 'Radera'}
+                          {isDeleting ? "Raderar..." : "Radera"}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -424,19 +496,21 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, governmen
             )}
           </div>
         </div>
-        
+
         <div className="flex-1 space-y-3">
           <h3 className="text-lg font-semibold text-foreground leading-snug">
             {promise}
           </h3>
-          
+
           {description && (
             <p className="text-muted-foreground text-sm leading-relaxed">
               {description}
             </p>
           )}
 
-          {(directQuote || (statusExplanation && status !== 'pending-analysis') || true) && (
+          {(directQuote ||
+            (statusExplanation && status !== "pending-analysis") ||
+            true) && (
             <Accordion type="single" collapsible className="w-full">
               {directQuote && (
                 <AccordionItem value="quote">
@@ -448,21 +522,25 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, governmen
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="bg-muted/50 border-l-2 border-primary pl-4 py-2 rounded-r space-y-3">
-                      <p className="text-sm italic text-foreground">"{directQuote}"</p>
+                      <p className="text-sm italic text-foreground">
+                        "{directQuote}"
+                      </p>
                       {manifestPdfUrl && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          asChild
-                        >
-                          <a 
-                            href={pageNumber ? `${manifestPdfUrl}#page=${pageNumber}` : manifestPdfUrl}
-                            target="_blank" 
+                        <Button variant="outline" size="sm" asChild>
+                          <a
+                            href={
+                              pageNumber
+                                ? `${manifestPdfUrl}#page=${pageNumber}`
+                                : manifestPdfUrl
+                            }
+                            target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-2"
                           >
                             <ExternalLink className="w-4 h-4" />
-                            {pageNumber ? `Öppna i källa (sida ${pageNumber})` : 'Öppna manifest'}
+                            {pageNumber
+                              ? `Öppna i källa (sida ${pageNumber})`
+                              : "Öppna manifest"}
                           </a>
                         </Button>
                       )}
@@ -471,13 +549,15 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, governmen
                 </AccordionItem>
               )}
 
-              {statusExplanation && status !== 'pending-analysis' && (
+              {statusExplanation && status !== "pending-analysis" && (
                 <AccordionItem value="explanation">
                   <AccordionTrigger className="text-sm font-medium">
                     Statusbedömning
                   </AccordionTrigger>
                   <AccordionContent>
-                    <p className="text-sm text-foreground">{statusExplanation}</p>
+                    <p className="text-sm text-foreground">
+                      {statusExplanation}
+                    </p>
                   </AccordionContent>
                 </AccordionItem>
               )}
@@ -501,7 +581,7 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, governmen
               </AccordionItem>
             </Accordion>
           )}
-          
+
           <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5" />

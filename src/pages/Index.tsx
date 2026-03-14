@@ -3,8 +3,21 @@ import { PromiseCard } from "@/components/PromiseCard";
 import { PromiseFilters } from "@/components/PromiseFilters";
 import { PartyProgressBars } from "@/components/PartyProgressBars";
 import { TimelineComparison } from "@/components/TimelineComparison";
-import { ShieldCheck, Scale, TrendingUp, Sparkles } from "lucide-react";
+import {
+  ShieldCheck,
+  Scale,
+  TrendingUp,
+  Sparkles,
+  SlidersHorizontal,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import {
   Pagination,
   PaginationContent,
@@ -69,6 +82,7 @@ const Index = () => {
   const [promises, setPromises] = useState<Promise[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const ITEMS_PER_PAGE = 20;
 
   // Scroll to promise if ID in URL - wait until promises are loaded
@@ -326,7 +340,7 @@ const Index = () => {
             />
           </div>
 
-          {/* Filters Sidebar — hidden on mobile (available via navbar sheet) */}
+          {/* Filters Sidebar (desktop) */}
           <aside className="hidden lg:block lg:col-span-1">
             <div className="sticky top-[72px] bg-card rounded-xl p-6 border shadow-sm">
               <h2 className="text-xl font-bold mb-6 text-foreground">
@@ -337,12 +351,29 @@ const Index = () => {
           </aside>
 
           {/* Promises List */}
-          <div className="col-span-1 lg:col-span-3 space-y-4">
+          <div className="lg:col-span-3 space-y-4">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-foreground">
                 {sortedPromises.length}{" "}
                 {sortedPromises.length === 1 ? "löfte" : "löften"}
               </h2>
+
+              <Drawer open={filtersOpen} onOpenChange={setFiltersOpen}>
+                <DrawerTrigger asChild>
+                  <Button variant="outline" className="gap-2 lg:hidden">
+                    <SlidersHorizontal className="w-4 h-4" />
+                    Filtrera
+                  </Button>
+                </DrawerTrigger>
+                <DrawerContent className="max-h-[85vh]">
+                  <DrawerHeader>
+                    <DrawerTitle>Filtrera löften</DrawerTitle>
+                  </DrawerHeader>
+                  <div className="px-4 pb-6 overflow-y-auto">
+                    <PromiseFilters />
+                  </div>
+                </DrawerContent>
+              </Drawer>
             </div>
 
             {loading ? (

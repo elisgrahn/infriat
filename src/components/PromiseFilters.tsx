@@ -112,9 +112,11 @@ export const PromiseFilters = () => {
 
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-foreground">Mandatperiod</h3>
-        <Select 
-          value={selectedPeriodId || (selectedPeriod?.id || 'all')} 
-          onValueChange={(value) => setSelectedPeriodId(value === 'all' ? null : value)}
+        <Select
+          value={selectedPeriodId || selectedPeriod?.id || "all"}
+          onValueChange={(value) =>
+            setSelectedPeriodId(value === "all" ? null : value)
+          }
         >
           <SelectTrigger>
             <SelectValue placeholder="Välj mandatperiod..." />
@@ -123,7 +125,7 @@ export const PromiseFilters = () => {
             <SelectItem value="all">Alla mandatperioder</SelectItem>
             {governmentPeriods.map((period) => (
               <SelectItem key={period.id} value={period.id}>
-                {period.name} ({period.start_year}–{period.end_year || 'nu'})
+                {period.name} ({period.start_year}–{period.end_year || "nu"})
               </SelectItem>
             ))}
           </SelectContent>
@@ -137,12 +139,18 @@ export const PromiseFilters = () => {
             <SelectValue placeholder="Sortera efter..." />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="created-desc">Skapat datum (fallande)</SelectItem>
+            <SelectItem value="created-desc">
+              Skapat datum (fallande)
+            </SelectItem>
             <SelectItem value="created-asc">Skapat datum (stigande)</SelectItem>
             <SelectItem value="year-desc">Valår (fallande)</SelectItem>
             <SelectItem value="year-asc">Valår (stigande)</SelectItem>
-            <SelectItem value="measurability-desc">Mätbarhet (högst först)</SelectItem>
-            <SelectItem value="measurability-asc">Mätbarhet (lägst först)</SelectItem>
+            <SelectItem value="measurability-desc">
+              Mätbarhet (högst först)
+            </SelectItem>
+            <SelectItem value="measurability-asc">
+              Mätbarhet (lägst först)
+            </SelectItem>
             <SelectItem value="status-asc">Status (infriade först)</SelectItem>
             <SelectItem value="status-desc">Status (brutna först)</SelectItem>
           </SelectContent>
@@ -150,8 +158,28 @@ export const PromiseFilters = () => {
       </div>
 
       <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-foreground">Status</h3>
+        <ToggleGroup
+          type="multiple"
+          value={selectedStatuses}
+          onValueChange={setSelectedStatuses}
+          className="flex flex-wrap gap-2 justify-start"
+        >
+          {statuses.map((status) => (
+            <ToggleGroupItem
+              key={status}
+              value={status}
+              className={`transition-all text-sm ${statusColors[status]}`}
+            >
+              {status}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+      </div>
+
+      <div className="space-y-3">
         <h3 className="text-sm font-semibold text-foreground">Parti</h3>
-        
+
         {governingParties.length > 0 && (
           <div className="space-y-2">
             <GroupToggle label="Regeringspartier" parties={governingParties} />
@@ -163,7 +191,11 @@ export const PromiseFilters = () => {
                 className="flex flex-wrap gap-2 justify-start"
               >
                 {governingParties.map((party) => (
-                  <ToggleGroupItem key={party} value={party} className={`transition-all text-sm ${partyColors[party]}`}>
+                  <ToggleGroupItem
+                    key={party}
+                    value={party}
+                    className={`transition-all text-sm ${partyColors[party]}`}
+                  >
                     {party}
                   </ToggleGroupItem>
                 ))}
@@ -183,7 +215,11 @@ export const PromiseFilters = () => {
                 className="flex flex-wrap gap-2 justify-start"
               >
                 {supportParties.map((party) => (
-                  <ToggleGroupItem key={party} value={party} className={`transition-all text-sm ${partyColors[party]}`}>
+                  <ToggleGroupItem
+                    key={party}
+                    value={party}
+                    className={`transition-all text-sm ${partyColors[party]}`}
+                  >
                     {party}
                   </ToggleGroupItem>
                 ))}
@@ -194,7 +230,10 @@ export const PromiseFilters = () => {
 
         {oppositionParties.length > 0 && (
           <div className="space-y-2">
-            <GroupToggle label="Oppositionspartier" parties={oppositionParties} />
+            <GroupToggle
+              label="Oppositionspartier"
+              parties={oppositionParties}
+            />
             <div className="pl-6">
               <ToggleGroup
                 type="multiple"
@@ -203,7 +242,11 @@ export const PromiseFilters = () => {
                 className="flex flex-wrap gap-2 justify-start"
               >
                 {oppositionParties.map((party) => (
-                  <ToggleGroupItem key={party} value={party} className={`transition-all text-sm ${partyColors[party]}`}>
+                  <ToggleGroupItem
+                    key={party}
+                    value={party}
+                    className={`transition-all text-sm ${partyColors[party]}`}
+                  >
                     {party}
                   </ToggleGroupItem>
                 ))}
@@ -211,22 +254,6 @@ export const PromiseFilters = () => {
             </div>
           </div>
         )}
-      </div>
-
-      <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-foreground">Status</h3>
-        <ToggleGroup
-          type="multiple"
-          value={selectedStatuses}
-          onValueChange={setSelectedStatuses}
-          className="flex flex-wrap gap-2 justify-start"
-        >
-          {statuses.map((status) => (
-            <ToggleGroupItem key={status} value={status} className={`transition-all text-sm ${statusColors[status]}`}>
-              {status}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
       </div>
     </div>
   );
