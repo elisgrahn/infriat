@@ -436,7 +436,7 @@ export const PromiseCard = ({ promiseId, promise, party, electionYear, governmen
             </p>
           )}
 
-          {(directQuote || (statusExplanation && status !== 'pending-analysis') || (statusSources && statusSources.length > 0)) && (
+          {(directQuote || (statusExplanation && status !== 'pending-analysis') || true) && (
             <Accordion type="single" collapsible className="w-full">
               {directQuote && (
                 <AccordionItem value="quote">
