@@ -65,6 +65,50 @@ export type Database = {
         }
         Relationships: []
       }
+      promise_sources: {
+        Row: {
+          added_by: string | null
+          created_at: string
+          description: string | null
+          id: string
+          promise_id: string
+          published_date: string | null
+          source_type: Database["public"]["Enums"]["source_type"]
+          title: string | null
+          url: string
+        }
+        Insert: {
+          added_by?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          promise_id: string
+          published_date?: string | null
+          source_type?: Database["public"]["Enums"]["source_type"]
+          title?: string | null
+          url: string
+        }
+        Update: {
+          added_by?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          promise_id?: string
+          published_date?: string | null
+          source_type?: Database["public"]["Enums"]["source_type"]
+          title?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promise_sources_promise_id_fkey"
+            columns: ["promise_id"]
+            isOneToOne: false
+            referencedRelation: "promises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       promises: {
         Row: {
           created_at: string
@@ -246,6 +290,7 @@ export type Database = {
         | "ej-infriat"
         | "brutet"
         | "pending-analysis"
+      source_type: "news" | "official" | "research" | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -382,6 +427,7 @@ export const Constants = {
         "brutet",
         "pending-analysis",
       ],
+      source_type: ["news", "official", "research", "other"],
     },
   },
 } as const
