@@ -14,7 +14,6 @@ serve(async (req) => {
   }
 
   try {
-    // Get authorization header
     const authHeader = req.headers.get('authorization');
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -24,15 +23,17 @@ serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: {
-        headers: { Authorization: authHeader }
-      }
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    // User client for auth check
+    const supabaseUser = createClient(supabaseUrl, supabaseServiceKey, {
+      global: { headers: { Authorization: authHeader } }
     });
 
-    // Verify user is authenticated and has admin role
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Service role client for writing promise_sources (bypasses RLS)
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
     
     if (authError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -41,8 +42,7 @@ serve(async (req) => {
       });
     }
 
-    // Check if user has admin role
-    const { data: roleData, error: roleError } = await supabase
+    const { data: roleData, error: roleError } = await supabaseUser
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
@@ -56,7 +56,6 @@ serve(async (req) => {
       });
     }
 
-    // Validate request body
     const requestSchema = z.object({
       promiseId: z.string().uuid(),
       context: z.string().max(5000).optional()
@@ -73,32 +72,22 @@ serve(async (req) => {
     }
 
     const { promiseId, context } = validation.data;
-    
-    if (!promiseId) {
-      return new Response(JSON.stringify({ error: 'Ogiltigt vallöfte-ID' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
 
     const GOOGLE_AI_API_KEY = Deno.env.get('GOOGLE_AI_API_KEY');
     if (!GOOGLE_AI_API_KEY) {
-      console.error('GOOGLE_AI_API_KEY not configured');
       return new Response(JSON.stringify({ error: 'Tjänsten är inte konfigurerad' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Get the promise
-    const { data: promise, error: promiseError } = await supabase
+    const { data: promise, error: promiseError } = await supabaseUser
       .from('promises')
       .select('*, parties(*)')
       .eq('id', promiseId)
       .single();
 
     if (promiseError || !promise) {
-      console.error('Promise fetch error:', promiseError);
       return new Response(JSON.stringify({ error: 'Vallöftet hittades inte' }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -107,7 +96,6 @@ serve(async (req) => {
 
     console.log(`Analyzing status for promise: ${promise.promise_text}`);
 
-    // Call Google Gemini with grounding for real sources
     const prompt = `Analysera detta svenska politiska vallöfte:
 
 Parti: ${promise.parties.name}
@@ -136,23 +124,11 @@ Statusdefinitioner:
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GOOGLE_AI_API_KEY}`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: prompt
-            }]
-          }],
-          tools: [{
-            googleSearch: {}
-          }],
-          generationConfig: {
-            temperature: 0.3,
-            topK: 40,
-            topP: 0.95
-          }
+          contents: [{ parts: [{ text: prompt }] }],
+          tools: [{ googleSearch: {} }],
+          generationConfig: { temperature: 0.3, topK: 40, topP: 0.95 }
         }),
       }
     );
@@ -164,9 +140,7 @@ Statusdefinitioner:
     }
 
     const aiData = await response.json();
-    console.log('AI response:', JSON.stringify(aiData, null, 2));
     
-    // Combine all text parts from the response
     const parts = aiData.candidates?.[0]?.content?.parts || [];
     const textContent = parts
       .filter((part: any) => part.text)
@@ -175,12 +149,9 @@ Statusdefinitioner:
       .trim();
       
     if (!textContent) {
-      console.error('No content in AI response');
       throw new Error('AI-analysen gav inget svar. Försök igen.');
     }
 
-    // Extract status from text response - look for the exact pattern
-    // Map AI status to database enum values
     let status: 'infriat' | 'delvis-infriat' | 'utreds' | 'ej-infriat' | 'brutet' = 'utreds';
     
     const lowerText = textContent.toLowerCase();
@@ -196,41 +167,34 @@ Statusdefinitioner:
       status = 'brutet';
     }
     
-    // Extract explanation - get text between Status and Källor sections
     const explanationMatch = textContent.match(/\*\*Förklaring:\*\*\s*([^*]+?)(?=\n\n\*\*Källor|\n\*\*Källor|$)/is) ||
                             textContent.match(/Förklaring:\s*([^*]+?)(?=Källor|$)/is);
     
     let explanation = explanationMatch ? explanationMatch[1].trim() : textContent;
     
-    // Extract real URLs from grounding metadata
-    const sources: string[] = [];
+    // Extract source URLs from grounding metadata
+    const sourceUrls: string[] = [];
     const groundingMetadata = aiData.candidates?.[0]?.groundingMetadata;
     
-    // Extract from groundingChunks which contains web URIs
     if (groundingMetadata?.groundingChunks) {
       console.log(`Found ${groundingMetadata.groundingChunks.length} grounding chunks`);
       for (const chunk of groundingMetadata.groundingChunks) {
         if (chunk.web?.uri) {
-          sources.push(chunk.web.uri);
+          sourceUrls.push(chunk.web.uri);
         }
       }
     }
     
-    console.log(`Extracted ${sources.length} sources from metadata`);
+    const uniqueSources = [...new Set(sourceUrls)].slice(0, 5);
+    console.log(`Extracted ${uniqueSources.length} sources from metadata`);
 
-    const analysis = {
-      status,
-      explanation: explanation,
-      sources: [...new Set(sources)].slice(0, 5) // Remove duplicates and limit to 5 sources
-    };
-
-    // Update promise with analysis
-    const { error: updateError } = await supabase
+    // Update promise status (keep status_sources for backward compat but also write to promise_sources)
+    const { error: updateError } = await supabaseAdmin
       .from('promises')
       .update({
-        status: analysis.status,
-        status_explanation: analysis.explanation,
-        status_sources: analysis.sources
+        status,
+        status_explanation: explanation,
+        status_sources: uniqueSources
       })
       .eq('id', promiseId);
 
@@ -239,26 +203,51 @@ Statusdefinitioner:
       throw new Error('Kunde inte uppdatera vallöftet. Försök igen.');
     }
 
-    console.log(`Updated promise status to: ${analysis.status}`);
+    // Delete old promise_sources for this promise, then insert new ones
+    const { error: deleteSourcesError } = await supabaseAdmin
+      .from('promise_sources')
+      .delete()
+      .eq('promise_id', promiseId);
+
+    if (deleteSourcesError) {
+      console.error('Error deleting old sources:', deleteSourcesError);
+    }
+
+    if (uniqueSources.length > 0) {
+      // Extract titles from grounding chunks where available
+      const sourceRows = uniqueSources.map((url) => {
+        const chunk = groundingMetadata?.groundingChunks?.find(
+          (c: any) => c.web?.uri === url
+        );
+        return {
+          promise_id: promiseId,
+          url,
+          title: chunk?.web?.title || null,
+          source_type: 'news' as const,
+        };
+      });
+
+      const { error: insertSourcesError } = await supabaseAdmin
+        .from('promise_sources')
+        .insert(sourceRows);
+
+      if (insertSourcesError) {
+        console.error('Error inserting sources:', insertSourcesError);
+      }
+    }
+
+    console.log(`Updated promise status to: ${status}`);
 
     return new Response(
-      JSON.stringify({ 
-        success: true,
-        analysis
-      }), 
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      JSON.stringify({ success: true, analysis: { status, explanation, sources: uniqueSources } }), 
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     console.error('Error in analyze-promise-status:', error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Ett fel uppstod. Försök igen.' }), 
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
