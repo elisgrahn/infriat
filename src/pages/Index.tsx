@@ -20,10 +20,11 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useFilters } from "@/contexts/FilterContext";
+import { PromiseDetailOverlay } from "@/components/PromiseDetailOverlay";
 
 interface GovernmentPeriod {
   id: string;
@@ -64,8 +65,10 @@ interface Promise {
 
 const Index = () => {
   const navigate = useNavigate();
+  const { id: legacyPromiseId } = useParams<{ id?: string }>();
   const { isAdmin } = useAuth();
   const [searchParams] = useSearchParams();
+  const selectedPromiseId = searchParams.get("promise") ?? undefined;
   const {
     selectedParties,
     selectedStatuses,
@@ -83,17 +86,17 @@ const Index = () => {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const ITEMS_PER_PAGE = 20;
 
-  // Redirect legacy /?promise=<id> deep-links to the dedicated detail page
+  // Support legacy /lofte/:id deep-links by normalizing to query param
   useEffect(() => {
-    const promiseId = searchParams.get("promise");
-    if (promiseId) {
-      navigate(`/lofte/${promiseId}`, { replace: true });
+    if (legacyPromiseId && searchParams.get("promise") !== legacyPromiseId) {
+      navigate(`/?promise=${legacyPromiseId}`, { replace: true });
     }
-  }, [searchParams, navigate]);
+  }, [legacyPromiseId, searchParams, navigate]);
 
   useEffect(() => {
     fetchPromises();
     fetchGovernmentPeriods();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchPromises = async () => {
@@ -284,10 +287,15 @@ const Index = () => {
     delayed: statsPromises.filter((p) => p.status === "ej-infriat").length,
   };
 
+  const selectedPromiseStatus = promises.find(
+    (promise) => promise.id === selectedPromiseId,
+  )?.status;
+
   return (
-    <div className="bg-background">
-      {/* Hero Section */}
-      <header className="relative overflow-hidden bg-gradient-to-br from-primary via-primary-light to-primary-dark text-primary-foreground">
+    <>
+      <div className="bg-background">
+        {/* Hero Section */}
+        <header className="relative overflow-hidden bg-gradient-to-br from-primary via-primary-light to-primary-dark text-primary-foreground">
         {/* Animated background elements */}
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-20 left-10 w-72 h-72 bg-primary-foreground rounded-full blur-3xl animate-pulse"></div>
@@ -333,10 +341,10 @@ const Index = () => {
             </div>
           </div>
         </div>
-      </header>
+        </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-12">
+        {/* Main Content */}
+        <main className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Party Comparison - Full Width Above Filters */}
           <div className="lg:col-span-4">
@@ -441,20 +449,27 @@ const Index = () => {
             )}
           </div>
         </div>
-      </main>
+        </main>
 
-      {/* Footer */}
-      <footer className="bg-muted mt-20 py-12">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-muted-foreground">
-            En plattform för att granska politiska löften och skapa transparens.
-          </p>
-          <p className="text-sm text-muted-foreground mt-2">
-            Byggt med öppenhet och ansvarstagande som grund.
-          </p>
-        </div>
-      </footer>
-    </div>
+        {/* Footer */}
+        <footer className="bg-muted mt-20 py-12">
+          <div className="container mx-auto px-4 text-center">
+            <p className="text-muted-foreground">
+              En plattform för att granska politiska löften och skapa transparens.
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Byggt med öppenhet och ansvarstagande som grund.
+            </p>
+          </div>
+        </footer>
+      </div>
+
+      <PromiseDetailOverlay
+        promiseId={selectedPromiseId}
+        initialStatus={selectedPromiseStatus}
+        onClose={() => navigate("/")}
+      />
+    </>
   );
 };
 

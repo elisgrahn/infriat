@@ -104,11 +104,11 @@ export const PromiseCard = ({
       className={`p-6 hover:shadow-lg transition-all duration-300 border-l-4 ${config.borderColor} ${config.cardHoverClassName} ${config.cardFocusClassName} cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2`}
       role="button"
       tabIndex={0}
-      onClick={() => navigate(`/lofte/${promiseId}`)}
+      onClick={() => navigate(`/?promise=${promiseId}`)}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
-          navigate(`/lofte/${promiseId}`);
+          navigate(`/?promise=${promiseId}`);
         }
       }}
     >

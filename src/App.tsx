@@ -11,7 +11,6 @@ import Statistics from "./pages/Statistics";
 import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
-import PromiseDetail from "./pages/PromiseDetail";
 
 const queryClient = new QueryClient();
 
@@ -33,10 +32,10 @@ const App = () => (
             <Routes>
               <Route element={<Layout />}>
                 <Route path="/" element={<Index />} />
+                <Route path="/lofte/:id" element={<Index />} />
                 <Route path="/statistik" element={<Statistics />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/auth" element={<Auth />} />
-                <Route path="/lofte/:id" element={<PromiseDetail />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Route>
