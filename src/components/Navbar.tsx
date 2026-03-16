@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { InfriatLogo } from "@/components/InfriatLogo";
 
 export function Navbar() {
   const { user, isAdmin, signOut } = useAuth();
@@ -41,8 +42,9 @@ export function Navbar() {
         {/* Logo */}
         <button
           onClick={() => navigate("/")}
-          className="text-xl font-bold tracking-tight text-foreground hover:text-secondary transition-colors"
+          className="group flex flex-row items-center gap-2 text-xl font-bold tracking-tight text-foreground hover:text-primary-light dark:hover:text-secondary transition-colors"
         >
+          <InfriatLogo className="size-6" />
           Infriat.se
         </button>
 
