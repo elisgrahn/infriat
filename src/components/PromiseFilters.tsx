@@ -128,7 +128,7 @@ export const PromiseFilters = ({
             setSelectedPeriodId(value === "all" ? null : value)
           }
         >
-          <SelectTrigger>
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Välj mandatperiod..." />
           </SelectTrigger>
           <SelectContent>
@@ -146,22 +146,16 @@ export const PromiseFilters = ({
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-foreground">Sortera efter</h3>
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Sortera efter..." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="created-desc">
-                Skapat datum (fallande)
-              </SelectItem>
+              <SelectItem value="created-desc">Skapat datum (fallande)</SelectItem>
               <SelectItem value="created-asc">Skapat datum (stigande)</SelectItem>
               <SelectItem value="year-desc">Valår (fallande)</SelectItem>
               <SelectItem value="year-asc">Valår (stigande)</SelectItem>
-              <SelectItem value="measurability-desc">
-                Mätbarhet (högst först)
-              </SelectItem>
-              <SelectItem value="measurability-asc">
-                Mätbarhet (lägst först)
-              </SelectItem>
+              <SelectItem value="measurability-desc">Mätbarhet (högst först)</SelectItem>
+              <SelectItem value="measurability-asc">Mätbarhet (lägst först)</SelectItem>
               <SelectItem value="status-asc">Status (infriade först)</SelectItem>
               <SelectItem value="status-desc">Status (brutna först)</SelectItem>
             </SelectContent>
