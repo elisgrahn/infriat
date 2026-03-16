@@ -16,7 +16,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Badge className={cn(config.badgeClassName, "gap-1.5", className)}>
+          <Badge variant="outline" className={cn(config.badgeClassName, "gap-1.5", className)}>
             <Icon className="w-3 h-3" />
             {config.label}
           </Badge>

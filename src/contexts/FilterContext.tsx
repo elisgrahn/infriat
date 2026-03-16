@@ -1,5 +1,9 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import {
+  PARTY_ABBREVIATION_TO_NAME,
+  getPartyAbbreviation,
+} from '@/utils/partyAbbreviations';
 
 interface GovernmentPeriod {
   id: string;
@@ -27,22 +31,6 @@ interface FilterContextType {
   setGovernmentPeriods: (periods: GovernmentPeriod[]) => void;
 }
 
-// Mapping between party names and abbreviations
-const partyNameToAbbr: Record<string, string> = {
-  "Socialdemokraterna": "S",
-  "Moderaterna": "M",
-  "Sverigedemokraterna": "SD",
-  "Centerpartiet": "C",
-  "Vänsterpartiet": "V",
-  "Kristdemokraterna": "KD",
-  "Liberalerna": "L",
-  "Miljöpartiet": "MP",
-};
-
-const partyAbbrToName: Record<string, string> = Object.fromEntries(
-  Object.entries(partyNameToAbbr).map(([name, abbr]) => [abbr, name])
-);
-
 const FilterContext = createContext<FilterContextType | undefined>(undefined);
 
 export const FilterProvider = ({ children }: { children: ReactNode }) => {
@@ -52,7 +40,7 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
     const parties = searchParams.get('parties');
     if (!parties) return [];
     // Convert abbreviations from URL to party names
-    return parties.split(',').map(abbr => partyAbbrToName[abbr] || abbr).filter(Boolean);
+    return parties.split(',').map(abbr => PARTY_ABBREVIATION_TO_NAME[abbr] || abbr).filter(Boolean);
   });
   
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>(() => {
@@ -76,7 +64,7 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
     
     if (selectedParties.length > 0) {
       // Convert party names to abbreviations for URL
-      const abbreviations = selectedParties.map(name => partyNameToAbbr[name] || name).filter(Boolean);
+      const abbreviations = selectedParties.map(name => getPartyAbbreviation(name) || name).filter(Boolean);
       params.set('parties', abbreviations.join(','));
     } else {
       params.delete('parties');

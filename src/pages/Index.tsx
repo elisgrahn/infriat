@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { PromiseCard } from "@/components/PromiseCard";
 import { PromiseFilters } from "@/components/PromiseFilters";
 import { PartyProgressBars } from "@/components/PartyProgressBars";
@@ -84,6 +84,7 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [cardCompactNeeds, setCardCompactNeeds] = useState<Record<string, boolean>>({});
   const ITEMS_PER_PAGE = 20;
 
   // Support legacy /lofte/:id deep-links by normalizing to query param
@@ -259,6 +260,34 @@ const Index = () => {
     currentPage * ITEMS_PER_PAGE,
   );
 
+  useEffect(() => {
+    const visibleIds = new Set(paginatedPromises.map((promise) => promise.id));
+    setCardCompactNeeds((previous) => {
+      const next = Object.fromEntries(
+        Object.entries(previous).filter(([id]) => visibleIds.has(id)),
+      );
+
+      return Object.keys(next).length === Object.keys(previous).length
+        ? previous
+        : next;
+    });
+  }, [paginatedPromises]);
+
+  const handleCardCompactNeedChange = useCallback(
+    (promiseId: string, needsCompact: boolean) => {
+      setCardCompactNeeds((previous) => {
+        if (previous[promiseId] === needsCompact) return previous;
+        return {
+          ...previous,
+          [promiseId]: needsCompact,
+        };
+      });
+    },
+    [],
+  );
+
+  const sharedCompactBadges = Object.values(cardCompactNeeds).some(Boolean);
+
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
@@ -411,6 +440,9 @@ const Index = () => {
                         promiseId={promise.id}
                         promise={promise.promise_text}
                         party={promise.parties.name}
+                        partyAbbreviation={promise.parties.abbreviation}
+                        sharedCompactBadges={sharedCompactBadges}
+                        onCompactNeedChange={handleCardCompactNeedChange}
                         electionYear={promise.election_year}
                         governmentStatus={getGovernmentStatus(
                           promise.parties.name,

@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 
 interface MeasurabilityBadgeProps {
   score: number;
+  compact?: boolean;
   className?: string;
 }
 
@@ -24,27 +25,35 @@ function scoreColor(score: number): string {
   return "text-rose-500";
 }
 
-export function MeasurabilityBadge({ score, className }: MeasurabilityBadgeProps) {
+export function MeasurabilityBadge({
+  score,
+  compact = false,
+  className,
+}: MeasurabilityBadgeProps) {
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className={cn("relative overflow-hidden rounded-md border border-border", className)}>
-            <div
-              className="absolute inset-0 bg-gradient-to-r from-rose-500/20 via-amber-500/20 to-emerald-500/20"
-              style={{ clipPath: `inset(0 ${100 - (score / 5) * 100}% 0 0)` }}
-            />
-            <Badge
-              variant="outline"
-              className={cn(
-                "gap-1.5 relative bg-background/80 backdrop-blur-sm border-0",
-                scoreColor(score)
-              )}
-            >
-              <Ruler className="w-3 h-3" />
-              Mätbarhet: {score}/5
-            </Badge>
-          </div>
+          <Badge
+            variant="outline"
+            className={cn(
+              "relative overflow-hidden gap-1.5",
+              scoreColor(score),
+              className
+            )}
+          >
+            <div 
+              className="absolute inset-0 blur-[4px]">
+                <div
+                  className="absolute inset-0 bg-gradient-to-r from-rose-500/20 via-amber-500/20 to-emerald-500/20"
+                  style={{ clipPath: `inset(0 ${100 - (score / 5) * 100}% 0 0)` }}
+                />
+            </div>
+            <Ruler className="w-3 h-3 relative" />
+            <span className="relative">
+              {compact ? `${score}/5` : `Mätbarhet: ${score}/5`}
+            </span>
+          </Badge>
         </TooltipTrigger>
         <TooltipContent>
           <p className="text-xs max-w-[200px]">{TOOLTIPS[score]}</p>
