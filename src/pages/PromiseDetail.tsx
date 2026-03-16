@@ -130,10 +130,24 @@ export default function PromiseDetail() {
     }
   };
 
+  const fetchCitationSources = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("promise_sources")
+        .select("url, title")
+        .eq("promise_id", id!)
+        .order("created_at", { ascending: true });
+      if (!error && data) setCitationSources(data);
+    } catch {
+      // Silently ignore
+    }
+  };
+
   useEffect(() => {
     if (!id) return;
     fetchPromise();
     fetchGovernmentPeriods();
+    fetchCitationSources();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
