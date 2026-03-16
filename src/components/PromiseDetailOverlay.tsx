@@ -90,18 +90,34 @@ export function PromiseDetailOverlay({
         onClose={onClose}
       >
         <DrawerContent
-          className={`flex flex-col max-h-[75vh] border-t-4 ${drawerBorderClass} bg-card shadow-sm rounded-t-2xl`}
+          className={`flex flex-col w-full max-w-[100vw] max-h-[75vh] border-t-4 ${drawerBorderClass} bg-card shadow-sm rounded-t-2xl`}
         >
-          <DrawerHeader className="flex-none">
-            <DrawerTitle className="text-left leading-snug">{title}</DrawerTitle>
+          <DrawerHeader className="flex-none min-w-0">
+            <DrawerTitle className="text-left leading-snug break-words">{title}</DrawerTitle>
             {headerData && (
-              <div className="flex flex-wrap items-center gap-2 pt-2">
-                <StatusBadge status={headerData.status} />
-                <PartyBadge party={headerData.partyName} />
-                <GovernmentBadge governmentStatus={headerData.governmentStatus} />
-                {headerData.measurabilityScore !== null && (
-                  <MeasurabilityBadge score={headerData.measurabilityScore} />
-                )}
+              <div
+                data-vaul-no-drag
+                className="w-full overflow-x-auto overflow-y-hidden pt-2 overscroll-x-contain touch-pan-x [-webkit-overflow-scrolling:touch]"
+                onPointerDownCapture={(event) => event.stopPropagation()}
+              >
+                <div
+                  className="flex w-max min-w-full flex-nowrap items-center gap-2 pb-1"
+                >
+                  <StatusBadge status={headerData.status} className="shrink-0" />
+                  <PartyBadge party={headerData.partyName} compact={false} className="shrink-0" />
+                  <GovernmentBadge
+                    governmentStatus={headerData.governmentStatus}
+                    compact={false}
+                    className="shrink-0"
+                  />
+                  {headerData.measurabilityScore !== null && (
+                    <MeasurabilityBadge
+                      score={headerData.measurabilityScore}
+                      compact={false}
+                      className="shrink-0"
+                    />
+                  )}
+                </div>
               </div>
             )}
           </DrawerHeader>
@@ -131,20 +147,32 @@ export function PromiseDetailOverlay({
     >
       <SheetContent
         side="right"
-        className={`flex flex-col gap-0 w-full sm:max-w-2xl p-0 border-l-4 ${statusBorderClass} bg-card shadow-sm rounded-l-2xl`}
+        className={`flex flex-col gap-0 w-full max-w-[100vw] sm:max-w-2xl p-0 border-l-4 ${statusBorderClass} bg-card shadow-sm rounded-l-2xl`}
         // Radix fires onCloseAutoFocus after the exit animation finishes
         onCloseAutoFocus={() => onClose()}
       >
-        <SheetHeader className="flex-none p-4">
-          <SheetTitle className="text-left leading-snug">{title}</SheetTitle>
+        <SheetHeader className="flex-none min-w-0 p-4">
+          <SheetTitle className="text-left leading-snug break-words">{title}</SheetTitle>
           {headerData && (
-            <div className="flex flex-wrap items-center gap-2 pt-2">
-              <StatusBadge status={headerData.status} />
-              <PartyBadge party={headerData.partyName} />
-              <GovernmentBadge governmentStatus={headerData.governmentStatus} />
-              {headerData.measurabilityScore !== null && (
-                <MeasurabilityBadge score={headerData.measurabilityScore} />
-              )}
+            <div
+              className="w-full overflow-x-auto overflow-y-hidden pt-2 overscroll-x-contain touch-pan-x [-webkit-overflow-scrolling:touch]"
+            >
+              <div className="flex w-max min-w-full flex-nowrap items-center gap-2 pb-1">
+                <StatusBadge status={headerData.status} className="shrink-0" />
+                <PartyBadge party={headerData.partyName} compact={false} className="shrink-0" />
+                <GovernmentBadge
+                  governmentStatus={headerData.governmentStatus}
+                  compact={false}
+                  className="shrink-0"
+                />
+                {headerData.measurabilityScore !== null && (
+                  <MeasurabilityBadge
+                    score={headerData.measurabilityScore}
+                    compact={false}
+                    className="shrink-0"
+                  />
+                )}
+              </div>
             </div>
           )}
         </SheetHeader>
