@@ -8,6 +8,81 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+/**
+ * Takes the raw explanation text and groundingSupports/groundingChunks from Gemini,
+ * and returns an annotated explanation with inline [n] citation markers.
+ */
+function buildCitedExplanation(
+  explanation: string,
+  groundingSupports: any[] | undefined,
+  groundingChunks: any[] | undefined
+): { citedText: string; sources: { url: string; title: string | null }[] } {
+  if (!groundingSupports || !groundingChunks || groundingChunks.length === 0) {
+    return { citedText: explanation, sources: [] };
+  }
+
+  // Build unique source list from grounding chunks
+  const uniqueSources: { url: string; title: string | null }[] = [];
+  const urlToIndex = new Map<string, number>();
+
+  for (const chunk of groundingChunks) {
+    const url = chunk.web?.uri;
+    if (url && !urlToIndex.has(url)) {
+      urlToIndex.set(url, uniqueSources.length);
+      uniqueSources.push({ url, title: chunk.web?.title || null });
+    }
+  }
+
+  // Collect insertions: at each endIndex, insert citation markers
+  // groundingSupports[].segment.startIndex/endIndex refer to the full AI text,
+  // but we match against the explanation substring
+  const insertions: { position: number; citations: number[] }[] = [];
+
+  for (const support of groundingSupports) {
+    const segment = support.segment;
+    if (!segment || segment.text === undefined) continue;
+
+    const chunkIndices: number[] = support.groundingChunkIndices || [];
+    if (chunkIndices.length === 0) continue;
+
+    // Find where this segment text appears in our explanation
+    const segmentText = segment.text?.trim();
+    if (!segmentText) continue;
+
+    const pos = explanation.indexOf(segmentText);
+    if (pos === -1) continue;
+
+    const endPos = pos + segmentText.length;
+
+    // Map chunk indices to our unique source indices
+    const citations: number[] = [];
+    for (const ci of chunkIndices) {
+      const chunk = groundingChunks[ci];
+      if (chunk?.web?.uri) {
+        const sourceIdx = urlToIndex.get(chunk.web.uri);
+        if (sourceIdx !== undefined && !citations.includes(sourceIdx)) {
+          citations.push(sourceIdx);
+        }
+      }
+    }
+
+    if (citations.length > 0) {
+      insertions.push({ position: endPos, citations });
+    }
+  }
+
+  // Sort insertions by position descending so we can insert without shifting
+  insertions.sort((a, b) => b.position - a.position);
+
+  let citedText = explanation;
+  for (const ins of insertions) {
+    const markers = ins.citations.map(i => `[${i + 1}]`).join('');
+    citedText = citedText.slice(0, ins.position) + markers + citedText.slice(ins.position);
+  }
+
+  return { citedText, sources: uniqueSources.slice(0, 10) };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -25,12 +100,9 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
-    // User client for auth check
     const supabaseUser = createClient(supabaseUrl, supabaseServiceKey, {
       global: { headers: { Authorization: authHeader } }
     });
-
-    // Service role client for writing promise_sources (bypasses RLS)
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
@@ -152,6 +224,7 @@ Statusdefinitioner:
       throw new Error('AI-analysen gav inget svar. Försök igen.');
     }
 
+    // Parse status
     let status: 'infriat' | 'delvis-infriat' | 'utreds' | 'ej-infriat' | 'brutet' = 'utreds';
     
     const lowerText = textContent.toLowerCase();
@@ -167,34 +240,36 @@ Statusdefinitioner:
       status = 'brutet';
     }
     
+    // Extract raw explanation
     const explanationMatch = textContent.match(/\*\*Förklaring:\*\*\s*([^*]+?)(?=\n\n\*\*Källor|\n\*\*Källor|$)/is) ||
                             textContent.match(/Förklaring:\s*([^*]+?)(?=Källor|$)/is);
     
-    let explanation = explanationMatch ? explanationMatch[1].trim() : textContent;
-    
-    // Extract source URLs from grounding metadata
-    const sourceUrls: string[] = [];
-    const groundingMetadata = aiData.candidates?.[0]?.groundingMetadata;
-    
-    if (groundingMetadata?.groundingChunks) {
-      console.log(`Found ${groundingMetadata.groundingChunks.length} grounding chunks`);
-      for (const chunk of groundingMetadata.groundingChunks) {
-        if (chunk.web?.uri) {
-          sourceUrls.push(chunk.web.uri);
-        }
-      }
-    }
-    
-    const uniqueSources = [...new Set(sourceUrls)].slice(0, 5);
-    console.log(`Extracted ${uniqueSources.length} sources from metadata`);
+    const rawExplanation = explanationMatch ? explanationMatch[1].trim() : textContent;
 
-    // Update promise status (keep status_sources for backward compat but also write to promise_sources)
+    // Build cited explanation with inline [n] markers
+    const groundingMetadata = aiData.candidates?.[0]?.groundingMetadata;
+    const groundingSupports = groundingMetadata?.groundingSupports;
+    const groundingChunks = groundingMetadata?.groundingChunks;
+
+    console.log(`Grounding supports: ${groundingSupports?.length || 0}, chunks: ${groundingChunks?.length || 0}`);
+
+    const { citedText, sources } = buildCitedExplanation(
+      rawExplanation,
+      groundingSupports,
+      groundingChunks
+    );
+
+    console.log(`Cited explanation preview: ${citedText.slice(0, 200)}`);
+
+    const sourceUrls = sources.map(s => s.url);
+
+    // Update promise status
     const { error: updateError } = await supabaseAdmin
       .from('promises')
       .update({
         status,
-        status_explanation: explanation,
-        status_sources: uniqueSources
+        status_explanation: citedText,
+        status_sources: sourceUrls
       })
       .eq('id', promiseId);
 
@@ -203,7 +278,7 @@ Statusdefinitioner:
       throw new Error('Kunde inte uppdatera vallöftet. Försök igen.');
     }
 
-    // Delete old promise_sources for this promise, then insert new ones
+    // Delete old promise_sources, then insert new ones
     const { error: deleteSourcesError } = await supabaseAdmin
       .from('promise_sources')
       .delete()
@@ -213,19 +288,13 @@ Statusdefinitioner:
       console.error('Error deleting old sources:', deleteSourcesError);
     }
 
-    if (uniqueSources.length > 0) {
-      // Extract titles from grounding chunks where available
-      const sourceRows = uniqueSources.map((url) => {
-        const chunk = groundingMetadata?.groundingChunks?.find(
-          (c: any) => c.web?.uri === url
-        );
-        return {
-          promise_id: promiseId,
-          url,
-          title: chunk?.web?.title || null,
-          source_type: 'news' as const,
-        };
-      });
+    if (sources.length > 0) {
+      const sourceRows = sources.map((s) => ({
+        promise_id: promiseId,
+        url: s.url,
+        title: s.title,
+        source_type: 'news' as const,
+      }));
 
       const { error: insertSourcesError } = await supabaseAdmin
         .from('promise_sources')
@@ -236,10 +305,10 @@ Statusdefinitioner:
       }
     }
 
-    console.log(`Updated promise status to: ${status}`);
+    console.log(`Updated promise status to: ${status}, ${sources.length} sources with inline citations`);
 
     return new Response(
-      JSON.stringify({ success: true, analysis: { status, explanation, sources: uniqueSources } }), 
+      JSON.stringify({ success: true, analysis: { status, explanation: citedText, sources: sourceUrls } }), 
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

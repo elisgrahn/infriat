@@ -9,6 +9,7 @@ import { GovernmentBadge } from "@/components/badges/GovernmentBadge";
 import { MeasurabilityBadge } from "@/components/badges/MeasurabilityBadge";
 import { SourcesList } from "@/components/SourcesList";
 import { CommunityNotes } from "@/components/CommunityNotes";
+import { CitedText } from "@/components/CitedText";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -95,6 +96,7 @@ export default function PromiseDetail() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [citationSources, setCitationSources] = useState<{ url: string; title: string | null }[]>([]);
 
   const fetchPromise = async () => {
     try {
@@ -128,10 +130,24 @@ export default function PromiseDetail() {
     }
   };
 
+  const fetchCitationSources = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("promise_sources")
+        .select("url, title")
+        .eq("promise_id", id!)
+        .order("created_at", { ascending: true });
+      if (!error && data) setCitationSources(data);
+    } catch {
+      // Silently ignore
+    }
+  };
+
   useEffect(() => {
     if (!id) return;
     fetchPromise();
     fetchGovernmentPeriods();
+    fetchCitationSources();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -251,30 +267,11 @@ export default function PromiseDetail() {
             Statusbedömning
           </h2>
           <p className="text-sm leading-relaxed text-foreground">
-            {promise.status_explanation}
+            <CitedText
+              text={promise.status_explanation}
+              sources={citationSources}
+            />
           </p>
-          {promise.status_sources && promise.status_sources.length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-1">
-              {promise.status_sources.map((src, i) => (
-                <a
-                  key={i}
-                  href={src}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                >
-                  <ExternalLink className="w-3 h-3" />
-                  {(() => {
-                    try {
-                      return new URL(src).hostname.replace(/^www\./, "");
-                    } catch {
-                      return src;
-                    }
-                  })()}
-                </a>
-              ))}
-            </div>
-          )}
         </section>
       )}
 

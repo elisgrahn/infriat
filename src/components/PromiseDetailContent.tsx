@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { type PromiseStatus } from "@/config/statusConfig";
 import { SourcesList } from "@/components/SourcesList";
 import { CommunityNotes } from "@/components/CommunityNotes";
+import { CitedText } from "@/components/CitedText";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -104,6 +105,7 @@ export function PromiseDetailContent({
   const [governmentPeriods, setGovernmentPeriods] = useState<GovernmentPeriod[]>(
     [],
   );
+  const [citationSources, setCitationSources] = useState<{ url: string; title: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -132,6 +134,19 @@ export function PromiseDetailContent({
     }
   };
 
+  const fetchCitationSources = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("promise_sources")
+        .select("url, title")
+        .eq("promise_id", promiseId)
+        .order("created_at", { ascending: true });
+      if (!error && data) setCitationSources(data);
+    } catch {
+      // Silently ignore
+    }
+  };
+
   const fetchGovernmentPeriods = async () => {
     try {
       const { data, error } = await supabase
@@ -147,6 +162,7 @@ export function PromiseDetailContent({
   useEffect(() => {
     if (!promiseId) return;
     fetchPromise();
+    fetchCitationSources();
     fetchGovernmentPeriods();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [promiseId]);
@@ -272,30 +288,11 @@ export function PromiseDetailContent({
               Statusbedömning
             </h2>
             <p className="text-sm leading-relaxed text-foreground">
-              {promise.status_explanation}
+              <CitedText
+                text={promise.status_explanation}
+                sources={citationSources}
+              />
             </p>
-            {promise.status_sources && promise.status_sources.length > 0 && (
-              <div className="flex flex-wrap gap-2 pt-1">
-                {promise.status_sources.map((src, index) => (
-                  <a
-                    key={index}
-                    href={src}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                  >
-                    <ExternalLink className="w-3 h-3" />
-                    {(() => {
-                      try {
-                        return new URL(src).hostname.replace(/^www\./, "");
-                      } catch {
-                        return src;
-                      }
-                    })()}
-                  </a>
-                ))}
-              </div>
-            )}
           </section>
         </>
       )}
