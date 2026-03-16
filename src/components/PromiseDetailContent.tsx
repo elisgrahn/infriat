@@ -162,6 +162,7 @@ export function PromiseDetailContent({
   useEffect(() => {
     if (!promiseId) return;
     fetchPromise();
+    fetchCitationSources();
     fetchGovernmentPeriods();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [promiseId]);
