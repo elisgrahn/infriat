@@ -134,6 +134,19 @@ export function PromiseDetailContent({
     }
   };
 
+  const fetchCitationSources = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("promise_sources")
+        .select("url, title")
+        .eq("promise_id", promiseId)
+        .order("created_at", { ascending: true });
+      if (!error && data) setCitationSources(data);
+    } catch {
+      // Silently ignore
+    }
+  };
+
   const fetchGovernmentPeriods = async () => {
     try {
       const { data, error } = await supabase
