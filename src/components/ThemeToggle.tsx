@@ -31,7 +31,7 @@ export function ThemeToggle({ variant = "navbar" }: ThemeToggleProps) {
   return (
     <Button
       variant="ghost"
-      size="icon"
+      size="sm"
       onClick={toggle}
       className={variant === "hero" ? heroClass : navbarClass}
     >

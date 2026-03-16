@@ -281,11 +281,10 @@ export const PromiseCard = ({
           </div>
 
           <div
-            ref={fullBadgesMeasureRef}
             aria-hidden="true"
             className="absolute inset-0 overflow-hidden pointer-events-none opacity-0 -z-10"
           >
-            <div className="absolute left-0 top-0 flex w-max items-center gap-2 whitespace-nowrap">
+            <div ref={fullBadgesMeasureRef} className="absolute left-0 top-0 flex w-max items-center gap-2 whitespace-nowrap">
               <StatusBadge status={status} className="shrink-0" />
               <PartyBadge
                 party={party}

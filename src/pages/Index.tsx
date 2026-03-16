@@ -1,16 +1,19 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { PromiseCard } from "@/components/PromiseCard";
 import { PromiseFilters } from "@/components/PromiseFilters";
 import { PartyProgressBars } from "@/components/PartyProgressBars";
 import { TimelineComparison } from "@/components/TimelineComparison";
 import { HeroStatCard } from "@/components/HeroStatCard";
 import { PromisePagination } from "@/components/PromisePagination";
+import { Input } from "@/components/ui/input";
 import {
   ShieldCheck,
   Scale,
   TrendingUp,
   Sparkles,
   SlidersHorizontal,
+  ArrowUpDown,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -75,6 +78,8 @@ const Index = () => {
     selectedGovStatus,
     searchQuery,
     sortBy,
+    setSearchQuery,
+    setSortBy,
     selectedPeriodId,
     governmentPeriods,
     setGovernmentPeriods,
@@ -84,8 +89,24 @@ const Index = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [cardCompactNeeds, setCardCompactNeeds] = useState<Record<string, boolean>>({});
+  const [sortOpen, setSortOpen] = useState(false);
+  const [isMobileBarStuck, setIsMobileBarStuck] = useState(false);
+  const mobileBarSentinelRef = useRef<HTMLDivElement>(null);
+  const [cardCompactNeeds, setCardCompactNeeds] = useState<
+    Record<string, boolean>
+  >({});
   const ITEMS_PER_PAGE = 20;
+
+  const sortOptions = [
+    { value: "created-desc", label: "Skapat datum (fallande)" },
+    { value: "created-asc", label: "Skapat datum (stigande)" },
+    { value: "year-desc", label: "Valår (fallande)" },
+    { value: "year-asc", label: "Valår (stigande)" },
+    { value: "measurability-desc", label: "Mätbarhet (högst först)" },
+    { value: "measurability-asc", label: "Mätbarhet (lägst först)" },
+    { value: "status-asc", label: "Status (infriade först)" },
+    { value: "status-desc", label: "Status (brutna först)" },
+  ] as const;
 
   // Support legacy /lofte/:id deep-links by normalizing to query param
   useEffect(() => {
@@ -260,19 +281,6 @@ const Index = () => {
     currentPage * ITEMS_PER_PAGE,
   );
 
-  useEffect(() => {
-    const visibleIds = new Set(paginatedPromises.map((promise) => promise.id));
-    setCardCompactNeeds((previous) => {
-      const next = Object.fromEntries(
-        Object.entries(previous).filter(([id]) => visibleIds.has(id)),
-      );
-
-      return Object.keys(next).length === Object.keys(previous).length
-        ? previous
-        : next;
-    });
-  }, [paginatedPromises]);
-
   const handleCardCompactNeedChange = useCallback(
     (promiseId: string, needsCompact: boolean) => {
       setCardCompactNeeds((previous) => {
@@ -287,6 +295,17 @@ const Index = () => {
   );
 
   const sharedCompactBadges = Object.values(cardCompactNeeds).some(Boolean);
+
+  useEffect(() => {
+    const sentinel = mobileBarSentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsMobileBarStuck(!entry.isIntersecting),
+      { rootMargin: "-56px 0px 0px 0px", threshold: 1 },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -325,169 +344,234 @@ const Index = () => {
       <div className="bg-background">
         {/* Hero Section */}
         <header className="relative overflow-hidden bg-gradient-to-br from-primary via-primary-light to-primary-dark text-primary-foreground">
-        {/* Animated background elements */}
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-primary-foreground rounded-full blur-3xl animate-pulse"></div>
-          <div
-            className="absolute bottom-10 right-20 w-96 h-96 bg-secondary rounded-full blur-3xl animate-pulse"
-            style={{ animationDelay: "1s" }}
-          ></div>
-        </div>
+          {/* Animated background elements */}
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute top-20 left-10 w-72 h-72 bg-primary-foreground rounded-full blur-3xl animate-pulse"></div>
+            <div
+              className="absolute bottom-10 right-20 w-96 h-96 bg-secondary rounded-full blur-3xl animate-pulse"
+              style={{ animationDelay: "1s" }}
+            ></div>
+          </div>
 
-        <div className="container relative mx-auto px-4 py-20 md:py-32">
-          <div className="max-w-5xl mx-auto text-center space-y-8">
-            <div className="inline-flex items-center gap-2 bg-primary-foreground/10 backdrop-blur-md px-5 py-2.5 rounded-full border border-primary-foreground/20 shadow-lg">
-              <Sparkles className="w-4 h-4 animate-pulse" />
-              <span className="text-sm font-medium">Politisk transparens</span>
-            </div>
+          <div className="container relative mx-auto px-4 py-20 md:py-32">
+            <div className="max-w-5xl mx-auto text-center space-y-8">
+              <div className="inline-flex items-center gap-2 bg-primary-foreground/10 backdrop-blur-md px-5 py-2.5 rounded-full border border-primary-foreground/20 shadow-lg">
+                <Sparkles className="w-4 h-4 animate-pulse" />
+                <span className="text-sm font-medium">
+                  Politisk transparens
+                </span>
+              </div>
 
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary-foreground via-primary-foreground to-primary-foreground/80 drop-shadow-lg">
-              Infriat
-            </h1>
+              <h1 className="text-5xl md:text-7xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary-foreground via-primary-foreground to-primary-foreground/80 drop-shadow-lg">
+                Infriat
+              </h1>
 
-            <p className="text-xl md:text-2xl text-primary-foreground/95 max-w-3xl mx-auto leading-relaxed font-light">
-              Vi granskar svenska politiska partier och följer upp deras
-              vallöften. Transparens och ansvar är grunden för ett demokratiskt
-              samhälle.
-            </p>
+              <p className="text-xl md:text-2xl text-primary-foreground/95 max-w-3xl mx-auto leading-relaxed font-light">
+                Vi granskar svenska politiska partier och följer upp deras
+                vallöften. Transparens och ansvar är grunden för ett
+                demokratiskt samhälle.
+              </p>
 
-            <div className="grid grid-cols-3 gap-2 sm:gap-6 pt-12 max-w-4xl mx-auto">
-              <HeroStatCard
-                icon={Scale}
-                value={stats.total}
-                label="Antal löften"
-              />
-              <HeroStatCard
-                icon={ShieldCheck}
-                value={stats.fulfilled}
-                label="Infriade löften"
-              />
-              <HeroStatCard
-                icon={TrendingUp}
-                value={`${stats.total > 0 ? Math.round((stats.fulfilled / stats.total) * 100) : 0}%`}
-                label="Uppfyllelsegrad"
-              />
+              <div className="grid grid-cols-3 gap-2 sm:gap-6 pt-12 max-w-4xl mx-auto">
+                <HeroStatCard
+                  icon={Scale}
+                  value={stats.total}
+                  label="Antal löften"
+                />
+                <HeroStatCard
+                  icon={ShieldCheck}
+                  value={stats.fulfilled}
+                  label="Infriade löften"
+                />
+                <HeroStatCard
+                  icon={TrendingUp}
+                  value={`${stats.total > 0 ? Math.round((stats.fulfilled / stats.total) * 100) : 0}%`}
+                  label="Uppfyllelsegrad"
+                />
+              </div>
             </div>
           </div>
-        </div>
         </header>
 
         {/* Main Content */}
-        <main className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Party Comparison - Full Width Above Filters */}
-          <div className="lg:col-span-4">
-            <TimelineComparison
-              promises={filteredPromises}
-              governmentPeriods={governmentPeriods}
-            />
-          </div>
-
-          {/* Filters Sidebar (desktop) */}
-          <aside className="hidden lg:block lg:col-span-1">
-            <div className="sticky top-[72px] bg-card rounded-xl p-6 border shadow-sm">
-              <h2 className="text-xl font-bold mb-6 text-foreground">
-                Filtrera
-              </h2>
-              <PromiseFilters />
-            </div>
-          </aside>
-
-          {/* Promises List */}
-          <div className="lg:col-span-3 space-y-4">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-foreground">
-                {sortedPromises.length}{" "}
-                {sortedPromises.length === 1 ? "löfte" : "löften"}
-              </h2>
-
-              <Drawer open={filtersOpen} onOpenChange={setFiltersOpen}>
-                <DrawerTrigger asChild>
-                  <Button variant="outline" className="gap-2 lg:hidden">
-                    <SlidersHorizontal className="w-4 h-4" />
-                    Filtrera
-                  </Button>
-                </DrawerTrigger>
-                <DrawerContent className="max-h-[85vh]">
-                  <DrawerHeader>
-                    <DrawerTitle>Filtrera löften</DrawerTitle>
-                  </DrawerHeader>
-                  <div className="px-4 pb-6 overflow-y-auto">
-                    <PromiseFilters />
-                  </div>
-                </DrawerContent>
-              </Drawer>
+        <main className="container mx-auto px-4 py-4">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Party Comparison - Full Width Above Filters */}
+            <div className="lg:col-span-4">
+              <TimelineComparison
+                promises={filteredPromises}
+                governmentPeriods={governmentPeriods}
+              />
             </div>
 
-            {loading ? (
-              <div className="text-center py-16 bg-card rounded-xl border">
-                <p className="text-muted-foreground text-lg">
-                  Laddar löften...
-                </p>
+            {/* Filters Sidebar (desktop) */}
+            <aside className="hidden lg:block lg:col-span-1">
+              <div className="sticky top-[72px] bg-card rounded-xl p-6 border shadow-sm">
+                <h2 className="text-xl font-bold mb-6 text-foreground">
+                  Filtrera
+                </h2>
+                <PromiseFilters />
               </div>
-            ) : sortedPromises.length === 0 ? (
-              <div className="text-center py-16 bg-card rounded-xl border">
-                <p className="text-muted-foreground text-lg">
-                  Inga löften hittades som matchar dina filter.
-                </p>
-              </div>
-            ) : (
-              <>
-                <div className="space-y-4">
-                  {paginatedPromises.map((promise) => (
-                    <div key={promise.id}>
-                      <PromiseCard
-                        promiseId={promise.id}
-                        promise={promise.promise_text}
-                        party={promise.parties.name}
-                        partyAbbreviation={promise.parties.abbreviation}
-                        sharedCompactBadges={sharedCompactBadges}
-                        onCompactNeedChange={handleCardCompactNeedChange}
-                        electionYear={promise.election_year}
-                        governmentStatus={getGovernmentStatus(
-                          promise.parties.name,
-                          promise.election_year,
-                        )}
-                        createdAt={new Date(
-                          promise.created_at,
-                        ).toLocaleDateString("sv-SE")}
-                        updatedAt={new Date(
-                          promise.updated_at,
-                        ).toLocaleDateString("sv-SE")}
-                        status={promise.status}
-                        description={promise.summary || undefined}
-                        statusExplanation={
-                          promise.status_explanation || undefined
-                        }
-                        statusSources={promise.status_sources || undefined}
-                        directQuote={promise.direct_quote || undefined}
-                        pageNumber={promise.page_number || undefined}
-                        manifestPdfUrl={promise.manifest_pdf_url || undefined}
-                        measurabilityScore={
-                          promise.measurability_score || undefined
-                        }
-                        onStatusUpdate={fetchPromises}
+            </aside>
+
+            {/* Promises List */}
+            <div className="lg:col-span-3">
+              {/* Sentinel: sits just above the sticky bar; becomes hidden when bar is stuck */}
+              <div
+                ref={mobileBarSentinelRef}
+                className="lg:hidden h-px"
+                aria-hidden="true"
+              />
+              <div className="lg:hidden sticky top-[56px] z-30 -mx-4 mb-2">
+                <div className="px-4 text-muted-foreground bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                  <div
+                    className={`${isMobileBarStuck ? "border-t" : "h-px"}`}
+                  />
+                  <div className={`flex items-center gap-2 py-2`}>
+                    <div className="relative flex-1 min-w-0">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" />
+                      <Input
+                        value={searchQuery}
+                        onChange={(event) => setSearchQuery(event.target.value)}
+                        placeholder="Sök löften..."
+                        className="pl-9 h-8 text-sm"
                       />
                     </div>
-                  ))}
-                </div>
 
-                <PromisePagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
+                    <Drawer open={filtersOpen} onOpenChange={setFiltersOpen}>
+                      <DrawerTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="shrink-0 h-8"
+                          aria-label="Filtrera"
+                        >
+                          <SlidersHorizontal className="w-4 h-4" />
+                          <span className="hidden sm:inline">Filtrera</span>
+                        </Button>
+                      </DrawerTrigger>
+                      <DrawerContent className="max-h-[85vh] rounded-t-2xl">
+                        <DrawerHeader>
+                          <DrawerTitle>Filtrera löften</DrawerTitle>
+                        </DrawerHeader>
+                        <div className="px-4 pb-6 overflow-y-auto">
+                          <PromiseFilters showSearch={false} showSort={false} />
+                        </div>
+                      </DrawerContent>
+                    </Drawer>
+
+                    <Drawer open={sortOpen} onOpenChange={setSortOpen}>
+                      <DrawerTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="shrink-0 h-8"
+                          aria-label="Sortera"
+                        >
+                          <ArrowUpDown className="w-4 h-4" />
+                          <span className="hidden sm:inline">Sortera</span>
+                        </Button>
+                      </DrawerTrigger>
+                      <DrawerContent className="max-h-[85vh] rounded-t-2xl">
+                        <DrawerHeader>
+                          <DrawerTitle>Sortera löften</DrawerTitle>
+                        </DrawerHeader>
+                        <div className="px-4 pb-6 space-y-2 overflow-y-auto">
+                          {sortOptions.map((option) => (
+                            <Button
+                              key={option.value}
+                              variant={
+                                sortBy === option.value ? "default" : "outline"
+                              }
+                              className="w-full justify-start"
+                              onClick={() => {
+                                setSortBy(option.value);
+                                setSortOpen(false);
+                              }}
+                            >
+                              {option.label}
+                            </Button>
+                          ))}
+                        </div>
+                      </DrawerContent>
+                    </Drawer>
+                  </div>
+                </div>
+                <div
+                  className={`${isMobileBarStuck ? "border-b" : "h-px"}`}
                 />
-              </>
-            )}
+              </div>
+
+              {loading ? (
+                <div className="text-center py-16 bg-card rounded-xl border">
+                  <p className="text-muted-foreground text-lg">
+                    Laddar löften...
+                  </p>
+                </div>
+              ) : sortedPromises.length === 0 ? (
+                <div className="text-center py-16 bg-card rounded-xl border">
+                  <p className="text-muted-foreground text-lg">
+                    Inga löften hittades som matchar dina filter.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-4">
+                    {paginatedPromises.map((promise) => (
+                      <div key={promise.id}>
+                        <PromiseCard
+                          promiseId={promise.id}
+                          promise={promise.promise_text}
+                          party={promise.parties.name}
+                          partyAbbreviation={promise.parties.abbreviation}
+                          sharedCompactBadges={sharedCompactBadges}
+                          onCompactNeedChange={handleCardCompactNeedChange}
+                          electionYear={promise.election_year}
+                          governmentStatus={getGovernmentStatus(
+                            promise.parties.name,
+                            promise.election_year,
+                          )}
+                          createdAt={new Date(
+                            promise.created_at,
+                          ).toLocaleDateString("sv-SE")}
+                          updatedAt={new Date(
+                            promise.updated_at,
+                          ).toLocaleDateString("sv-SE")}
+                          status={promise.status}
+                          description={promise.summary || undefined}
+                          statusExplanation={
+                            promise.status_explanation || undefined
+                          }
+                          statusSources={promise.status_sources || undefined}
+                          directQuote={promise.direct_quote || undefined}
+                          pageNumber={promise.page_number || undefined}
+                          manifestPdfUrl={promise.manifest_pdf_url || undefined}
+                          measurabilityScore={
+                            promise.measurability_score || undefined
+                          }
+                          onStatusUpdate={fetchPromises}
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  <PromisePagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                  />
+                </>
+              )}
+            </div>
           </div>
-        </div>
         </main>
 
         {/* Footer */}
         <footer className="bg-muted mt-20 py-12">
           <div className="container mx-auto px-4 text-center">
             <p className="text-muted-foreground">
-              En plattform för att granska politiska löften och skapa transparens.
+              En plattform för att granska politiska löften och skapa
+              transparens.
             </p>
             <p className="text-sm text-muted-foreground mt-2">
               Byggt med öppenhet och ansvarstagande som grund.

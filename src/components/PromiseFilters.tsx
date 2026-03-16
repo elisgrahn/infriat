@@ -17,7 +17,15 @@ const parties = [
 ];
 const statuses = ["Infriat", "Delvis infriat", "Utreds", "Ej infriat", "Brutet"];
 
-export const PromiseFilters = () => {
+interface PromiseFiltersProps {
+  showSearch?: boolean;
+  showSort?: boolean;
+}
+
+export const PromiseFilters = ({
+  showSearch = true,
+  showSort = true,
+}: PromiseFiltersProps = {}) => {
   const {
     selectedParties,
     selectedStatuses,
@@ -100,15 +108,17 @@ export const PromiseFilters = () => {
   };
   return (
     <div className="space-y-6">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          placeholder="Sök efter löften..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
-      </div>
+      {showSearch && (
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Sök efter löften..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+      )}
 
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-foreground">Mandatperiod</h3>
@@ -132,30 +142,32 @@ export const PromiseFilters = () => {
         </Select>
       </div>
 
-      <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-foreground">Sortera efter</h3>
-        <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger>
-            <SelectValue placeholder="Sortera efter..." />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="created-desc">
-              Skapat datum (fallande)
-            </SelectItem>
-            <SelectItem value="created-asc">Skapat datum (stigande)</SelectItem>
-            <SelectItem value="year-desc">Valår (fallande)</SelectItem>
-            <SelectItem value="year-asc">Valår (stigande)</SelectItem>
-            <SelectItem value="measurability-desc">
-              Mätbarhet (högst först)
-            </SelectItem>
-            <SelectItem value="measurability-asc">
-              Mätbarhet (lägst först)
-            </SelectItem>
-            <SelectItem value="status-asc">Status (infriade först)</SelectItem>
-            <SelectItem value="status-desc">Status (brutna först)</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      {showSort && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-foreground">Sortera efter</h3>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger>
+              <SelectValue placeholder="Sortera efter..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="created-desc">
+                Skapat datum (fallande)
+              </SelectItem>
+              <SelectItem value="created-asc">Skapat datum (stigande)</SelectItem>
+              <SelectItem value="year-desc">Valår (fallande)</SelectItem>
+              <SelectItem value="year-asc">Valår (stigande)</SelectItem>
+              <SelectItem value="measurability-desc">
+                Mätbarhet (högst först)
+              </SelectItem>
+              <SelectItem value="measurability-asc">
+                Mätbarhet (lägst först)
+              </SelectItem>
+              <SelectItem value="status-asc">Status (infriade först)</SelectItem>
+              <SelectItem value="status-desc">Status (brutna först)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-foreground">Status</h3>
