@@ -1,11 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
-import { StatusBadge } from "@/components/badges/StatusBadge";
-import { PartyBadge } from "@/components/badges/PartyBadge";
-import { GovernmentBadge } from "@/components/badges/GovernmentBadge";
-import { MeasurabilityBadge } from "@/components/badges/MeasurabilityBadge";
+import { type PromiseStatus } from "@/config/statusConfig";
 import { SourcesList } from "@/components/SourcesList";
 import { CommunityNotes } from "@/components/CommunityNotes";
 import { Button } from "@/components/ui/button";
@@ -23,16 +19,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   ArrowLeft,
-  Calendar,
-  Check,
-  Clock,
   ExternalLink,
-  FileText,
+  Quote,
   RefreshCw,
   Ruler,
   Search,
-  Share2,
   Trash2,
+  CircleHelp,
 } from "lucide-react";
 import { usePromiseAdminActions } from "@/hooks/usePromiseAdminActions";
 import { toast } from "sonner";
@@ -70,6 +63,15 @@ interface PromiseDetailContentProps {
   promiseId: string;
   onClose: () => void;
   onStatusChange?: (status: PromiseStatus) => void;
+  onHeaderDataChange?: (data: PromiseDetailHeaderData | null) => void;
+}
+
+export interface PromiseDetailHeaderData {
+  title: string;
+  status: PromiseStatus;
+  partyName: string;
+  governmentStatus: "governing" | "opposition";
+  measurabilityScore: number | null;
 }
 
 function getGovernmentStatus(
@@ -94,6 +96,7 @@ export function PromiseDetailContent({
   promiseId,
   onClose,
   onStatusChange,
+  onHeaderDataChange,
 }: PromiseDetailContentProps) {
   const { isAdmin } = useAuth();
 
@@ -103,7 +106,6 @@ export function PromiseDetailContent({
   );
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [copied, setCopied] = useState(false);
 
   const fetchPromise = async () => {
     setLoading(true);
@@ -149,17 +151,25 @@ export function PromiseDetailContent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [promiseId]);
 
-  const handleShare = async () => {
-    const url = `${window.location.origin}/lofte/${promiseId}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      toast.success("Länk kopierad!");
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast.error("Kunde inte kopiera länk");
+  useEffect(() => {
+    if (!onHeaderDataChange) return;
+    if (!promise) {
+      onHeaderDataChange(null);
+      return;
     }
-  };
+
+    onHeaderDataChange({
+      title: promise.promise_text,
+      status: promise.status,
+      partyName: promise.parties.name,
+      governmentStatus: getGovernmentStatus(
+        promise.parties.name,
+        promise.election_year,
+        governmentPeriods,
+      ),
+      measurabilityScore: promise.measurability_score,
+    });
+  }, [governmentPeriods, onHeaderDataChange, promise]);
 
   const {
     isAnalyzing,
@@ -199,86 +209,16 @@ export function PromiseDetailContent({
   }
 
   return (
-    <div className="space-y-8 pb-4">
-      {/* <div
-        className={`rounded-xl ${borderSide === "top" ? "border-t-4" : "border-l-4"} ${statusBorderClass} bg-card p-6 shadow-sm space-y-4`}
-      >
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge status={promise.status} />
-            <PartyBadge party={promise.parties.name} />
-            <GovernmentBadge governmentStatus={govStatus} />
-            {promise.measurability_score !== null && (
-              <MeasurabilityBadge score={promise.measurability_score} />
-            )}
-          </div>
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleShare}
-            className="gap-1.5"
-          >
-            {copied ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
-            {copied ? "Kopierad" : "Dela"}
-          </Button>
-        </div>
-
-        <h1 className="text-xl font-semibold leading-snug text-foreground">
-          {promise.promise_text}
-        </h1>
-
-        {promise.summary && (
-          <p className="text-muted-foreground text-sm leading-relaxed">
+    <div className="space-y-6">
+      {promise.summary && (
+        <section className="space-y-2">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+              <CircleHelp className="w-4 h-4" />
+              Sammanfattning
+            </h2>
+          <p className="text-sm leading-relaxed text-foreground">
             {promise.summary}
           </p>
-        )}
-
-        <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground pt-1">
-          <div className="flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5" />
-            <span>Valår: {promise.election_year}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5" />
-            <span>
-              Uppdaterad: {" "}
-              {new Date(promise.updated_at).toLocaleDateString("sv-SE")}
-            </span>
-          </div>
-        </div>
-      </div> */}
-
-      {promise.status_explanation && (
-        <section className="space-y-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Statusbedömning
-          </h2>
-          <p className="text-sm leading-relaxed text-foreground">
-            {promise.status_explanation}
-          </p>
-          {promise.status_sources && promise.status_sources.length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-1">
-              {promise.status_sources.map((src, index) => (
-                <a
-                  key={index}
-                  href={src}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                >
-                  <ExternalLink className="w-3 h-3" />
-                  {(() => {
-                    try {
-                      return new URL(src).hostname.replace(/^www\./, "");
-                    } catch {
-                      return src;
-                    }
-                  })()}
-                </a>
-              ))}
-            </div>
-          )}
         </section>
       )}
 
@@ -287,7 +227,7 @@ export function PromiseDetailContent({
           <Separator />
           <section className="space-y-2">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
-              <FileText className="w-4 h-4" />
+              <Quote className="w-4 h-4" />
               Citat ur valmanifest
             </h2>
             <blockquote className="border-l-2 border-muted pl-4 italic text-sm text-muted-foreground leading-relaxed">
@@ -319,6 +259,43 @@ export function PromiseDetailContent({
             <p className="text-sm leading-relaxed text-foreground">
               {promise.measurability_reason}
             </p>
+          </section>
+        </>
+      )}
+
+      {promise.status_explanation && (
+        <>
+          <Separator />
+          <section className="space-y-2">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+              <Search className="w-4 h-4" />
+              Statusbedömning
+            </h2>
+            <p className="text-sm leading-relaxed text-foreground">
+              {promise.status_explanation}
+            </p>
+            {promise.status_sources && promise.status_sources.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {promise.status_sources.map((src, index) => (
+                  <a
+                    key={index}
+                    href={src}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    {(() => {
+                      try {
+                        return new URL(src).hostname.replace(/^www\./, "");
+                      } catch {
+                        return src;
+                      }
+                    })()}
+                  </a>
+                ))}
+              </div>
+            )}
           </section>
         </>
       )}

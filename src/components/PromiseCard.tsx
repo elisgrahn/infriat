@@ -113,7 +113,13 @@ export const PromiseCard = ({
       }}
     >
       <div className="flex flex-col gap-4">
-        {/* Header row: badges + action buttons */}
+        
+        {/* title */}
+        <h3 className="text-lg font-semibold text-foreground leading-snug">
+          {promise}
+        </h3>
+
+        {/* badges + action buttons */}
         <div className="flex items-start justify-between gap-4">
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={status} />
@@ -216,16 +222,11 @@ export const PromiseCard = ({
         </div>
 
         {/* Promise title + description */}
-        <div className="space-y-2">
-          <h3 className="text-lg font-semibold text-foreground leading-snug">
-            {promise}
-          </h3>
-          {description && (
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              {description}
-            </p>
-          )}
-        </div>
+        {description && (
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            {description}
+          </p>
+        )}
 
         {/* Tabs: Statusbedömning | Citat | Källor | Medborgarförslag */}
         {/* <Tabs defaultValue="explanation" className="w-full">
@@ -300,7 +301,7 @@ export const PromiseCard = ({
         </Tabs> */}
 
         {/* Footer metadata */}
-        <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5" />
             <span>Valår: {electionYear}</span>

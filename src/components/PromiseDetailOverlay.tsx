@@ -12,8 +12,15 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { PromiseDetailContent } from "@/components/PromiseDetailContent";
+import {
+  PromiseDetailContent,
+  type PromiseDetailHeaderData,
+} from "@/components/PromiseDetailContent";
 import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
+import { StatusBadge } from "@/components/badges/StatusBadge";
+import { PartyBadge } from "@/components/badges/PartyBadge";
+import { GovernmentBadge } from "@/components/badges/GovernmentBadge";
+import { MeasurabilityBadge } from "@/components/badges/MeasurabilityBadge";
 
 interface PromiseDetailOverlayProps {
   promiseId?: string;
@@ -42,11 +49,16 @@ export function PromiseDetailOverlay({
     status: initialStatus ?? "pending-analysis",
   });
 
+  const [headerData, setHeaderData] = useState<PromiseDetailHeaderData | null>(
+    null,
+  );
+
   // Sync open state when promiseId changes from parent
   useEffect(() => {
     if (promiseId) {
       setLastPromiseId(promiseId);
       setOpen(true);
+      setHeaderData(null);
     } else {
       setOpen(false);
     }
@@ -65,6 +77,8 @@ export function PromiseDetailOverlay({
   // Called by the close button inside PromiseDetailContent — start dismiss animation
   const handleClose = () => setOpen(false);
 
+  const title = headerData?.title ?? "Löftesdetaljer";
+
   if (isMobile) {
     return (
       <Drawer
@@ -76,13 +90,23 @@ export function PromiseDetailOverlay({
         onClose={onClose}
       >
         <DrawerContent
-          className={`h-[75vh] max-h-[75vh] !border-t-4 ${drawerBorderClass} bg-card shadow-sm rounded-t-3xl`}
+          className={`flex flex-col max-h-[75vh] border-t-4 ${drawerBorderClass} bg-card shadow-sm rounded-t-2xl`}
         >
-          <DrawerHeader className="sr-only">
-            <DrawerTitle>Löftesdetaljer</DrawerTitle>
+          <DrawerHeader className="flex-none">
+            <DrawerTitle className="text-left leading-snug">{title}</DrawerTitle>
+            {headerData && (
+              <div className="flex flex-wrap items-center gap-2 pt-2">
+                <StatusBadge status={headerData.status} />
+                <PartyBadge party={headerData.partyName} />
+                <GovernmentBadge governmentStatus={headerData.governmentStatus} />
+                {headerData.measurabilityScore !== null && (
+                  <MeasurabilityBadge score={headerData.measurabilityScore} />
+                )}
+              </div>
+            )}
           </DrawerHeader>
           {/* Fixed height minus drag handle (mt-4 h-2 = ~1.5rem) so vaul's gesture isn't blocked by overflow:hidden on the outer container */}
-          <div className="overflow-y-auto px-4 pb-6" style={{ height: "calc(75vh - 1.5rem)" }}>
+          <div className="flex-1 overflow-y-auto px-4 pb-4">
             <PromiseDetailContent
               key={activePromiseId}
               promiseId={activePromiseId!}
@@ -90,6 +114,7 @@ export function PromiseDetailOverlay({
               onStatusChange={(status) =>
                 setResolvedStatus({ promiseId: activePromiseId, status })
               }
+              onHeaderDataChange={setHeaderData}
             />
           </div>
         </DrawerContent>
@@ -106,14 +131,24 @@ export function PromiseDetailOverlay({
     >
       <SheetContent
         side="right"
-        className={`w-full sm:max-w-2xl p-0 border-l-4 ${statusBorderClass} bg-card shadow-sm rounded-l-3xl`}
+        className={`flex flex-col gap-0 w-full sm:max-w-2xl p-0 border-l-4 ${statusBorderClass} bg-card shadow-sm rounded-l-2xl`}
         // Radix fires onCloseAutoFocus after the exit animation finishes
         onCloseAutoFocus={() => onClose()}
       >
-        <SheetHeader className="sr-only">
-          <SheetTitle>Löftesdetaljer</SheetTitle>
+        <SheetHeader className="flex-none p-4">
+          <SheetTitle className="text-left leading-snug">{title}</SheetTitle>
+          {headerData && (
+            <div className="flex flex-wrap items-center gap-2 pt-2">
+              <StatusBadge status={headerData.status} />
+              <PartyBadge party={headerData.partyName} />
+              <GovernmentBadge governmentStatus={headerData.governmentStatus} />
+              {headerData.measurabilityScore !== null && (
+                <MeasurabilityBadge score={headerData.measurabilityScore} />
+              )}
+            </div>
+          )}
         </SheetHeader>
-        <div className="h-full overflow-y-auto p-4 sm:p-6">
+        <div className="flex-1 overflow-y-auto px-4 pb-4">
           <PromiseDetailContent
             key={activePromiseId}
             promiseId={activePromiseId!}
@@ -121,6 +156,7 @@ export function PromiseDetailOverlay({
             onStatusChange={(status) =>
               setResolvedStatus({ promiseId: activePromiseId, status })
             }
+            onHeaderDataChange={setHeaderData}
           />
         </div>
       </SheetContent>
