@@ -105,6 +105,7 @@ export function PromiseDetailContent({
   const [governmentPeriods, setGovernmentPeriods] = useState<GovernmentPeriod[]>(
     [],
   );
+  const [citationSources, setCitationSources] = useState<{ url: string; title: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
