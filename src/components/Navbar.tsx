@@ -6,8 +6,10 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { InfriatLogo } from "@/components/InfriatLogo";
+import { useStickyBar } from "@/contexts/StickyBarContext";
 
 export function Navbar() {
+  const { isMobileBarStuck } = useStickyBar();
   const { user, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
   const [pendingCount, setPendingCount] = useState(0);
@@ -37,11 +39,11 @@ export function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className={`sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-shadow`}>
       <div className="container mx-auto px-4 h-14 flex items-center justify-between">
         {/* Logo */}
         <button
-          onClick={() => navigate("/")}
+          onClick={() => { navigate("/"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
           className="group flex flex-row items-center gap-2 text-xl font-bold tracking-tight text-foreground hover:text-primary-light dark:hover:text-secondary transition-colors"
         >
           <InfriatLogo className="size-6" />
@@ -80,6 +82,16 @@ export function Navbar() {
             )}
           </Button>
         </div>
+      </div>
+      {/* Animate the changing of padding */}
+      <div
+        style={{
+          paddingLeft: isMobileBarStuck ? "1rem" : "0",
+          paddingRight: isMobileBarStuck ? "1rem" : "0",
+          transition: "padding 100ms ease",
+        }}
+      >
+        <div className="border-b" />
       </div>
     </nav>
   );

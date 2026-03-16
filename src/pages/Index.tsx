@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useStickyBar } from "@/contexts/StickyBarContext";
 import { PromiseCard } from "@/components/PromiseCard";
 import { PromiseFilters } from "@/components/PromiseFilters";
 import { PartyProgressBars } from "@/components/PartyProgressBars";
@@ -90,7 +91,7 @@ const Index = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
-  const [isMobileBarStuck, setIsMobileBarStuck] = useState(false);
+  const { isMobileBarStuck, setMobileBarStuck } = useStickyBar();
   const mobileBarSentinelRef = useRef<HTMLDivElement>(null);
   const [cardCompactNeeds, setCardCompactNeeds] = useState<
     Record<string, boolean>
@@ -300,12 +301,12 @@ const Index = () => {
     const sentinel = mobileBarSentinelRef.current;
     if (!sentinel) return;
     const observer = new IntersectionObserver(
-      ([entry]) => setIsMobileBarStuck(!entry.isIntersecting),
+      ([entry]) => setMobileBarStuck(!entry.isIntersecting),
       { rootMargin: "-56px 0px 0px 0px", threshold: 1 },
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, []);
+  }, [setMobileBarStuck]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -424,9 +425,6 @@ const Index = () => {
               />
               <div className="lg:hidden sticky top-[56px] z-30 -mx-4 mb-2">
                 <div className="px-4 text-muted-foreground bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                  <div
-                    className={`${isMobileBarStuck ? "border-t" : "h-px"}`}
-                  />
                   <div className={`flex items-center gap-2 py-2`}>
                     <div className="relative flex-1 min-w-0">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" />

@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import { FilterProvider } from "@/contexts/FilterContext";
+import { StickyBarProvider } from "@/contexts/StickyBarContext";
 import { Navbar } from "@/components/Navbar";
 import Index from "./pages/Index";
 import Statistics from "./pages/Statistics";
@@ -15,10 +16,12 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const Layout = () => (
-  <div className="min-h-screen bg-background flex flex-col">
-    <Navbar />
-    <Outlet />
-  </div>
+  <StickyBarProvider>
+    <div className="min-h-screen bg-background flex flex-col">
+      <Navbar />
+      <Outlet />
+    </div>
+  </StickyBarProvider>
 );
 
 const App = () => (
