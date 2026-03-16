@@ -96,6 +96,7 @@ export default function PromiseDetail() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [citationSources, setCitationSources] = useState<{ url: string; title: string | null }[]>([]);
 
   const fetchPromise = async () => {
     try {
