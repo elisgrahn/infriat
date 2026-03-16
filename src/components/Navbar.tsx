@@ -26,9 +26,9 @@ export function Navbar() {
         {/* Logo */}
         <button
           onClick={() => navigate("/")}
-          className="text-xl font-bold tracking-tight text-foreground hover:text-primary transition-colors"
+          className="text-xl font-bold tracking-tight text-foreground hover:text-secondary transition-colors"
         >
-          Infriat
+          Infriat.se
         </button>
 
         {/* Actions (always visible, including mobile) */}

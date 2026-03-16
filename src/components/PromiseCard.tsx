@@ -1,24 +1,16 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Calendar,
   RefreshCw,
-  ExternalLink,
-  FileText,
   Clock,
   Upload,
   Trash2,
   Search,
   Ruler,
-  Share2,
-  Check,
   MoreVertical,
 } from "lucide-react";
-import { SourcesList } from "@/components/SourcesList";
-import { CommunityNotes } from "@/components/CommunityNotes";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,11 +31,13 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { usePromiseAdminActions } from "@/hooks/usePromiseAdminActions";
+import { useNavigate } from "react-router-dom";
 import { StatusBadge } from "@/components/badges/StatusBadge";
 import { PartyBadge } from "@/components/badges/PartyBadge";
 import { GovernmentBadge } from "@/components/badges/GovernmentBadge";
 import { MeasurabilityBadge } from "@/components/badges/MeasurabilityBadge";
 import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
+import { ShareButton } from "./ShareButton";
 
 
 interface PromiseCardProps {
@@ -84,8 +78,8 @@ export const PromiseCard = ({
   onStatusUpdate,
 }: PromiseCardProps) => {
   const config = STATUS_CONFIG[status];
-  const [copied, setCopied] = useState(false);
   const { isAdmin, loading } = useAuth();
+  const navigate = useNavigate();
 
   const {
     isAnalyzing,
@@ -105,20 +99,19 @@ export const PromiseCard = ({
     onStatusUpdate,
   });
 
-  const handleShare = async () => {
-    const url = `${window.location.origin}/?promise=${promiseId}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      toast.success("Länk kopierad!");
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast.error("Kunde inte kopiera länk");
-    }
-  };
-
   return (
-    <Card className={`p-6 hover:shadow-lg transition-all duration-300 border-l-4 ${config.borderColor}`}>
+    <Card
+      className={`p-6 hover:shadow-lg transition-all duration-300 border-l-4 ${config.borderColor} ${config.cardHoverClassName} ${config.cardFocusClassName} cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2`}
+      role="button"
+      tabIndex={0}
+      onClick={() => navigate(`/lofte/${promiseId}`)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          navigate(`/lofte/${promiseId}`);
+        }
+      }}
+    >
       <div className="flex flex-col gap-4">
         {/* Header row: badges + action buttons */}
         <div className="flex items-start justify-between gap-4">
@@ -131,23 +124,12 @@ export const PromiseCard = ({
             )}
           </div>
 
-          <div className="flex gap-2 shrink-0">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="icon" onClick={handleShare}>
-                    {copied ? (
-                      <Check className="w-4 h-4" />
-                    ) : (
-                      <Share2 className="w-4 h-4" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Dela länk till detta löfte</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+          <div
+            className="flex gap-2 shrink-0"
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
+          >
+            <ShareButton promiseId={promiseId} />
 
             {isAdmin && !loading && (
               <DropdownMenu>
@@ -157,8 +139,13 @@ export const PromiseCard = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleAnalyze} disabled={isAnalyzing}>
-                    <RefreshCw className={`w-4 h-4 mr-2 ${isAnalyzing ? "animate-spin" : ""}`} />
+                  <DropdownMenuItem
+                    onClick={handleAnalyze}
+                    disabled={isAnalyzing}
+                  >
+                    <RefreshCw
+                      className={`w-4 h-4 mr-2 ${isAnalyzing ? "animate-spin" : ""}`}
+                    />
                     {isAnalyzing
                       ? "Analyserar..."
                       : status === "pending-analysis"
@@ -170,7 +157,9 @@ export const PromiseCard = ({
                     onClick={handleAnalyzeMeasurability}
                     disabled={isAnalyzingMeasurability}
                   >
-                    <Ruler className={`w-4 h-4 mr-2 ${isAnalyzingMeasurability ? "animate-spin" : ""}`} />
+                    <Ruler
+                      className={`w-4 h-4 mr-2 ${isAnalyzingMeasurability ? "animate-spin" : ""}`}
+                    />
                     {isAnalyzingMeasurability
                       ? "Analyserar..."
                       : measurabilityScore
@@ -183,7 +172,9 @@ export const PromiseCard = ({
                       onClick={handleReanalyzePage}
                       disabled={isReanalyzingPage}
                     >
-                      <Search className={`w-4 h-4 mr-2 ${isReanalyzingPage ? "animate-spin" : ""}`} />
+                      <Search
+                        className={`w-4 h-4 mr-2 ${isReanalyzingPage ? "animate-spin" : ""}`}
+                      />
                       {isReanalyzingPage ? "Söker..." : "Hitta sidnummer"}
                     </DropdownMenuItem>
                   )}
@@ -237,7 +228,7 @@ export const PromiseCard = ({
         </div>
 
         {/* Tabs: Statusbedömning | Citat | Källor | Medborgarförslag */}
-        <Tabs defaultValue="explanation" className="w-full">
+        {/* <Tabs defaultValue="explanation" className="w-full">
           <TabsList className="w-full h-auto flex-wrap justify-start bg-muted/50">
             <TabsTrigger value="explanation" className="text-xs">
               Statusbedömning
@@ -306,7 +297,7 @@ export const PromiseCard = ({
           <TabsContent value="community" className="mt-3">
             <CommunityNotes promiseId={promiseId} />
           </TabsContent>
-        </Tabs>
+        </Tabs> */}
 
         {/* Footer metadata */}
         <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">

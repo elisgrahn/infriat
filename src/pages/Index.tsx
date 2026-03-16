@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { PromiseCard } from "@/components/PromiseCard";
 import { PromiseFilters } from "@/components/PromiseFilters";
 import { PartyProgressBars } from "@/components/PartyProgressBars";
@@ -43,7 +43,13 @@ interface Promise {
   direct_quote: string | null;
   measurability_reason: string | null;
   measurability_score: number | null;
-  status: 'infriat' | 'delvis-infriat' | 'utreds' | 'ej-infriat' | 'brutet' | 'pending-analysis';
+  status:
+    | "infriat"
+    | "delvis-infriat"
+    | "utreds"
+    | "ej-infriat"
+    | "brutet"
+    | "pending-analysis";
   status_explanation: string | null;
   status_sources: string[] | null;
   page_number: number | null;
@@ -60,41 +66,30 @@ const Index = () => {
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
   const [searchParams] = useSearchParams();
-  const promiseRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-  const { 
-    selectedParties, 
-    selectedStatuses, 
-    selectedGovStatus, 
-    searchQuery, 
-    sortBy, 
+  const {
+    selectedParties,
+    selectedStatuses,
+    selectedGovStatus,
+    searchQuery,
+    sortBy,
     selectedPeriodId,
     governmentPeriods,
-    setGovernmentPeriods
+    setGovernmentPeriods,
   } = useFilters();
-  
+
   const [promises, setPromises] = useState<Promise[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const ITEMS_PER_PAGE = 20;
 
-  // Scroll to promise if ID in URL - wait until promises are loaded
+  // Redirect legacy /?promise=<id> deep-links to the dedicated detail page
   useEffect(() => {
-    if (loading || promises.length === 0) return;
-    
-    const promiseId = searchParams.get('promise');
-    if (promiseId && promiseRefs.current[promiseId]) {
-      // Give some time for rendering
-      const timer = setTimeout(() => {
-        promiseRefs.current[promiseId]?.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center' 
-        });
-      }, 300);
-      
-      return () => clearTimeout(timer);
+    const promiseId = searchParams.get("promise");
+    if (promiseId) {
+      navigate(`/lofte/${promiseId}`, { replace: true });
     }
-  }, [loading, promises, searchParams]);
+  }, [searchParams, navigate]);
 
   useEffect(() => {
     fetchPromises();
@@ -104,9 +99,9 @@ const Index = () => {
   const fetchPromises = async () => {
     try {
       const { data, error } = await supabase
-        .from('promises')
-        .select('*, parties(*)')
-        .order('created_at', { ascending: false });
+        .from("promises")
+        .select("*, parties(*)")
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       setPromises(data || []);
@@ -120,9 +115,9 @@ const Index = () => {
   const fetchGovernmentPeriods = async () => {
     try {
       const { data, error } = await supabase
-        .from('government_periods')
-        .select('*')
-        .order('start_year', { ascending: true });
+        .from("government_periods")
+        .select("*")
+        .order("start_year", { ascending: true });
 
       if (error) throw error;
       setGovernmentPeriods(data || []);
@@ -131,50 +126,64 @@ const Index = () => {
     }
   };
 
-  const getGovernmentStatus = (partyName: string, electionYear: number): 'governing' | 'opposition' => {
+  const getGovernmentStatus = (
+    partyName: string,
+    electionYear: number,
+  ): "governing" | "opposition" => {
     // If a specific period is selected, use that period's data
     if (selectedPeriodId) {
-      const period = governmentPeriods.find(p => p.id === selectedPeriodId);
-      if (!period) return 'opposition';
-      return period.governing_parties.includes(partyName) || period.support_parties?.includes(partyName) 
-        ? 'governing' 
-        : 'opposition';
+      const period = governmentPeriods.find((p) => p.id === selectedPeriodId);
+      if (!period) return "opposition";
+      return period.governing_parties.includes(partyName) ||
+        period.support_parties?.includes(partyName)
+        ? "governing"
+        : "opposition";
     }
-    
+
     // Otherwise, find the period based on election year
-    const period = governmentPeriods.find(p => 
-      electionYear >= p.start_year && (p.end_year === null || electionYear <= p.end_year)
+    const period = governmentPeriods.find(
+      (p) =>
+        electionYear >= p.start_year &&
+        (p.end_year === null || electionYear <= p.end_year),
     );
-    
-    if (!period) return 'opposition';
-    
-    return period.governing_parties.includes(partyName) || period.support_parties?.includes(partyName)
-      ? 'governing' 
-      : 'opposition';
+
+    if (!period) return "opposition";
+
+    return period.governing_parties.includes(partyName) ||
+      period.support_parties?.includes(partyName)
+      ? "governing"
+      : "opposition";
   };
 
   const filteredPromises = promises.filter((promise) => {
     // Hide "pending-analysis" status from non-admins
-    if (promise.status === 'pending-analysis' && !isAdmin) {
+    if (promise.status === "pending-analysis" && !isAdmin) {
       return false;
     }
 
-    const matchesParty = selectedParties.length === 0 || selectedParties.includes(promise.parties.name);
-    
+    const matchesParty =
+      selectedParties.length === 0 ||
+      selectedParties.includes(promise.parties.name);
+
     const statusMap: Record<string, string> = {
-      "Infriat": "infriat",
+      Infriat: "infriat",
       "Delvis infriat": "delvis-infriat",
-      "Utreds": "utreds",
+      Utreds: "utreds",
       "Ej infriat": "ej-infriat",
-      "Brutet": "brutet"
+      Brutet: "brutet",
     };
-    
-    const matchesStatus = selectedStatuses.length === 0 || 
-      selectedStatuses.some(status => statusMap[status] === promise.status);
-    
-    const govStatus = getGovernmentStatus(promise.parties.name, promise.election_year);
-    const matchesGovStatus = selectedGovStatus.length === 0 || selectedGovStatus.includes(govStatus);
-    
+
+    const matchesStatus =
+      selectedStatuses.length === 0 ||
+      selectedStatuses.some((status) => statusMap[status] === promise.status);
+
+    const govStatus = getGovernmentStatus(
+      promise.parties.name,
+      promise.election_year,
+    );
+    const matchesGovStatus =
+      selectedGovStatus.length === 0 || selectedGovStatus.includes(govStatus);
+
     const matchesSearch =
       searchQuery === "" ||
       promise.promise_text.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -183,32 +192,44 @@ const Index = () => {
     // Filter by selected period
     let matchesPeriod = true;
     if (selectedPeriodId) {
-      const period = governmentPeriods.find(p => p.id === selectedPeriodId);
+      const period = governmentPeriods.find((p) => p.id === selectedPeriodId);
       if (period) {
-        matchesPeriod = promise.election_year >= period.start_year && 
-                        (period.end_year === null || promise.election_year <= period.end_year);
+        matchesPeriod =
+          promise.election_year >= period.start_year &&
+          (period.end_year === null ||
+            promise.election_year <= period.end_year);
       }
     }
 
-    return matchesParty && matchesStatus && matchesGovStatus && matchesSearch && matchesPeriod;
+    return (
+      matchesParty &&
+      matchesStatus &&
+      matchesGovStatus &&
+      matchesSearch &&
+      matchesPeriod
+    );
   });
 
   const sortedPromises = [...filteredPromises].sort((a, b) => {
     // Status ranking based on filter button order
     const statusRank: Record<string, number> = {
-      'infriat': 1,
-      'delvis-infriat': 2,
-      'utreds': 3,
-      'ej-infriat': 4,
-      'brutet': 5,
-      'pending-analysis': 6
+      infriat: 1,
+      "delvis-infriat": 2,
+      utreds: 3,
+      "ej-infriat": 4,
+      brutet: 5,
+      "pending-analysis": 6,
     };
 
     switch (sortBy) {
       case "created-desc":
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        return (
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
       case "created-asc":
-        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        return (
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
       case "year-desc":
         return b.election_year - a.election_year;
       case "year-asc":
@@ -222,7 +243,9 @@ const Index = () => {
       case "status-desc":
         return statusRank[b.status] - statusRank[a.status];
       default:
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        return (
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
     }
   });
 
@@ -230,23 +253,32 @@ const Index = () => {
   const totalPages = Math.ceil(sortedPromises.length / ITEMS_PER_PAGE);
   const paginatedPromises = sortedPromises.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+    currentPage * ITEMS_PER_PAGE,
   );
 
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedParties, selectedStatuses, selectedGovStatus, searchQuery, sortBy, selectedPeriodId]);
+  }, [
+    selectedParties,
+    selectedStatuses,
+    selectedGovStatus,
+    searchQuery,
+    sortBy,
+    selectedPeriodId,
+  ]);
 
   // Filter out pending-analysis for non-admins in stats
-  const statsPromises = isAdmin 
-    ? promises 
-    : promises.filter(p => p.status !== 'pending-analysis');
+  const statsPromises = isAdmin
+    ? promises
+    : promises.filter((p) => p.status !== "pending-analysis");
 
   const stats = {
     total: statsPromises.length,
     fulfilled: statsPromises.filter((p) => p.status === "infriat").length,
-    partiallyFulfilled: statsPromises.filter((p) => p.status === "delvis-infriat").length,
+    partiallyFulfilled: statsPromises.filter(
+      (p) => p.status === "delvis-infriat",
+    ).length,
     broken: statsPromises.filter((p) => p.status === "brutet").length,
     inProgress: statsPromises.filter((p) => p.status === "utreds").length,
     delayed: statsPromises.filter((p) => p.status === "ej-infriat").length,
@@ -282,11 +314,11 @@ const Index = () => {
               samhälle.
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-12 max-w-4xl mx-auto">
+            <div className="grid grid-cols-3 gap-2 sm:gap-6 pt-12 max-w-4xl mx-auto">
               <HeroStatCard
                 icon={Scale}
                 value={stats.total}
-                label="Totalt antal löften"
+                label="Antal löften"
               />
               <HeroStatCard
                 icon={ShieldCheck}
@@ -366,10 +398,7 @@ const Index = () => {
               <>
                 <div className="space-y-4">
                   {paginatedPromises.map((promise) => (
-                    <div
-                      key={promise.id}
-                      ref={(el) => (promiseRefs.current[promise.id] = el)}
-                    >
+                    <div key={promise.id}>
                       <PromiseCard
                         promiseId={promise.id}
                         promise={promise.promise_text}
