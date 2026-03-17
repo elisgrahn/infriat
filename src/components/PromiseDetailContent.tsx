@@ -5,6 +5,8 @@ import { type PromiseStatus } from "@/config/statusConfig";
 import { SourcesList } from "@/components/SourcesList";
 import { CommunityNotes } from "@/components/CommunityNotes";
 import { CitedText } from "@/components/CitedText";
+import { CitationFootnotes } from "@/components/CitationFootnotes";
+import { PromiseDetailSkeleton } from "@/components/PromiseDetailSkeleton";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
