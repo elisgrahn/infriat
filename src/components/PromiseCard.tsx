@@ -144,7 +144,7 @@ export const PromiseCard = ({
 
   return (
     <Card
-      className={`relative p-4 hover:shadow-lg transition-all duration-300 border-l-4 rounded-2xl ${config.borderColor} ${config.cardHoverClassName} ${config.cardFocusClassName} cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2`}
+      className={`relative p-6 hover:shadow-lg transition-all duration-300 border-l-4 rounded-2xl ${config.borderColor} ${config.cardHoverClassName} ${config.cardFocusClassName} cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2`}
       role="button"
       tabIndex={0}
       onClick={() => navigate(`/?promise=${promiseId}`)}

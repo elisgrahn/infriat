@@ -129,7 +129,7 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
   }));
 
   return (
-    <Card className="p-6">
+    <Card className="p-4 rounded-2xl">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>

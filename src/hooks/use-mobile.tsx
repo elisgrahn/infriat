@@ -7,12 +7,31 @@ export function useIsMobile() {
 
   React.useEffect(() => {
     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
+
     const onChange = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+      setIsMobile(mql.matches);
     };
-    mql.addEventListener("change", onChange);
-    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-    return () => mql.removeEventListener("change", onChange);
+
+    onChange();
+
+    if (typeof mql.addEventListener === "function") {
+      mql.addEventListener("change", onChange);
+    } else {
+      mql.addListener(onChange);
+    }
+
+    window.addEventListener("resize", onChange);
+    window.addEventListener("orientationchange", onChange);
+
+    return () => {
+      if (typeof mql.removeEventListener === "function") {
+        mql.removeEventListener("change", onChange);
+      } else {
+        mql.removeListener(onChange);
+      }
+      window.removeEventListener("resize", onChange);
+      window.removeEventListener("orientationchange", onChange);
+    };
   }, []);
 
   return !!isMobile;

@@ -393,8 +393,8 @@ const Index = () => {
         </header>
 
         {/* Main Content */}
-        <main className="container mx-auto px-4 py-4">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <main className="container mx-auto p-4">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
             {/* Party Comparison - Full Width Above Filters */}
             <div className="lg:col-span-4">
               <TimelineComparison
@@ -405,7 +405,7 @@ const Index = () => {
 
             {/* Filters Sidebar (desktop) */}
             <aside className="hidden lg:block lg:col-span-1">
-              <div className="sticky top-[72px] bg-card rounded-xl p-6 border shadow-sm">
+              <div className="sticky top-20 bg-card rounded-2xl p-4 border">
                 <h2 className="text-xl font-bold mb-6 text-foreground">
                   Filtrera
                 </h2>
@@ -499,7 +499,7 @@ const Index = () => {
               </div>
 
               {loading ? (
-                <div className="space-y-4">
+                <div className="grid gap-4">
                   {Array.from({ length: 6 }).map((_, i) => (
                     <PromiseCardSkeleton key={i} />
                   ))}
@@ -512,7 +512,7 @@ const Index = () => {
                 </div>
               ) : (
                 <>
-                  <div className="space-y-4">
+                  <div className="grid gap-4">
                     {paginatedPromises.map((promise) => (
                       <div key={promise.id}>
                         <PromiseCard
