@@ -83,7 +83,7 @@ async function buildCitedExplanation(
     // Map chunk indices to our unique source indices
     const citations: number[] = [];
     for (const ci of chunkIndices) {
-      const chunk = groundingChunks[ci];
+      const chunk = resolvedChunks[ci];
       if (chunk?.web?.uri) {
         const sourceIdx = urlToIndex.get(chunk.web.uri);
         if (sourceIdx !== undefined && !citations.includes(sourceIdx)) {
