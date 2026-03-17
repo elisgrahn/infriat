@@ -58,50 +58,53 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
   const [selectedPeriodId, setSelectedPeriodId] = useState<string | null>(() => searchParams.get('period') || null);
   const [governmentPeriods, setGovernmentPeriods] = useState<GovernmentPeriod[]>([]);
 
-  // Update URL when filters change
+  // Update URL when filters change – use the callback form of setSearchParams
+  // so we always read the *latest* params and never accidentally strip unrelated
+  // query params (e.g. ?promise=).
   useEffect(() => {
-    const params = new URLSearchParams(searchParams);
-    
-    if (selectedParties.length > 0) {
-      // Convert party names to abbreviations for URL
-      const abbreviations = selectedParties.map(name => getPartyAbbreviation(name) || name).filter(Boolean);
-      params.set('parties', abbreviations.join(','));
-    } else {
-      params.delete('parties');
-    }
-    
-    if (selectedStatuses.length > 0) {
-      params.set('statuses', selectedStatuses.join(','));
-    } else {
-      params.delete('statuses');
-    }
-    
-    if (selectedGovStatus.length > 0) {
-      params.set('govStatus', selectedGovStatus.join(','));
-    } else {
-      params.delete('govStatus');
-    }
-    
-    if (searchQuery) {
-      params.set('search', searchQuery);
-    } else {
-      params.delete('search');
-    }
-    
-    if (sortBy !== 'created-desc') {
-      params.set('sort', sortBy);
-    } else {
-      params.delete('sort');
-    }
-    
-    if (selectedPeriodId) {
-      params.set('period', selectedPeriodId);
-    } else {
-      params.delete('period');
-    }
-    
-    setSearchParams(params, { replace: true });
-  }, [selectedParties, selectedStatuses, selectedGovStatus, searchQuery, sortBy, selectedPeriodId]);
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev);
+
+      if (selectedParties.length > 0) {
+        const abbreviations = selectedParties.map(name => getPartyAbbreviation(name) || name).filter(Boolean);
+        params.set('parties', abbreviations.join(','));
+      } else {
+        params.delete('parties');
+      }
+
+      if (selectedStatuses.length > 0) {
+        params.set('statuses', selectedStatuses.join(','));
+      } else {
+        params.delete('statuses');
+      }
+
+      if (selectedGovStatus.length > 0) {
+        params.set('govStatus', selectedGovStatus.join(','));
+      } else {
+        params.delete('govStatus');
+      }
+
+      if (searchQuery) {
+        params.set('search', searchQuery);
+      } else {
+        params.delete('search');
+      }
+
+      if (sortBy !== 'created-desc') {
+        params.set('sort', sortBy);
+      } else {
+        params.delete('sort');
+      }
+
+      if (selectedPeriodId) {
+        params.set('period', selectedPeriodId);
+      } else {
+        params.delete('period');
+      }
+
+      return params;
+    }, { replace: true });
+  }, [selectedParties, selectedStatuses, selectedGovStatus, searchQuery, sortBy, selectedPeriodId, setSearchParams]);
 
   return (
     <FilterContext.Provider

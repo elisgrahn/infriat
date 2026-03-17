@@ -69,7 +69,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { id: legacyPromiseId } = useParams<{ id?: string }>();
   const { isAdmin } = useAuth();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const selectedPromiseId = searchParams.get("promise") ?? undefined;
   const {
     selectedParties,
@@ -338,6 +338,14 @@ const Index = () => {
     (promise) => promise.id === selectedPromiseId,
   )?.status;
 
+  const handleOverlayClose = useCallback(() => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete("promise");
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
+
   return (
     <>
       <div className="bg-background">
@@ -575,7 +583,7 @@ const Index = () => {
       <PromiseDetailOverlay
         promiseId={selectedPromiseId}
         initialStatus={selectedPromiseStatus}
-        onClose={() => navigate("/")}
+        onClose={handleOverlayClose}
       />
     </>
   );

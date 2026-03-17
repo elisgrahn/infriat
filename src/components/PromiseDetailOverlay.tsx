@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   ResponsiveOverlay,
   ResponsiveOverlayBody,
@@ -117,6 +117,8 @@ export function PromiseDetailOverlay({
   }, [lastPromiseId, resolvedStatus, headerDataByPromiseId]);
 
   const activePromiseId = lastPromiseId;
+  const activePromiseIdRef = useRef(activePromiseId);
+  activePromiseIdRef.current = activePromiseId;
 
   const activeStatus =
     resolvedStatus.promiseId === activePromiseId
@@ -137,22 +139,23 @@ export function PromiseDetailOverlay({
     onClose();
   };
 
-  const handleHeaderDataChange = (data: PromiseDetailHeaderData | null) => {
+  const handleHeaderDataChange = useCallback((data: PromiseDetailHeaderData | null) => {
     setHeaderData(data);
-    if (!activePromiseId) return;
+    const id = activePromiseIdRef.current;
+    if (!id) return;
     setHeaderDataByPromiseId((prev) => {
       if (!data) {
-        if (!(activePromiseId in prev)) return prev;
+        if (!(id in prev)) return prev;
         const next = { ...prev };
-        delete next[activePromiseId];
+        delete next[id];
         return next;
       }
       return {
         ...prev,
-        [activePromiseId]: data,
+        [id]: data,
       };
     });
-  };
+  }, []);
 
   const title = headerData?.title ?? "Löftesdetaljer";
 
@@ -165,7 +168,7 @@ export function PromiseDetailOverlay({
       onCloseComplete={handleOverlayCloseComplete}
     >
       <ResponsiveOverlayContent
-        className="flex flex-col w-full max-w-[100vw] p-0 shadow-sm bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60"
+        className="flex flex-col w-full max-w-[100vw] p-0 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60"
         mobileClassName={`max-h-[75vh] border-t-4 ${drawerBorderClass} rounded-t-2xl`}
         desktopClassName={`sm:max-w-2xl border-l-4 ${statusBorderClass} rounded-l-2xl gap-0`}
         side="right"
