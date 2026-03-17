@@ -5,23 +5,56 @@ import { requireAdmin } from '../_shared/auth.ts';
 import { requireGoogleApiKey, geminiUrl } from '../_shared/gemini.ts';
 
 /**
+ * Follows a redirect URL (like vertexaisearch.cloud.google.com) to get the real destination.
+ */
+async function resolveRedirectUrl(url: string): Promise<string> {
+  if (!url.includes('vertexaisearch.cloud.google.com')) {
+    return url;
+  }
+  try {
+    const resp = await fetch(url, { method: 'HEAD', redirect: 'follow' });
+    return resp.url || url;
+  } catch {
+    try {
+      const resp = await fetch(url, { redirect: 'follow' });
+      const finalUrl = resp.url || url;
+      await resp.body?.cancel();
+      return finalUrl;
+    } catch {
+      return url;
+    }
+  }
+}
+
+/**
  * Takes the raw explanation text and groundingSupports/groundingChunks from Gemini,
  * and returns an annotated explanation with inline [n] citation markers.
+ * Resolves vertexaisearch redirect URLs to actual source URLs.
  */
-function buildCitedExplanation(
+async function buildCitedExplanation(
   explanation: string,
   groundingSupports: any[] | undefined,
   groundingChunks: any[] | undefined
-): { citedText: string; sources: { url: string; title: string | null }[] } {
+): Promise<{ citedText: string; sources: { url: string; title: string | null }[] }> {
   if (!groundingSupports || !groundingChunks || groundingChunks.length === 0) {
     return { citedText: explanation, sources: [] };
   }
 
-  // Build unique source list from grounding chunks
+  // Resolve all redirect URLs in parallel
+  const resolvedChunks = await Promise.all(
+    groundingChunks.map(async (chunk: any) => {
+      const uri = chunk.web?.uri;
+      if (!uri) return chunk;
+      const resolvedUrl = await resolveRedirectUrl(uri);
+      return { ...chunk, web: { ...chunk.web, uri: resolvedUrl } };
+    })
+  );
+
+  // Build unique source list from resolved chunks
   const uniqueSources: { url: string; title: string | null }[] = [];
   const urlToIndex = new Map<string, number>();
 
-  for (const chunk of groundingChunks) {
+  for (const chunk of resolvedChunks) {
     const url = chunk.web?.uri;
     if (url && !urlToIndex.has(url)) {
       urlToIndex.set(url, uniqueSources.length);
