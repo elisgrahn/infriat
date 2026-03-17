@@ -1,71 +1,31 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsResponse, jsonResponse, errorResponse } from '../_shared/cors.ts';
+import { requireAdmin } from '../_shared/auth.ts';
+import { requireGoogleApiKey, geminiUrl } from '../_shared/gemini.ts';
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === 'OPTIONS') return corsResponse();
 
   try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const jwt = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(jwt);
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!roleData || roleData.role !== 'admin') {
-      return new Response(JSON.stringify({ error: 'Forbidden' }), {
-        status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    const { userClient, adminClient } = await requireAdmin(req);
+    const apiKey = requireGoogleApiKey();
 
     // Validate request body
     const requestSchema = z.object({
-      reanalyze: z.boolean().optional()
+      reanalyze: z.boolean().optional(),
     });
 
     const body = await req.json();
     const validation = requestSchema.safeParse(body);
-    
     if (!validation.success) {
-      return new Response(JSON.stringify({ error: 'Ogiltig begäran' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return errorResponse('Ogiltig begäran', 400);
     }
 
     const { reanalyze } = validation.data;
 
-    let query = supabase
+    // Fetch promises (RLS-scoped read via userClient)
+    let query = userClient
       .from('promises')
       .select('id, promise_text, direct_quote');
 
@@ -77,35 +37,27 @@ serve(async (req) => {
 
     if (fetchError) {
       console.error('Error fetching promises:', fetchError);
-      return new Response(JSON.stringify({ error: fetchError.message }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return errorResponse(fetchError.message);
     }
 
     if (!promises || promises.length === 0) {
-      return new Response(JSON.stringify({ message: 'No promises to analyze', analyzed: 0 }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return jsonResponse({ message: 'No promises to analyze', analyzed: 0 });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    console.log(`Analyzing measurability for ${promises.length} promises`);
+
     let analyzed = 0;
+    const errors: string[] = [];
 
     for (const promise of promises) {
       try {
-        const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        const response = await fetch(geminiUrl(apiKey), {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            model: 'google/gemini-3-flash-preview',
-            messages: [
-              {
-                role: 'system',
-              content: `Du är en expert på att bedöma mätbarheten av politiska vallöften. 
+            contents: [{
+              parts: [{
+                text: `Du är en expert på att bedöma mätbarheten av politiska vallöften. 
               
 Bedöm mätbarheten på en skala 1-5:
 - 5: Mycket mätbart - KRÄVER BÅDE konkreta siffror/mätbara mål OCH en tydlig tidsram (årtal)
@@ -114,52 +66,81 @@ Bedöm mätbarheten på en skala 1-5:
 - 2: Svårmätbart (vaga formuleringar)
 - 1: Omätbart (inga konkreta mål alls)
 
-Svara ENDAST med ett JSON-objekt: {"score": X, "reason": "kort förklaring"}`,
-              },
-              {
-                role: 'user',
-                content: `Bedöm mätbarheten för detta vallöfte:\n\n${promise.promise_text}\n\n${promise.direct_quote ? `Direkt citat: ${promise.direct_quote}` : ''}`,
-              },
-            ],
+Svara ENDAST med ett JSON-objekt: {"score": X, "reason": "kort förklaring"}
+
+Bedöm mätbarheten för detta vallöfte:
+
+${promise.promise_text}
+
+${promise.direct_quote ? `Direkt citat: ${promise.direct_quote}` : ''}`
+              }]
+            }],
+            generationConfig: { temperature: 0.2, topP: 0.8 },
           }),
         });
 
-        const data = await response.json();
-        const content = data.choices?.[0]?.message?.content;
-        
-        if (content) {
-          const result = JSON.parse(content);
-          const score = Math.min(Math.max(result.score, 1), 5);
-
-          await supabase
-            .from('promises')
-            .update({
-              measurability_score: score,
-              measurability_reason: result.reason,
-            })
-            .eq('id', promise.id);
-
-          analyzed++;
-          console.log(`Analyzed promise ${promise.id}: score ${score}`);
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`AI error for promise ${promise.id}:`, response.status, errorText);
+          errors.push(`${promise.id}: API ${response.status}`);
+          continue;
         }
+
+        const aiData = await response.json();
+        const textContent = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!textContent) {
+          console.error(`Empty AI response for promise ${promise.id}`);
+          errors.push(`${promise.id}: empty response`);
+          continue;
+        }
+
+        // Extract JSON — handle markdown-fenced code blocks
+        let jsonStr = textContent.trim();
+        if (jsonStr.startsWith('```json')) {
+          jsonStr = jsonStr.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+        } else if (jsonStr.startsWith('```')) {
+          jsonStr = jsonStr.replace(/^```\s*/, '').replace(/\s*```$/, '');
+        }
+
+        const result = JSON.parse(jsonStr);
+        const score = Math.min(Math.max(result.score, 1), 5);
+
+        // Write via admin client (bypasses RLS)
+        const { error: updateError } = await adminClient
+          .from('promises')
+          .update({
+            measurability_score: score,
+            measurability_reason: result.reason,
+          })
+          .eq('id', promise.id);
+
+        if (updateError) {
+          console.error(`DB update error for ${promise.id}:`, updateError);
+          errors.push(`${promise.id}: DB update failed`);
+          continue;
+        }
+
+        analyzed++;
+        console.log(`Analyzed promise ${promise.id}: score ${score}`);
       } catch (error) {
         console.error(`Error analyzing promise ${promise.id}:`, error);
+        errors.push(`${promise.id}: ${error instanceof Error ? error.message : 'unknown'}`);
       }
     }
 
-    return new Response(JSON.stringify({ 
-      message: `Analyzed ${analyzed} promises`,
+    return jsonResponse({
+      message: `Analyzed ${analyzed} of ${promises.length} promises`,
       analyzed,
       total: promises.length,
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      errors: errors.length > 0 ? errors : undefined,
     });
 
-  } catch (error) {
-    console.error('Error in analyze-measurability function:', error);
-    return new Response(JSON.stringify({ error: 'Analysen misslyckades. Försök igen.' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+  } catch (error: any) {
+    console.error('Error in analyze-measurability:', error);
+    if (error?.status && error?.message) {
+      return errorResponse(error.message, error.status);
+    }
+    return errorResponse('Analysen misslyckades. Försök igen.');
   }
 });

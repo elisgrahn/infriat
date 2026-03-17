@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { extractFunctionError } from "@/lib/utils";
 import { z } from "zod";
 
 const contextSchema = z.string()
@@ -50,9 +51,12 @@ export const PromiseStatusAnalyzer = ({
       onAnalysisComplete?.();
     } catch (error: any) {
       console.error('Analysis error:', error);
-      const errorMessage = error instanceof z.ZodError 
-        ? error.errors[0].message 
-        : error.message || "Kunde inte analysera löftet";
+      let errorMessage: string;
+      if (error instanceof z.ZodError) {
+        errorMessage = error.errors[0].message;
+      } else {
+        errorMessage = await extractFunctionError(error);
+      }
       
       toast({
         title: "Fel vid analys",

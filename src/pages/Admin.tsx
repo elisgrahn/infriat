@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { extractFunctionError } from "@/lib/utils";
 import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
 
 interface SuggestionWithPromise {
@@ -131,7 +132,9 @@ const Admin = () => {
       if (error) throw error;
       toast({ title: "✅ Analys klar!", description: `${data.analyzed} av ${data.total} löften analyserade` });
     } catch (error) {
-      toast({ title: "❌ Fel vid analys", description: error instanceof Error ? error.message : "Kunde inte analysera mätbarhet", variant: "destructive" });
+      const msg = await extractFunctionError(error);
+      console.error('analyze-measurability error:', error);
+      toast({ title: "❌ Fel vid analys", description: msg, variant: "destructive" });
     } finally {
       setIsAnalyzingMeasurability(false);
     }

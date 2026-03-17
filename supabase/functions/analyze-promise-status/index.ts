@@ -1,12 +1,8 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsResponse, jsonResponse, errorResponse } from '../_shared/cors.ts';
+import { requireAdmin } from '../_shared/auth.ts';
+import { requireGoogleApiKey, geminiUrl } from '../_shared/gemini.ts';
 
 /**
  * Takes the raw explanation text and groundingSupports/groundingChunks from Gemini,
@@ -34,8 +30,6 @@ function buildCitedExplanation(
   }
 
   // Collect insertions: at each endIndex, insert citation markers
-  // groundingSupports[].segment.startIndex/endIndex refer to the full AI text,
-  // but we match against the explanation substring
   const insertions: { position: number; citations: number[] }[] = [];
 
   for (const support of groundingSupports) {
@@ -45,7 +39,6 @@ function buildCitedExplanation(
     const chunkIndices: number[] = support.groundingChunkIndices || [];
     if (chunkIndices.length === 0) continue;
 
-    // Find where this segment text appears in our explanation
     const segmentText = segment.text?.trim();
     if (!segmentText) continue;
 
@@ -84,49 +77,11 @@ function buildCitedExplanation(
 }
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === 'OPTIONS') return corsResponse();
 
   try {
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
-    const supabaseUser = createClient(supabaseUrl, supabaseServiceKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-
-    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
-    
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const { data: roleData, error: roleError } = await supabaseUser
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
-      .maybeSingle();
-
-    if (roleError || !roleData) {
-      return new Response(JSON.stringify({ error: 'Forbidden - Admin access required' }), {
-        status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    const { userClient, adminClient } = await requireAdmin(req);
+    const apiKey = requireGoogleApiKey();
 
     const requestSchema = z.object({
       promiseId: z.string().uuid(),
@@ -137,33 +92,19 @@ serve(async (req) => {
     const validation = requestSchema.safeParse(body);
     
     if (!validation.success) {
-      return new Response(JSON.stringify({ error: 'Ogiltig begäran' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return errorResponse('Ogiltig begäran', 400);
     }
 
     const { promiseId, context } = validation.data;
 
-    const GOOGLE_AI_API_KEY = Deno.env.get('GOOGLE_AI_API_KEY');
-    if (!GOOGLE_AI_API_KEY) {
-      return new Response(JSON.stringify({ error: 'Tjänsten är inte konfigurerad' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const { data: promise, error: promiseError } = await supabaseUser
+    const { data: promise, error: promiseError } = await userClient
       .from('promises')
       .select('*, parties(*)')
       .eq('id', promiseId)
       .single();
 
     if (promiseError || !promise) {
-      return new Response(JSON.stringify({ error: 'Vallöftet hittades inte' }), {
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return errorResponse('Vallöftet hittades inte', 404);
     }
 
     console.log(`Analyzing status for promise: ${promise.promise_text}`);
@@ -192,23 +133,20 @@ Statusdefinitioner:
 
 **Källor:** [lista med relevanta källor]`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${GOOGLE_AI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          tools: [{ googleSearch: {} }],
-          generationConfig: { temperature: 0.3, topK: 40, topP: 0.95 }
-        }),
-      }
-    );
+    const response = await fetch(geminiUrl(apiKey), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        tools: [{ googleSearch: {} }],
+        generationConfig: { temperature: 0.3, topK: 40, topP: 0.95 }
+      }),
+    });
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Google AI API error:', response.status, errorText);
-      throw new Error('AI-analysen misslyckades. Försök igen.');
+      throw new Error(`AI-analysen misslyckades (${response.status}). Försök igen.`);
     }
 
     const aiData = await response.json();
@@ -263,8 +201,8 @@ Statusdefinitioner:
 
     const sourceUrls = sources.map(s => s.url);
 
-    // Update promise status
-    const { error: updateError } = await supabaseAdmin
+    // Update promise status via admin client
+    const { error: updateError } = await adminClient
       .from('promises')
       .update({
         status,
@@ -279,7 +217,7 @@ Statusdefinitioner:
     }
 
     // Delete old promise_sources, then insert new ones
-    const { error: deleteSourcesError } = await supabaseAdmin
+    const { error: deleteSourcesError } = await adminClient
       .from('promise_sources')
       .delete()
       .eq('promise_id', promiseId);
@@ -296,7 +234,7 @@ Statusdefinitioner:
         source_type: 'news' as const,
       }));
 
-      const { error: insertSourcesError } = await supabaseAdmin
+      const { error: insertSourcesError } = await adminClient
         .from('promise_sources')
         .insert(sourceRows);
 
@@ -307,16 +245,18 @@ Statusdefinitioner:
 
     console.log(`Updated promise status to: ${status}, ${sources.length} sources with inline citations`);
 
-    return new Response(
-      JSON.stringify({ success: true, analysis: { status, explanation: citedText, sources: sourceUrls } }), 
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return jsonResponse({
+      success: true,
+      analysis: { status, explanation: citedText, sources: sourceUrls }
+    });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in analyze-promise-status:', error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Ett fel uppstod. Försök igen.' }), 
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    if (error?.status && error?.message) {
+      return errorResponse(error.message, error.status);
+    }
+    return errorResponse(
+      error instanceof Error ? error.message : 'Ett fel uppstod. Försök igen.'
     );
   }
 });

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { extractFunctionError } from "@/lib/utils";
 
 interface UsePromiseAdminActionsProps {
   promiseId: string;
@@ -33,8 +34,10 @@ export function usePromiseAdminActions({
       if (error) throw error;
       toast.success("Status analyserad!");
       onStatusUpdate?.();
-    } catch {
-      toast.error("Kunde inte analysera status");
+    } catch (err) {
+      const msg = await extractFunctionError(err);
+      console.error("analyze-promise-status error:", err);
+      toast.error(`Kunde inte analysera status: ${msg}`);
     } finally {
       setIsAnalyzing(false);
     }
@@ -50,8 +53,10 @@ export function usePromiseAdminActions({
       if (error) throw error;
       toast.success(`Mätbarhet analyserad: ${data.score}/5`);
       onStatusUpdate?.();
-    } catch {
-      toast.error("Kunde inte analysera mätbarhet");
+    } catch (err) {
+      const msg = await extractFunctionError(err);
+      console.error("analyze-single-measurability error:", err);
+      toast.error(`Kunde inte analysera mätbarhet: ${msg}`);
     } finally {
       setIsAnalyzingMeasurability(false);
     }
