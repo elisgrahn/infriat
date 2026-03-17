@@ -208,11 +208,7 @@ export function PromiseDetailContent({
   });
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[40vh]">
-        <div className="text-muted-foreground animate-pulse">Laddar löfte…</div>
-      </div>
-    );
+    return <PromiseDetailSkeleton />;
   }
 
   if (notFound || !promise) {
