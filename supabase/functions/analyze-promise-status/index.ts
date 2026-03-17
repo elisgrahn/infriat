@@ -224,7 +224,7 @@ Statusdefinitioner:
 
     console.log(`Grounding supports: ${groundingSupports?.length || 0}, chunks: ${groundingChunks?.length || 0}`);
 
-    const { citedText, sources } = buildCitedExplanation(
+    const { citedText, sources } = await buildCitedExplanation(
       rawExplanation,
       groundingSupports,
       groundingChunks
