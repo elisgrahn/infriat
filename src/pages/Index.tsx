@@ -502,10 +502,10 @@ const Index = () => {
               </div>
 
               {loading ? (
-                <div className="text-center py-16 bg-card rounded-xl border">
-                  <p className="text-muted-foreground text-lg">
-                    Laddar löften...
-                  </p>
+                <div className="space-y-4">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <PromiseCardSkeleton key={i} />
+                  ))}
                 </div>
               ) : sortedPromises.length === 0 ? (
                 <div className="text-center py-16 bg-card rounded-xl border">

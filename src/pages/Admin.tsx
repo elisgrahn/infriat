@@ -229,6 +229,23 @@ const Admin = () => {
             </Button>
           </div>
 
+          <div className="space-y-2">
+            <Button
+              onClick={handleBatchReanalyze}
+              disabled={isBatchAnalyzing}
+              variant="outline"
+              className="w-full"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isBatchAnalyzing ? "animate-spin" : ""}`} />
+              {isBatchAnalyzing
+                ? (batchProgress || "Analyserar...")
+                : "Omanalysera statusar (löften utan citations)"}
+            </Button>
+            {batchProgress && (
+              <p className="text-xs text-muted-foreground text-center">{batchProgress}</p>
+            )}
+          </div>
+
           {/* Community Suggestions Review */}
           <div className="space-y-4">
             <h2 className="text-2xl font-bold">Medborgarförslag (≥2 röster)</h2>

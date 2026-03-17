@@ -291,6 +291,9 @@ export function PromiseDetailContent({
                 sources={citationSources}
               />
             </p>
+            {citationSources.length > 0 && (
+              <CitationFootnotes sources={citationSources} className="mt-3 pt-3 border-t border-border/50" />
+            )}
           </section>
         </>
       )}
