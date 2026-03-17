@@ -1,4 +1,4 @@
-const GEMINI_MODEL = 'gemini-2.5-flash-preview-05-20';
+const GEMINI_MODEL = 'gemini-2.5-flash';
 
 /**
  * Returns the Google AI API key from environment, or throws a structured error.
