@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useStickyBar } from "@/contexts/StickyBarContext";
 import { PromiseCard } from "@/components/PromiseCard";
+import { PromiseCardSkeleton } from "@/components/PromiseCardSkeleton";
 import { PromiseFilters } from "@/components/PromiseFilters";
 import { PartyProgressBars } from "@/components/PartyProgressBars";
 import { TimelineComparison } from "@/components/TimelineComparison";
@@ -46,7 +47,6 @@ interface Promise {
   promise_text: string;
   summary: string | null;
   direct_quote: string | null;
-  measurability_reason: string | null;
   measurability_score: number | null;
   status:
     | "infriat"
@@ -55,8 +55,6 @@ interface Promise {
     | "ej-infriat"
     | "brutet"
     | "pending-analysis";
-  status_explanation: string | null;
-  status_sources: string[] | null;
   page_number: number | null;
   manifest_pdf_url: string | null;
   parties: {
@@ -126,7 +124,7 @@ const Index = () => {
     try {
       const { data, error } = await supabase
         .from("promises")
-        .select("*, parties(*)")
+        .select("id, party_id, election_year, promise_text, summary, measurability_score, status, page_number, manifest_pdf_url, direct_quote, created_at, updated_at, parties(name, abbreviation)")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -501,10 +499,10 @@ const Index = () => {
               </div>
 
               {loading ? (
-                <div className="text-center py-16 bg-card rounded-xl border">
-                  <p className="text-muted-foreground text-lg">
-                    Laddar löften...
-                  </p>
+                <div className="space-y-4">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <PromiseCardSkeleton key={i} />
+                  ))}
                 </div>
               ) : sortedPromises.length === 0 ? (
                 <div className="text-center py-16 bg-card rounded-xl border">
@@ -537,10 +535,6 @@ const Index = () => {
                           ).toLocaleDateString("sv-SE")}
                           status={promise.status}
                           description={promise.summary || undefined}
-                          statusExplanation={
-                            promise.status_explanation || undefined
-                          }
-                          statusSources={promise.status_sources || undefined}
                           directQuote={promise.direct_quote || undefined}
                           pageNumber={promise.page_number || undefined}
                           manifestPdfUrl={promise.manifest_pdf_url || undefined}

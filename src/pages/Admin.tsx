@@ -3,7 +3,7 @@ import { ManifestUpload } from "@/components/ManifestUpload";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Target, Check, X } from "lucide-react";
+import { ArrowLeft, Target, Check, X, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,6 +30,8 @@ const Admin = () => {
   const { user, isAdmin, loading } = useAuth();
   const { toast } = useToast();
   const [isAnalyzingMeasurability, setIsAnalyzingMeasurability] = useState(false);
+  const [isBatchAnalyzing, setIsBatchAnalyzing] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<SuggestionWithPromise[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(true);
 
@@ -108,6 +110,50 @@ const Admin = () => {
     }
   };
 
+  const handleBatchReanalyze = async () => {
+    setIsBatchAnalyzing(true);
+    setBatchProgress("Hämtar löften utan citations...");
+    try {
+      // Find promises that lack [n] markers in status_explanation
+      const { data: allPromises, error } = await supabase
+        .from("promises")
+        .select("id, status_explanation")
+        .neq("status", "pending-analysis");
+      
+      if (error) throw error;
+      
+      const needsReanalysis = (allPromises || []).filter(
+        (p) => !p.status_explanation || !/\[\d+\]/.test(p.status_explanation)
+      );
+
+      if (needsReanalysis.length === 0) {
+        toast({ title: "Alla löften har redan citations", description: "Inget att omanalysera." });
+        return;
+      }
+
+      let done = 0;
+      for (const p of needsReanalysis) {
+        done++;
+        setBatchProgress(`Analyserar ${done}/${needsReanalysis.length}...`);
+        try {
+          await supabase.functions.invoke("analyze-promise-status", {
+            body: { promiseId: p.id },
+          });
+        } catch {
+          // Continue with next
+        }
+      }
+
+      toast({ title: "Batch-analys klar!", description: `${done} löften omanalyserade.` });
+    } catch (err) {
+      const msg = await extractFunctionError(err);
+      toast({ title: "Fel vid batch-analys", description: msg, variant: "destructive" });
+    } finally {
+      setIsBatchAnalyzing(false);
+      setBatchProgress(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -181,6 +227,23 @@ const Admin = () => {
                 ? "Analyserar..."
                 : "Återanalysera alla"}
             </Button>
+          </div>
+
+          <div className="space-y-2">
+            <Button
+              onClick={handleBatchReanalyze}
+              disabled={isBatchAnalyzing}
+              variant="outline"
+              className="w-full"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isBatchAnalyzing ? "animate-spin" : ""}`} />
+              {isBatchAnalyzing
+                ? (batchProgress || "Analyserar...")
+                : "Omanalysera statusar (löften utan citations)"}
+            </Button>
+            {batchProgress && (
+              <p className="text-xs text-muted-foreground text-center">{batchProgress}</p>
+            )}
           </div>
 
           {/* Community Suggestions Review */}

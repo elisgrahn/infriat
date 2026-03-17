@@ -5,6 +5,8 @@ import { type PromiseStatus } from "@/config/statusConfig";
 import { SourcesList } from "@/components/SourcesList";
 import { CommunityNotes } from "@/components/CommunityNotes";
 import { CitedText } from "@/components/CitedText";
+import { CitationFootnotes } from "@/components/CitationFootnotes";
+import { PromiseDetailSkeleton } from "@/components/PromiseDetailSkeleton";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -206,11 +208,7 @@ export function PromiseDetailContent({
   });
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[40vh]">
-        <div className="text-muted-foreground animate-pulse">Laddar löfte…</div>
-      </div>
-    );
+    return <PromiseDetailSkeleton />;
   }
 
   if (notFound || !promise) {
@@ -293,6 +291,9 @@ export function PromiseDetailContent({
                 sources={citationSources}
               />
             </p>
+            {citationSources.length > 0 && (
+              <CitationFootnotes sources={citationSources} className="mt-3 pt-3 border-t border-border/50" />
+            )}
           </section>
         </>
       )}
