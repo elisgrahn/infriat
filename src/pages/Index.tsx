@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useStickyBar } from "@/contexts/StickyBarContext";
 import { PromiseCard } from "@/components/PromiseCard";
+import { PromiseCardSkeleton } from "@/components/PromiseCardSkeleton";
 import { PromiseFilters } from "@/components/PromiseFilters";
 import { PartyProgressBars } from "@/components/PartyProgressBars";
 import { TimelineComparison } from "@/components/TimelineComparison";
