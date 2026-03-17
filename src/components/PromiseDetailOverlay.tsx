@@ -7,7 +7,6 @@ import {
   ResponsiveOverlayHeaderExtras,
   ResponsiveOverlayTitle,
 } from "@/components/ui/ResponsiveOverlay";
-import { useResponsive } from "@/hooks/use-responsive";
 import {
   PromiseDetailContent,
   type PromiseDetailHeaderData,
@@ -51,10 +50,6 @@ export function PromiseDetailOverlay({
   initialStatus,
   onClose,
 }: PromiseDetailOverlayProps) {
-  const responsive = useResponsive();
-  const isMobile = responsive?.isMobile ?? false;
-  const previousIsMobileRef = useRef(isMobile);
-  const ignoreNextCloseCallbackRef = useRef(false);
   const headerDataByPromiseIdRef = useRef<Record<string, PromiseDetailHeaderData>>({});
   const [storedState] = useState<StoredOverlayState>(() => readStoredOverlayState());
 
@@ -87,13 +82,6 @@ export function PromiseDetailOverlay({
   const [headerData, setHeaderData] = useState<PromiseDetailHeaderData | null>(
     promiseId ? (storedState.headerDataByPromiseId?.[promiseId] ?? null) : null,
   );
-
-  useEffect(() => {
-    if (previousIsMobileRef.current !== isMobile) {
-      ignoreNextCloseCallbackRef.current = true;
-      previousIsMobileRef.current = isMobile;
-    }
-  }, [isMobile]);
 
   // Sync open state when promiseId changes from parent
   useEffect(() => {
@@ -132,10 +120,6 @@ export function PromiseDetailOverlay({
   const handleClose = () => setOpen(false);
 
   const handleOverlayCloseComplete = () => {
-    if (ignoreNextCloseCallbackRef.current) {
-      ignoreNextCloseCallbackRef.current = false;
-      return;
-    }
     onClose();
   };
 
@@ -171,7 +155,7 @@ export function PromiseDetailOverlay({
         className="flex flex-col w-full max-w-[100vw] p-0 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60"
         mobileClassName={`max-h-[75vh] border-t-4 ${drawerBorderClass} rounded-t-2xl`}
         desktopClassName={`sm:max-w-2xl border-l-4 ${statusBorderClass} rounded-l-2xl gap-0`}
-        side="right"
+        side="right"  
         onCloseComplete={handleOverlayCloseComplete}
       >
         <ResponsiveOverlayHeader

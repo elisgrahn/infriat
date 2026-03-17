@@ -51,13 +51,71 @@ export function ResponsiveOverlay({
   const responsive = useResponsive();
   const isMobile = responsive?.isMobile ?? false;
 
-  if (isMobile) {
+  // Track the committed mode so we can detect switches
+  const [committedMode, setCommittedMode] = React.useState(isMobile);
+  // During a mode switch, suppress close callbacks from the unmounting component
+  const suppressCloseRef = React.useRef(false);
+
+  const onCloseCompleteRef = React.useRef(onCloseComplete);
+  onCloseCompleteRef.current = onCloseComplete;
+  const onOpenChangeRef = React.useRef(onOpenChange);
+  onOpenChangeRef.current = onOpenChange;
+
+  // When isMobile changes, suppress the unmount-triggered close and switch mode
+  React.useEffect(() => {
+    if (isMobile !== committedMode) {
+      if (open) {
+        suppressCloseRef.current = true;
+      }
+      setCommittedMode(isMobile);
+    }
+  }, [isMobile, committedMode, open]);
+
+  // Clear suppression after the new component has mounted
+  React.useEffect(() => {
+    if (suppressCloseRef.current) {
+      const id = requestAnimationFrame(() => {
+        suppressCloseRef.current = false;
+      });
+      return () => cancelAnimationFrame(id);
+    }
+  }, [committedMode]);
+
+  const guardedOnOpenChange = React.useCallback((isOpen: boolean) => {
+    if (!isOpen && suppressCloseRef.current) return;
+    onOpenChangeRef.current(isOpen);
+  }, []);
+
+  const guardedOnCloseComplete = React.useCallback(() => {
+    if (suppressCloseRef.current) return;
+    onCloseCompleteRef.current?.();
+  }, []);
+
+  // For the Sheet path: detect close transition and fire callback after animation.
+  // onCloseAutoFocus is unreliable when there is no trigger element.
+  const prevOpenRef = React.useRef(open);
+  React.useEffect(() => {
+    if (prevOpenRef.current && !open && !committedMode) {
+      // Sheet close animation is 300ms (data-[state=closed]:duration-300)
+      const timer = setTimeout(() => {
+        if (!suppressCloseRef.current) {
+          onCloseCompleteRef.current?.();
+        }
+      }, 310);
+      prevOpenRef.current = open;
+      return () => clearTimeout(timer);
+    }
+    prevOpenRef.current = open;
+  }, [open, committedMode]);
+
+  if (committedMode) {
     return (
-      <ResponsiveOverlayModeContext.Provider value={{ isMobile }}>
+      <ResponsiveOverlayModeContext.Provider value={{ isMobile: true }}>
         <Drawer
           open={open}
-          onOpenChange={onOpenChange}
-          onClose={onCloseComplete}
+          onOpenChange={guardedOnOpenChange}
+          onClose={guardedOnCloseComplete}
+          shouldScaleBackground={false}
         >
           {children}
         </Drawer>
@@ -66,10 +124,10 @@ export function ResponsiveOverlay({
   }
 
   return (
-    <ResponsiveOverlayModeContext.Provider value={{ isMobile }}>
+    <ResponsiveOverlayModeContext.Provider value={{ isMobile: false }}>
       <Sheet
         open={open}
-        onOpenChange={onOpenChange}
+        onOpenChange={guardedOnOpenChange}
       >
         {children}
       </Sheet>
@@ -106,7 +164,6 @@ export function ResponsiveOverlayContent({
     <SheetContent
       side={side}
       className={resolvedClassName}
-      onCloseAutoFocus={onCloseComplete}
     >
       {children}
     </SheetContent>
