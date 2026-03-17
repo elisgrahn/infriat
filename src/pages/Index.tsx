@@ -127,7 +127,7 @@ const Index = () => {
     try {
       const { data, error } = await supabase
         .from("promises")
-        .select("*, parties(*)")
+        .select("id, party_id, election_year, promise_text, summary, measurability_score, status, page_number, manifest_pdf_url, direct_quote, created_at, updated_at, parties(name, abbreviation)")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
