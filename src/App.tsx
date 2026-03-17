@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import { FilterProvider } from "@/contexts/FilterContext";
 import { StickyBarProvider } from "@/contexts/StickyBarContext";
+import { ResponsiveProvider } from "@/contexts/ResponsiveContext";
 import { Navbar } from "@/components/Navbar";
 import Index from "./pages/Index";
 import Statistics from "./pages/Statistics";
@@ -27,25 +28,27 @@ const Layout = () => (
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider defaultTheme="system" storageKey="infriat-theme">
-      <TooltipProvider>
-        <BrowserRouter>
-          <FilterProvider>
-            <Toaster />
-            <Sonner />
-            <Routes>
-              <Route element={<Layout />}>
-                <Route path="/" element={<Index />} />
-                <Route path="/lofte/:id" element={<Index />} />
-                <Route path="/statistik" element={<Statistics />} />
-                <Route path="/admin" element={<Admin />} />
-                <Route path="/auth" element={<Auth />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Route>
-            </Routes>
-          </FilterProvider>
-        </BrowserRouter>
-      </TooltipProvider>
+      <ResponsiveProvider>
+        <TooltipProvider>
+          <BrowserRouter>
+            <FilterProvider>
+              <Toaster />
+              <Sonner />
+              <Routes>
+                <Route element={<Layout />}>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/lofte/:id" element={<Index />} />
+                  <Route path="/statistik" element={<Statistics />} />
+                  <Route path="/admin" element={<Admin />} />
+                  <Route path="/auth" element={<Auth />} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Route>
+              </Routes>
+            </FilterProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ResponsiveProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );

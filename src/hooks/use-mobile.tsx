@@ -1,11 +1,15 @@
 import * as React from "react";
+import { useResponsive } from "@/hooks/use-responsive";
 
 const MOBILE_BREAKPOINT = 768;
 
 export function useIsMobile() {
+  const responsive = useResponsive();
   const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined);
 
   React.useEffect(() => {
+    if (responsive) return;
+
     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
 
     const onChange = () => {
@@ -32,7 +36,8 @@ export function useIsMobile() {
       window.removeEventListener("resize", onChange);
       window.removeEventListener("orientationchange", onChange);
     };
-  }, []);
+  }, [responsive]);
 
+  if (responsive) return responsive.isMobile;
   return !!isMobile;
 }

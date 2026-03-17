@@ -1,17 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import { useIsMobile } from "@/hooks/use-mobile";
+  ResponsiveOverlay,
+  ResponsiveOverlayBody,
+  ResponsiveOverlayContent,
+  ResponsiveOverlayHeader,
+  ResponsiveOverlayHeaderExtras,
+  ResponsiveOverlayTitle,
+} from "@/components/ui/ResponsiveOverlay";
+import { useResponsive } from "@/hooks/use-responsive";
 import {
   PromiseDetailContent,
   type PromiseDetailHeaderData,
@@ -55,10 +51,12 @@ export function PromiseDetailOverlay({
   initialStatus,
   onClose,
 }: PromiseDetailOverlayProps) {
-  const isMobile = useIsMobile();
+  const responsive = useResponsive();
+  const isMobile = responsive?.isMobile ?? false;
   const previousIsMobileRef = useRef(isMobile);
   const ignoreNextCloseCallbackRef = useRef(false);
-  const storedState = readStoredOverlayState();
+  const headerDataByPromiseIdRef = useRef<Record<string, PromiseDetailHeaderData>>({});
+  const [storedState] = useState<StoredOverlayState>(() => readStoredOverlayState());
 
   // Internal open state so we can let the exit animation finish before calling onClose
   const [open, setOpen] = useState(Boolean(promiseId));
@@ -82,6 +80,10 @@ export function PromiseDetailOverlay({
     Record<string, PromiseDetailHeaderData>
   >(storedState.headerDataByPromiseId ?? {});
 
+  useEffect(() => {
+    headerDataByPromiseIdRef.current = headerDataByPromiseId;
+  }, [headerDataByPromiseId]);
+
   const [headerData, setHeaderData] = useState<PromiseDetailHeaderData | null>(
     promiseId ? (storedState.headerDataByPromiseId?.[promiseId] ?? null) : null,
   );
@@ -98,11 +100,11 @@ export function PromiseDetailOverlay({
     if (promiseId) {
       setLastPromiseId(promiseId);
       setOpen(true);
-      setHeaderData(headerDataByPromiseId[promiseId] ?? null);
+      setHeaderData(headerDataByPromiseIdRef.current[promiseId] ?? null);
     } else {
       setOpen(false);
     }
-  }, [promiseId, headerDataByPromiseId]);
+  }, [promiseId]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -137,94 +139,52 @@ export function PromiseDetailOverlay({
 
   const handleHeaderDataChange = (data: PromiseDetailHeaderData | null) => {
     setHeaderData(data);
-    if (!activePromiseId || !data) return;
-    setHeaderDataByPromiseId((prev) => ({
-      ...prev,
-      [activePromiseId]: data,
-    }));
+    if (!activePromiseId) return;
+    setHeaderDataByPromiseId((prev) => {
+      if (!data) {
+        if (!(activePromiseId in prev)) return prev;
+        const next = { ...prev };
+        delete next[activePromiseId];
+        return next;
+      }
+      return {
+        ...prev,
+        [activePromiseId]: data,
+      };
+    });
   };
 
   const title = headerData?.title ?? "Löftesdetaljer";
 
-  if (isMobile) {
-    return (
-      <Drawer
-        open={open}
-        onOpenChange={(isOpen) => {
-          if (!isOpen) setOpen(false);
-        }}
-        // vaul fires onClose after the exit animation completes
-        onClose={handleOverlayCloseComplete}
-      >
-        <DrawerContent
-          className={`flex flex-col w-full max-w-[100vw] max-h-[75vh] border-t-4 ${drawerBorderClass} shadow-sm rounded-t-2xl bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60`}
-        >
-          <DrawerHeader className="flex-none min-w-0 p-6 pb-4 pt-2 border-b gap-0">
-            <DrawerTitle className="text-left leading-snug break-words">{title}</DrawerTitle>
-            {headerData && (
-              <div
-                data-vaul-no-drag
-                className="w-full overflow-x-auto overflow-y-hidden overscroll-x-contain touch-pan-x [-webkit-overflow-scrolling:touch]"
-                onPointerDownCapture={(event) => event.stopPropagation()}
-              >
-                <div
-                  className="flex w-max min-w-full flex-nowrap items-center gap-2 py-2"
-                >
-                  <StatusBadge status={headerData.status} className="shrink-0" />
-                  <PartyBadge party={headerData.partyName} compact={false} className="shrink-0" />
-                  <GovernmentBadge
-                    governmentStatus={headerData.governmentStatus}
-                    compact={false}
-                    className="shrink-0"
-                  />
-                  {headerData.measurabilityScore !== null && (
-                    <MeasurabilityBadge
-                      score={headerData.measurabilityScore}
-                      compact={false}
-                      className="shrink-0"
-                    />
-                  )}
-                </div>
-              </div>
-            )}
-          </DrawerHeader>
-          {/* Fixed height minus drag handle (mt-4 h-2 = ~1.5rem) so vaul's gesture isn't blocked by overflow:hidden on the outer container */}
-          <div className="flex-1 overflow-y-auto p-6 pt-4">
-            <PromiseDetailContent
-              key={activePromiseId}
-              promiseId={activePromiseId!}
-              onClose={handleClose}
-              onStatusChange={(status) =>
-                setResolvedStatus({ promiseId: activePromiseId, status })
-              }
-              onHeaderDataChange={handleHeaderDataChange}
-            />
-          </div>
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
   return (
-    <Sheet
+    <ResponsiveOverlay
       open={open}
       onOpenChange={(isOpen) => {
         if (!isOpen) setOpen(false);
       }}
+      onCloseComplete={handleOverlayCloseComplete}
     >
-      <SheetContent
+      <ResponsiveOverlayContent
+        className="flex flex-col w-full max-w-[100vw] p-0 shadow-sm bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60"
+        mobileClassName={`max-h-[75vh] border-t-4 ${drawerBorderClass} rounded-t-2xl`}
+        desktopClassName={`sm:max-w-2xl border-l-4 ${statusBorderClass} rounded-l-2xl gap-0`}
         side="right"
-        className={`flex flex-col gap-0 w-full max-w-[100vw] sm:max-w-2xl p-0 border-l-4 ${statusBorderClass} shadow-sm rounded-l-2xl bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60`}
-        // Radix fires onCloseAutoFocus after the exit animation finishes
-        onCloseAutoFocus={handleOverlayCloseComplete}
+        onCloseComplete={handleOverlayCloseComplete}
       >
-        <SheetHeader className="flex-none min-w-0 p-6 pb-4 border-b">
-          <SheetTitle className="text-left leading-snug break-words">{title}</SheetTitle>
+        <ResponsiveOverlayHeader
+          className="flex-none min-w-0 p-6 pb-4 border-b"
+          mobileClassName="pt-2 gap-0"
+        >
+          <ResponsiveOverlayTitle className="text-left leading-snug break-words">
+            {title}
+          </ResponsiveOverlayTitle>
+
           {headerData && (
-            <div
-              className="w-full overflow-x-auto overflow-y-hidden overscroll-x-contain touch-pan-x [-webkit-overflow-scrolling:touch]"
+            <ResponsiveOverlayHeaderExtras
+              mobileClassName="py-2"
+              desktopClassName="pb-2"
             >
-              <div className="flex w-max min-w-full flex-nowrap items-center gap-2 pb-2">
+              <div className="flex w-max min-w-full flex-nowrap items-center gap-2">
                 <StatusBadge status={headerData.status} className="shrink-0" />
                 <PartyBadge party={headerData.partyName} compact={false} className="shrink-0" />
                 <GovernmentBadge
@@ -240,10 +200,11 @@ export function PromiseDetailOverlay({
                   />
                 )}
               </div>
-            </div>
+            </ResponsiveOverlayHeaderExtras>
           )}
-        </SheetHeader>
-        <div className="flex-1 overflow-y-auto p-6 pt-4">
+        </ResponsiveOverlayHeader>
+
+        <ResponsiveOverlayBody className="flex-1 overflow-y-auto p-6 pt-4">
           <PromiseDetailContent
             key={activePromiseId}
             promiseId={activePromiseId!}
@@ -253,8 +214,8 @@ export function PromiseDetailOverlay({
             }
             onHeaderDataChange={handleHeaderDataChange}
           />
-        </div>
-      </SheetContent>
-    </Sheet>
+        </ResponsiveOverlayBody>
+      </ResponsiveOverlayContent>
+    </ResponsiveOverlay>
   );
 }
