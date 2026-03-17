@@ -3,7 +3,7 @@ import { ManifestUpload } from "@/components/ManifestUpload";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Target, Check, X } from "lucide-react";
+import { ArrowLeft, Target, Check, X, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
