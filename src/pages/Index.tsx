@@ -47,7 +47,6 @@ interface Promise {
   promise_text: string;
   summary: string | null;
   direct_quote: string | null;
-  measurability_reason: string | null;
   measurability_score: number | null;
   status:
     | "infriat"
@@ -56,8 +55,6 @@ interface Promise {
     | "ej-infriat"
     | "brutet"
     | "pending-analysis";
-  status_explanation: string | null;
-  status_sources: string[] | null;
   page_number: number | null;
   manifest_pdf_url: string | null;
   parties: {
