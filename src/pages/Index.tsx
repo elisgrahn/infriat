@@ -535,10 +535,6 @@ const Index = () => {
                           ).toLocaleDateString("sv-SE")}
                           status={promise.status}
                           description={promise.summary || undefined}
-                          statusExplanation={
-                            promise.status_explanation || undefined
-                          }
-                          statusSources={promise.status_sources || undefined}
                           directQuote={promise.direct_quote || undefined}
                           pageNumber={promise.page_number || undefined}
                           manifestPdfUrl={promise.manifest_pdf_url || undefined}
