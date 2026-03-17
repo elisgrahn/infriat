@@ -231,7 +231,7 @@ serve(async (req) => {
     ): Promise<any[]> {
       
       const aiRequestBody = JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-3-flash-preview',
         max_completion_tokens: 30000,
         messages: [
           {
@@ -512,7 +512,7 @@ VIKTIGT - VAR GENERÖS: Ett löfte är mätbart om det uppfyller minst ett av de
       console.log('Analyzing small manifest in single request...');
       
       const aiRequestBody = JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-3-flash-preview',
         messages: [
           {
             role: 'system',
