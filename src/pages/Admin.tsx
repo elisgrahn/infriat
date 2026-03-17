@@ -110,6 +110,50 @@ const Admin = () => {
     }
   };
 
+  const handleBatchReanalyze = async () => {
+    setIsBatchAnalyzing(true);
+    setBatchProgress("Hämtar löften utan citations...");
+    try {
+      // Find promises that lack [n] markers in status_explanation
+      const { data: allPromises, error } = await supabase
+        .from("promises")
+        .select("id, status_explanation")
+        .neq("status", "pending-analysis");
+      
+      if (error) throw error;
+      
+      const needsReanalysis = (allPromises || []).filter(
+        (p) => !p.status_explanation || !/\[\d+\]/.test(p.status_explanation)
+      );
+
+      if (needsReanalysis.length === 0) {
+        toast({ title: "Alla löften har redan citations", description: "Inget att omanalysera." });
+        return;
+      }
+
+      let done = 0;
+      for (const p of needsReanalysis) {
+        done++;
+        setBatchProgress(`Analyserar ${done}/${needsReanalysis.length}...`);
+        try {
+          await supabase.functions.invoke("analyze-promise-status", {
+            body: { promiseId: p.id },
+          });
+        } catch {
+          // Continue with next
+        }
+      }
+
+      toast({ title: "Batch-analys klar!", description: `${done} löften omanalyserade.` });
+    } catch (err) {
+      const msg = await extractFunctionError(err);
+      toast({ title: "Fel vid batch-analys", description: msg, variant: "destructive" });
+    } finally {
+      setIsBatchAnalyzing(false);
+      setBatchProgress(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
