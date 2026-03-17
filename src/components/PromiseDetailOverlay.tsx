@@ -90,18 +90,18 @@ export function PromiseDetailOverlay({
         onClose={onClose}
       >
         <DrawerContent
-          className={`flex flex-col w-full max-w-[100vw] max-h-[75vh] border-t-4 ${drawerBorderClass} bg-card shadow-sm rounded-t-2xl`}
+          className={`flex flex-col w-full max-w-[100vw] max-h-[75vh] border-t-4 ${drawerBorderClass} shadow-sm rounded-t-2xl bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60`}
         >
           <DrawerHeader className="flex-none min-w-0">
             <DrawerTitle className="text-left leading-snug break-words">{title}</DrawerTitle>
             {headerData && (
               <div
                 data-vaul-no-drag
-                className="w-full overflow-x-auto overflow-y-hidden pt-2 overscroll-x-contain touch-pan-x [-webkit-overflow-scrolling:touch]"
+                className="w-full overflow-x-auto overflow-y-hidden overscroll-x-contain touch-pan-x [-webkit-overflow-scrolling:touch]"
                 onPointerDownCapture={(event) => event.stopPropagation()}
               >
                 <div
-                  className="flex w-max min-w-full flex-nowrap items-center gap-2 pb-1"
+                  className="flex w-max min-w-full flex-nowrap items-center gap-2"
                 >
                   <StatusBadge status={headerData.status} className="shrink-0" />
                   <PartyBadge party={headerData.partyName} compact={false} className="shrink-0" />
@@ -147,7 +147,7 @@ export function PromiseDetailOverlay({
     >
       <SheetContent
         side="right"
-        className={`flex flex-col gap-0 w-full max-w-[100vw] sm:max-w-2xl p-0 border-l-4 ${statusBorderClass} bg-card shadow-sm rounded-l-2xl`}
+        className={`flex flex-col gap-0 w-full max-w-[100vw] sm:max-w-2xl p-0 border-l-4 ${statusBorderClass} shadow-sm rounded-l-2xl bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60`}
         // Radix fires onCloseAutoFocus after the exit animation finishes
         onCloseAutoFocus={() => onClose()}
       >
@@ -155,7 +155,7 @@ export function PromiseDetailOverlay({
           <SheetTitle className="text-left leading-snug break-words">{title}</SheetTitle>
           {headerData && (
             <div
-              className="w-full overflow-x-auto overflow-y-hidden pt-2 overscroll-x-contain touch-pan-x [-webkit-overflow-scrolling:touch]"
+              className="w-full overflow-x-auto overflow-y-hidden overscroll-x-contain touch-pan-x [-webkit-overflow-scrolling:touch]"
             >
               <div className="flex w-max min-w-full flex-nowrap items-center gap-2 pb-1">
                 <StatusBadge status={headerData.status} className="shrink-0" />

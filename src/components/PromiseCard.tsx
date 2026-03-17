@@ -144,7 +144,7 @@ export const PromiseCard = ({
 
   return (
     <Card
-      className={`relative p-6 hover:shadow-lg transition-all duration-300 border-l-4 ${config.borderColor} ${config.cardHoverClassName} ${config.cardFocusClassName} cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2`}
+      className={`relative p-4 hover:shadow-lg transition-all duration-300 border-l-4 rounded-2xl ${config.borderColor} ${config.cardHoverClassName} ${config.cardFocusClassName} cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2`}
       role="button"
       tabIndex={0}
       onClick={() => navigate(`/?promise=${promiseId}`)}
@@ -155,7 +155,7 @@ export const PromiseCard = ({
         }
       }}
     >
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
         
         {/* title + actions*/}
         <div className="flex items-start justify-between gap-2">
@@ -304,78 +304,6 @@ export const PromiseCard = ({
             {description}
           </p>
         )}
-
-        {/* Tabs: Statusbedömning | Citat | Källor | Medborgarförslag */}
-        {/* <Tabs defaultValue="explanation" className="w-full">
-          <TabsList className="w-full h-auto flex-wrap justify-start bg-muted/50">
-            <TabsTrigger value="explanation" className="text-xs">
-              Statusbedömning
-            </TabsTrigger>
-            {directQuote && (
-              <TabsTrigger value="quote" className="text-xs">
-                <FileText className="w-3 h-3 mr-1.5" />
-                Citat
-              </TabsTrigger>
-            )}
-            <TabsTrigger value="sources" className="text-xs">
-              Källor
-            </TabsTrigger>
-            <TabsTrigger value="community" className="text-xs">
-              Medborgarförslag
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="explanation" className="mt-3">
-            {statusExplanation && status !== "pending-analysis" ? (
-              <p className="text-sm text-foreground leading-relaxed">
-                {statusExplanation}
-              </p>
-            ) : (
-              <p className="text-sm text-muted-foreground italic">
-                {status === "pending-analysis"
-                  ? "Statusbedömning pågår..."
-                  : "Ingen statusbedömning tillgänglig ännu."}
-              </p>
-            )}
-          </TabsContent>
-
-          {directQuote && (
-            <TabsContent value="quote" className="mt-3">
-              <div className="bg-muted/50 border-l-2 border-primary pl-4 py-2 rounded-r space-y-3">
-                <p className="text-sm italic text-foreground">
-                  "{directQuote}"
-                </p>
-                {manifestPdfUrl && (
-                  <Button variant="outline" size="sm" asChild>
-                    <a
-                      href={
-                        pageNumber
-                          ? `${manifestPdfUrl}#page=${pageNumber}`
-                          : manifestPdfUrl
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                      {pageNumber
-                        ? `Öppna i källa (sida ${pageNumber})`
-                        : "Öppna manifest"}
-                    </a>
-                  </Button>
-                )}
-              </div>
-            </TabsContent>
-          )}
-
-          <TabsContent value="sources" className="mt-3">
-            <SourcesList promiseId={promiseId} isAdmin={isAdmin} />
-          </TabsContent>
-
-          <TabsContent value="community" className="mt-3">
-            <CommunityNotes promiseId={promiseId} />
-          </TabsContent>
-        </Tabs> */}
 
         {/* Footer metadata */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">

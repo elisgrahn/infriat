@@ -25,7 +25,7 @@ export function CitationFootnotes({ sources, className }: CitationFootnotesProps
   if (!sources || sources.length === 0) return null;
 
   return (
-    <ol className={`space-y-1.5 text-xs text-muted-foreground ${className ?? ""}`}>
+    <ol className={`space-y-1.5 text-sm text-muted-foreground ${className ?? ""}`}>
       {sources.map((source, index) => (
         <li key={index} className="flex items-start gap-2">
           <span className="shrink-0 font-semibold text-primary/70 min-w-[1.25rem] text-right">
@@ -41,9 +41,9 @@ export function CitationFootnotes({ sources, className }: CitationFootnotesProps
             <span className="truncate">
               {source.title || getHostname(source.url)}
             </span>
-            <span className="text-muted-foreground shrink-0">
+            {/* <span className="text-muted-foreground shrink-0">
               — {getHostname(source.url)}
-            </span>
+            </span> */}
             <ExternalLink className="w-2.5 h-2.5 shrink-0" />
           </a>
         </li>

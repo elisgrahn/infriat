@@ -29,6 +29,7 @@ import {
   Search,
   Trash2,
   CircleHelp,
+  Link,
 } from "lucide-react";
 import { usePromiseAdminActions } from "@/hooks/usePromiseAdminActions";
 import { toast } from "sonner";
@@ -223,7 +224,7 @@ export function PromiseDetailContent({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {promise.summary && (
         <section className="space-y-2">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
@@ -291,20 +292,30 @@ export function PromiseDetailContent({
                 sources={citationSources}
               />
             </p>
-            {citationSources.length > 0 && (
-              <CitationFootnotes sources={citationSources} className="mt-3 pt-3 border-t border-border/50" />
-            )}
           </section>
         </>
       )}
 
-      <Separator />
+      {citationSources.length > 0 && (
+        <>
+          <Separator />
+          <section className="space-y-2">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+              <Link className="w-4 h-4" />
+              Källor
+            </h2>
+            <CitationFootnotes sources={citationSources} className="border-border/50" />
+          </section>
+        </>
+      )}
+
+      {/* <Separator />
       <section className="space-y-2">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Källor
         </h2>
         <SourcesList promiseId={promise.id} isAdmin={isAdmin} />
-      </section>
+      </section> */}
 
       <Separator />
       <section className="space-y-2">

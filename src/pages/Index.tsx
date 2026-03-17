@@ -446,7 +446,7 @@ const Index = () => {
                           <span className="hidden sm:inline">Filtrera</span>
                         </Button>
                       </DrawerTrigger>
-                      <DrawerContent className="max-h-[85vh] rounded-t-2xl">
+                      <DrawerContent className="max-h-[85vh] rounded-t-2xl bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
                         <DrawerHeader>
                           <DrawerTitle>Filtrera löften</DrawerTitle>
                         </DrawerHeader>
@@ -468,7 +468,7 @@ const Index = () => {
                           <span className="hidden sm:inline">Sortera</span>
                         </Button>
                       </DrawerTrigger>
-                      <DrawerContent className="max-h-[85vh] rounded-t-2xl">
+                      <DrawerContent className="max-h-[85vh] rounded-t-2xl bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
                         <DrawerHeader>
                           <DrawerTitle>Sortera löften</DrawerTitle>
                         </DrawerHeader>
