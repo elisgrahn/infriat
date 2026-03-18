@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { FlaskConical } from "lucide-react";
 import { StatisticsCharts } from "@/components/StatisticsCharts";
 import { EnhancedStatisticsCharts } from "@/components/EnhancedStatisticsCharts";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -45,7 +48,15 @@ const Statistics = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-gradient-to-br from-primary via-primary-light to-primary-dark text-primary-foreground py-12">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 space-y-4">
+          <div className="flex justify-center sm:justify-end">
+            <Button asChild variant="secondary" className="gap-2">
+              <Link to="/statistik/labb">
+                <FlaskConical className="h-4 w-4" />
+                Öppna diagramlabb
+              </Link>
+            </Button>
+          </div>
           <h1 className="text-4xl font-bold text-center">Statistik</h1>
         </div>
       </header>

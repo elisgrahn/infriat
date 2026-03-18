@@ -7,6 +7,7 @@ import { CommunityNotes } from "@/components/CommunityNotes";
 import { CitedText } from "@/components/CitedText";
 import { CitationFootnotes } from "@/components/CitationFootnotes";
 import { PromiseDetailSkeleton } from "@/components/PromiseDetailSkeleton";
+import { PromiseInsightRadar } from "@/components/PromiseInsightRadar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -33,198 +34,14 @@ import {
 } from "lucide-react";
 import { usePromiseAdminActions } from "@/hooks/usePromiseAdminActions";
 import { toast } from "sonner";
-
-interface PromiseDetailData {
-  id: string;
-  promise_text: string;
-  summary: string | null;
-  direct_quote: string | null;
-  measurability_reason: string | null;
-  measurability_score: number | null;
-  status: PromiseStatus;
-  status_explanation: string | null;
-  status_sources: string[] | null;
-  page_number: number | null;
-  manifest_pdf_url: string | null;
-  election_year: number;
-  created_at: string;
-  updated_at: string;
-  parties: {
-    name: string;
-    abbreviation: string;
-  };
-}
-
-interface GovernmentPeriod {
-  id: string;
-  start_year: number;
-  end_year: number | null;
-  governing_parties: string[];
-  support_parties: string[] | null;
-}
-
-interface PromiseDetailContentProps {
-  promiseId: string;
-  onClose: () => void;
-  onStatusChange?: (status: PromiseStatus) => void;
-  onHeaderDataChange?: (data: PromiseDetailHeaderData | null) => void;
-}
-
-export interface PromiseDetailHeaderData {
-  title: string;
-  status: PromiseStatus;
-  partyName: string;
-  governmentStatus: "governing" | "opposition";
-  measurabilityScore: number | null;
-}
-
-function getGovernmentStatus(
-  partyName: string,
-  electionYear: number,
-  periods: GovernmentPeriod[],
-): "governing" | "opposition" {
-  const period = periods.find(
-    (p) =>
-      p.start_year <= electionYear &&
-      (p.end_year === null || p.end_year >= electionYear),
-  );
-  if (!period) return "opposition";
-  const allGoverning = [
-    ...(period.governing_parties || []),
-    ...(period.support_parties || []),
-  ];
-  return allGoverning.includes(partyName) ? "governing" : "opposition";
-}
-
-export function PromiseDetailContent({
-  promiseId,
-  onClose,
-  onStatusChange,
-  onHeaderDataChange,
-}: PromiseDetailContentProps) {
-  const { isAdmin } = useAuth();
-
-  const [promise, setPromise] = useState<PromiseDetailData | null>(null);
-  const [governmentPeriods, setGovernmentPeriods] = useState<GovernmentPeriod[]>(
-    [],
-  );
-  const [citationSources, setCitationSources] = useState<{ url: string; title: string | null }[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
-
-  const fetchPromise = async () => {
-    setLoading(true);
-    setNotFound(false);
-
-    try {
-      const { data, error } = await supabase
-        .from("promises")
-        .select("*, parties(*)")
-        .eq("id", promiseId)
-        .single();
-
-      if (error || !data) {
-        setNotFound(true);
-      } else {
-        const nextPromise = data as unknown as PromiseDetailData;
-        setPromise(nextPromise);
-        onStatusChange?.(nextPromise.status);
-      }
-    } catch {
-      setNotFound(true);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchCitationSources = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("promise_sources")
-        .select("url, title")
-        .eq("promise_id", promiseId)
-        .order("created_at", { ascending: true });
-      if (!error && data) setCitationSources(data);
-    } catch {
-      // Silently ignore
-    }
-  };
-
-  const fetchGovernmentPeriods = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("government_periods")
-        .select("*")
-        .order("start_year", { ascending: true });
-      if (!error && data) setGovernmentPeriods(data as GovernmentPeriod[]);
-    } catch {
-      // Silently ignore
-    }
-  };
-
-  useEffect(() => {
-    if (!promiseId) return;
-    fetchPromise();
-    fetchCitationSources();
-    fetchGovernmentPeriods();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [promiseId]);
-
-  useEffect(() => {
-    if (!onHeaderDataChange) return;
-    if (!promise) {
-      onHeaderDataChange(null);
-      return;
-    }
-
-    onHeaderDataChange({
-      title: promise.promise_text,
-      status: promise.status,
-      partyName: promise.parties.name,
-      governmentStatus: getGovernmentStatus(
-        promise.parties.name,
-        promise.election_year,
-        governmentPeriods,
-      ),
-      measurabilityScore: promise.measurability_score,
-    });
-  }, [governmentPeriods, onHeaderDataChange, promise]);
-
-  const {
-    isAnalyzing,
-    isAnalyzingMeasurability,
-    isReanalyzingPage,
-    isDeleting,
-    handleAnalyze,
-    handleAnalyzeMeasurability,
-    handleReanalyzePage,
-    handleDelete,
-  } = usePromiseAdminActions({
-    promiseId,
-    status: promise?.status ?? "pending-analysis",
-    directQuote: promise?.direct_quote ?? undefined,
-    manifestPdfUrl: promise?.manifest_pdf_url ?? undefined,
-    measurabilityScore: promise?.measurability_score ?? undefined,
-    onStatusUpdate: fetchPromise,
-  });
-
-  if (loading) {
-    return <PromiseDetailSkeleton />;
-  }
-
-  if (notFound || !promise) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4">
-        <p className="text-muted-foreground text-lg">Löftet hittades inte.</p>
-        <Button variant="outline" onClick={onClose}>
-          <ArrowLeft className="w-4 h-4 mr-2" /> Tillbaka
-        </Button>
-      </div>
-    );
-  }
-
+...
   return (
     <div className="space-y-4">
+      <PromiseInsightRadar
+        promise={promise}
+        citationCount={citationSources.length}
+      />
+
       {promise.summary && (
         <section className="space-y-2">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">

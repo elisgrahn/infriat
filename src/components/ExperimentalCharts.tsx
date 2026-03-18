@@ -72,6 +72,11 @@ export function ExperimentalCharts({
     [visiblePromises],
   );
 
+  const radarMax =
+    radarMode === "share"
+      ? 100
+      : Math.max(3, ...radarData.map((row) => row.total));
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -111,11 +116,7 @@ export function ExperimentalCharts({
                   />
                   <PolarRadiusAxis
                     angle={90}
-                    domain={
-                      radarMode === "share"
-                        ? [0, 100]
-                        : [0, Math.max(3, ...radarData.map((row) => Number(row.total) || 0))]
-                    }
+                    domain={[0, radarMax]}
                     tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
                   />
                   <Tooltip

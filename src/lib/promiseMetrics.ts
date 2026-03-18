@@ -26,9 +26,19 @@ export interface PromiseProfileSource {
   manifest_pdf_url?: string | null;
 }
 
+export interface PartyStatusRadarRow {
+  party: string;
+  total: number;
+  infriat: number;
+  "delvis-infriat": number;
+  utreds: number;
+  "ej-infriat": number;
+  brutet: number;
+}
+
 export const PARTY_ORDER = ["V", "S", "MP", "C", "L", "KD", "M", "SD"] as const;
 
-export const CHARTABLE_STATUSES: PromiseStatus[] = [
+export const CHARTABLE_STATUSES: Array<Exclude<PromiseStatus, "pending-analysis">> = [
   "infriat",
   "delvis-infriat",
   "utreds",
@@ -126,7 +136,7 @@ export function buildPromiseProfileRadarData(
 export function buildPartyStatusRadarData(
   promises: AnalyticsPromise[],
   mode: "share" | "count" = "share",
-) {
+): PartyStatusRadarRow[] {
   const grouped = promises.reduce(
     (acc, promise) => {
       const party = promise.parties.abbreviation;
@@ -134,14 +144,18 @@ export function buildPartyStatusRadarData(
         acc[party] = {
           party,
           total: 0,
-          statuses: Object.fromEntries(
-            CHARTABLE_STATUSES.map((status) => [status, 0]),
-          ) as Record<PromiseStatus, number>,
+          statuses: {
+            infriat: 0,
+            "delvis-infriat": 0,
+            utreds: 0,
+            "ej-infriat": 0,
+            brutet: 0,
+          },
         };
       }
 
       acc[party].total += 1;
-      if (CHARTABLE_STATUSES.includes(promise.status)) {
+      if (promise.status !== "pending-analysis") {
         acc[party].statuses[promise.status] += 1;
       }
 
@@ -152,26 +166,36 @@ export function buildPartyStatusRadarData(
       {
         party: string;
         total: number;
-        statuses: Record<PromiseStatus, number>;
+        statuses: Record<Exclude<PromiseStatus, "pending-analysis">, number>;
       }
     >,
   );
 
   return sortByPartyOrder(
-    Object.values(grouped).map((entry) => {
-      const row: Record<string, string | number> = {
-        party: entry.party,
-        total: entry.total,
-      };
-
-      CHARTABLE_STATUSES.forEach((status) => {
-        const count = entry.statuses[status] ?? 0;
-        row[status] =
-          mode === "share" && entry.total > 0 ? round((count / entry.total) * 100) : count;
-      });
-
-      return row;
-    }),
+    Object.values(grouped).map((entry) => ({
+      party: entry.party,
+      total: entry.total,
+      infriat:
+        mode === "share" && entry.total > 0
+          ? round((entry.statuses.infriat / entry.total) * 100)
+          : entry.statuses.infriat,
+      "delvis-infriat":
+        mode === "share" && entry.total > 0
+          ? round((entry.statuses["delvis-infriat"] / entry.total) * 100)
+          : entry.statuses["delvis-infriat"],
+      utreds:
+        mode === "share" && entry.total > 0
+          ? round((entry.statuses.utreds / entry.total) * 100)
+          : entry.statuses.utreds,
+      "ej-infriat":
+        mode === "share" && entry.total > 0
+          ? round((entry.statuses["ej-infriat"] / entry.total) * 100)
+          : entry.statuses["ej-infriat"],
+      brutet:
+        mode === "share" && entry.total > 0
+          ? round((entry.statuses.brutet / entry.total) * 100)
+          : entry.statuses.brutet,
+    })),
   );
 }
 

@@ -10,35 +10,15 @@ import { ResponsiveProvider } from "@/contexts/ResponsiveContext";
 import { Navbar } from "@/components/Navbar";
 import Index from "./pages/Index";
 import Statistics from "./pages/Statistics";
+import StatisticsLab from "./pages/StatisticsLab";
 import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
-
-const queryClient = new QueryClient();
-
-const Layout = () => (
-  <StickyBarProvider>
-    <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
-      <Outlet />
-    </div>
-  </StickyBarProvider>
-);
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="system" storageKey="infriat-theme">
-      <ResponsiveProvider>
-        <TooltipProvider>
-          <BrowserRouter>
-            <FilterProvider>
-              <Toaster />
-              <Sonner />
-              <Routes>
-                <Route element={<Layout />}>
+...
                   <Route path="/" element={<Index />} />
                   <Route path="/lofte/:id" element={<Index />} />
                   <Route path="/statistik" element={<Statistics />} />
+                  <Route path="/statistik/labb" element={<StatisticsLab />} />
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/auth" element={<Auth />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
