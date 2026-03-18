@@ -13,6 +13,8 @@ interface AnalyticsPromiseRow {
   election_year: number;
   status: PromiseStatus;
   measurability_score: number | null;
+  category: string | null;
+  is_status_quo: boolean;
   parties: {
     name: string;
     abbreviation: string;
