@@ -288,11 +288,11 @@ export function buildAverageMeasurabilityByCategory(promises: AnalyticsPromise[]
     {} as Record<PolicyCategory, { category: PolicyCategory; measured: number; sum: number }>,
   );
 
-  return POLICY_CATEGORY_ORDER.filter((category) => accessoryHasOwn(acc, category)).map((category) => ({
+  return POLICY_CATEGORY_ORDER.filter((category) => accessoryHasOwn(grouped, category)).map((category) => ({
     category,
     label: POLICY_CATEGORY_LABELS[category],
-    average: round(acc[category].sum / acc[category].measured, 2),
-    measured: acc[category].measured,
+    average: round(grouped[category].sum / grouped[category].measured, 2),
+    measured: grouped[category].measured,
   }));
 }
 
