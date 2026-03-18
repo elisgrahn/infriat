@@ -126,6 +126,7 @@ export type Database = {
           status: Database["public"]["Enums"]["promise_status"]
           status_explanation: string | null
           status_sources: string[] | null
+          status_tldr: string | null
           summary: string | null
           updated_at: string
         }
@@ -145,6 +146,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["promise_status"]
           status_explanation?: string | null
           status_sources?: string[] | null
+          status_tldr?: string | null
           summary?: string | null
           updated_at?: string
         }
@@ -164,6 +166,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["promise_status"]
           status_explanation?: string | null
           status_sources?: string[] | null
+          status_tldr?: string | null
           summary?: string | null
           updated_at?: string
         }
