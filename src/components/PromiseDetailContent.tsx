@@ -99,6 +99,20 @@ function getGovernmentStatus(
   return allGoverning.includes(partyName) ? "governing" : "opposition";
 }
 
+const categoryLabels: Record<string, string> = {
+  valfard: "Välfärd",
+  halsa: "Hälsa",
+  utbildning: "Utbildning",
+  arbetsmarknad: "Arbetsmarknad",
+  migration: "Migration",
+  rattssakerhet: "Rättssäkerhet",
+  forsvar: "Försvar",
+  "klimat-miljo": "Klimat & miljö",
+  bostad: "Bostad",
+  demokrati: "Demokrati",
+  ovrigt: "Övrigt",
+};
+
 export function PromiseDetailContent({
   promiseId,
   onClose,
