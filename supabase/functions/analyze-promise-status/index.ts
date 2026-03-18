@@ -40,7 +40,6 @@ async function buildCitedExplanation(
     return { citedText: explanation, sources: [] };
   }
 
-  // Resolve all redirect URLs in parallel
   const resolvedChunks = await Promise.all(
     groundingChunks.map(async (chunk: any) => {
       const uri = chunk.web?.uri;
@@ -50,7 +49,6 @@ async function buildCitedExplanation(
     })
   );
 
-  // Build unique source list from resolved chunks
   const uniqueSources: { url: string; title: string | null }[] = [];
   const urlToIndex = new Map<string, number>();
 
@@ -62,7 +60,6 @@ async function buildCitedExplanation(
     }
   }
 
-  // Collect insertions: at each endIndex, insert citation markers
   const insertions: { position: number; citations: number[] }[] = [];
 
   for (const support of groundingSupports) {
@@ -79,9 +76,8 @@ async function buildCitedExplanation(
     if (pos === -1) continue;
 
     const endPos = pos + segmentText.length;
-
-    // Map chunk indices to our unique source indices
     const citations: number[] = [];
+
     for (const ci of chunkIndices) {
       const chunk = resolvedChunks[ci];
       if (chunk?.web?.uri) {
@@ -97,7 +93,6 @@ async function buildCitedExplanation(
     }
   }
 
-  // Sort insertions by position descending so we can insert without shifting
   insertions.sort((a, b) => b.position - a.position);
 
   let citedText = explanation;
@@ -107,6 +102,30 @@ async function buildCitedExplanation(
   }
 
   return { citedText, sources: uniqueSources.slice(0, 10) };
+}
+
+function normalizeTldr(rawTldr: string, partyName: string, partyAbbreviation: string): string {
+  let tldr = rawTldr
+    .replace(/\s+/g, ' ')
+    .replace(/^[-•]\s*/, '')
+    .trim();
+
+  if (!tldr) {
+    return `${partyAbbreviation}.`;
+  }
+
+  tldr = tldr.split(/(?<=[.!?])\s+/)[0]?.trim() || tldr;
+  tldr = tldr.replace(/[.!?]+$/, '').trim();
+
+  const escapedPartyName = partyName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  tldr = tldr.replace(new RegExp(escapedPartyName, 'gi'), partyAbbreviation);
+  tldr = tldr.replace(new RegExp(`^${partyAbbreviation}\s+(har|hade|bedöms|anses)\s+`, 'i'), `${partyAbbreviation} `);
+
+  if (!new RegExp(`\\b${partyAbbreviation}\\b`, 'i').test(tldr)) {
+    tldr = `${partyAbbreviation} ${tldr.charAt(0).toLowerCase()}${tldr.slice(1)}`;
+  }
+
+  return `${tldr}.`;
 }
 
 serve(async (req) => {
@@ -123,7 +142,7 @@ serve(async (req) => {
 
     const body = await req.json();
     const validation = requestSchema.safeParse(body);
-    
+
     if (!validation.success) {
       return errorResponse('Ogiltig begäran', 400);
     }
@@ -142,7 +161,6 @@ serve(async (req) => {
 
     console.log(`Analyzing status for promise: ${promise.promise_text}`);
 
-    // Determine mandate type from government_periods table
     let mandateType: 'government' | 'support' | 'opposition' = 'opposition';
     const partyAbbreviation = promise.parties.abbreviation;
 
@@ -164,14 +182,12 @@ serve(async (req) => {
 
     console.log(`Mandate type for ${partyAbbreviation}: ${mandateType}`);
 
-    // Build dynamic mandate context
     const mandateContext = {
       government: `${promise.parties.name} ingick i REGERINGEN efter valet ${promise.election_year} och hade fullt mandat att genomföra sin politik via propositioner och budgetarbete.`,
       support: `${promise.parties.name} var STÖDPARTI efter valet ${promise.election_year}. Partiet ingick inte i regeringen men gav den parlamentariskt stöd och hade därmed visst inflytande, men lade inte egna propositioner.`,
       opposition: `${promise.parties.name} var OPPOSITIONSPARTI efter valet ${promise.election_year} och saknade mandat att självständigt genomföra politik. Partiet kunde påverka via motioner och voteringar, men inte lägga propositioner.`
     }[mandateType];
 
-    // Build status definitions based on mandate type
     const statusDefinitions = mandateType === 'opposition'
       ? `
 Statusdefinitioner (oppositionsparti — använd ALDRIG "broken"):
@@ -204,6 +220,7 @@ ${mandateContext}
 
 ## Löftet
 Parti: ${promise.parties.name}
+Partiförkortning: ${partyAbbreviation}
 Löfte: ${promise.promise_text}
 Sammanfattning: ${promise.summary}
 Politikområde: ${promise.category ?? 'okänt'}
@@ -214,16 +231,16 @@ ${evidenceChain}
 ## Statusdefinitioner
 ${statusDefinitions}
 
-    ## Svar
-    Ge din bedömning i detta format:
-    
-    **Status:** [en av: fulfilled, partially-fulfilled, in-progress, not-fulfilled, broken]
-    
-    **Förklaring:** [3–5 meningar. Utgå från beviskedjan ovan. Nämn konkreta beslut, propositionsnummer, budgetposter eller motionsnummer om sådana finns. Förklara varför du valt just denna status utifrån mandattypen.]
-    
-    **Källor:** [lista med relevanta källor och URL:er]
+## Svar
+Ge din bedömning i detta format:
 
-    **TL;DR:** [1–2 korta meningar på svenska som sammanfattar slutbedömningen. Skriv detta SIST av allt, först när du är helt färdig med analysen ovan, så att TL;DR bygger på din slutliga status och förklaring.]`;
+**Status:** [en av: fulfilled, partially-fulfilled, in-progress, not-fulfilled, broken]
+
+**Förklaring:** [3–5 meningar. Utgå från beviskedjan ovan. Nämn konkreta beslut, propositionsnummer, budgetposter eller motionsnummer om sådana finns. Förklara varför du valt just denna status utifrån mandattypen.]
+
+**Källor:** [lista med relevanta källor och URL:er]
+
+**TL;DR:** [EXAKT en mening på svenska. Den ska vara ett komplement till statusbadge och den längre förklaringen, inte upprepa statusen eller partinamnet i onödan. Börja med partiförkortningen ${partyAbbreviation} och fokusera på den viktigaste konkreta åtgärden, effekten eller siffran. Skriv detta SIST av allt, först när du är helt färdig med analysen ovan, så att TL;DR bygger på din slutliga status och förklaring.]`;
 
     const response = await fetch(geminiUrl(apiKey), {
       method: 'POST',
@@ -254,7 +271,6 @@ ${statusDefinitions}
       throw new Error('AI-analysen gav inget svar. Försök igen.');
     }
 
-    // Parse status
     let status: 'infriat' | 'delvis-infriat' | 'utreds' | 'ej-infriat' | 'brutet' = 'utreds';
 
     const lowerText = textContent.toLowerCase();
@@ -277,8 +293,8 @@ ${statusDefinitions}
 
     const rawExplanation = explanationMatch ? explanationMatch[1].trim() : textContent;
     const rawTldr = tldrMatch?.[1]?.trim() || rawExplanation.split(/(?<=[.!?])\s+/)[0]?.trim() || rawExplanation;
+    const normalizedTldr = normalizeTldr(rawTldr, promise.parties.name, partyAbbreviation);
 
-    // Build cited explanation with inline [n] markers
     const groundingMetadata = aiData.candidates?.[0]?.groundingMetadata;
     const groundingSupports = groundingMetadata?.groundingSupports;
     const groundingChunks = groundingMetadata?.groundingChunks;
@@ -295,14 +311,13 @@ ${statusDefinitions}
 
     const sourceUrls = sources.map(s => s.url);
 
-    // Update promise status via admin client
     const { error: updateError } = await adminClient
       .from('promises')
       .update({
         status,
         status_explanation: citedText,
         status_sources: sourceUrls,
-        status_tldr: rawTldr,
+        status_tldr: normalizedTldr,
       })
       .eq('id', promiseId);
 
@@ -311,7 +326,6 @@ ${statusDefinitions}
       throw new Error('Kunde inte uppdatera vallöftet. Försök igen.');
     }
 
-    // Delete old promise_sources, then insert new ones
     const { error: deleteSourcesError } = await adminClient
       .from('promise_sources')
       .delete()
@@ -342,7 +356,7 @@ ${statusDefinitions}
 
     return jsonResponse({
       success: true,
-      analysis: { status, tldr: rawTldr, explanation: citedText, sources: sourceUrls }
+      analysis: { status, tldr: normalizedTldr, explanation: citedText, sources: sourceUrls }
     });
 
   } catch (error: any) {
