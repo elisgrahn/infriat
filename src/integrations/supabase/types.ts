@@ -111,10 +111,12 @@ export type Database = {
       }
       promises: {
         Row: {
+          category: Database["public"]["Enums"]["policy_category"] | null
           created_at: string
           direct_quote: string | null
           election_year: number
           id: string
+          is_status_quo: boolean
           manifest_pdf_url: string | null
           measurability_reason: string | null
           measurability_score: number | null
@@ -128,10 +130,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          category?: Database["public"]["Enums"]["policy_category"] | null
           created_at?: string
           direct_quote?: string | null
           election_year: number
           id?: string
+          is_status_quo?: boolean
           manifest_pdf_url?: string | null
           measurability_reason?: string | null
           measurability_score?: number | null
@@ -145,10 +149,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          category?: Database["public"]["Enums"]["policy_category"] | null
           created_at?: string
           direct_quote?: string | null
           election_year?: number
           id?: string
+          is_status_quo?: boolean
           manifest_pdf_url?: string | null
           measurability_reason?: string | null
           measurability_score?: number | null
@@ -283,6 +289,18 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      policy_category:
+        | "valfard"
+        | "halsa"
+        | "utbildning"
+        | "arbetsmarknad"
+        | "migration"
+        | "rattssakerhet"
+        | "forsvar"
+        | "klimat-miljo"
+        | "bostad"
+        | "demokrati"
+        | "ovrigt"
       promise_status:
         | "infriat"
         | "delvis-infriat"
@@ -419,6 +437,19 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      policy_category: [
+        "valfard",
+        "halsa",
+        "utbildning",
+        "arbetsmarknad",
+        "migration",
+        "rattssakerhet",
+        "forsvar",
+        "klimat-miljo",
+        "bostad",
+        "demokrati",
+        "ovrigt",
+      ],
       promise_status: [
         "infriat",
         "delvis-infriat",
