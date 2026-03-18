@@ -49,6 +49,7 @@ interface PromiseDetailData {
   status: PromiseStatus;
   status_explanation: string | null;
   status_sources: string[] | null;
+  status_tldr: string | null;
   page_number: number | null;
   manifest_pdf_url: string | null;
   election_year: number;
