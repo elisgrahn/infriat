@@ -32,7 +32,7 @@ const StatisticsLab = () => {
       try {
         const { data, error } = await supabase
           .from("promises")
-          .select("id, election_year, status, measurability_score, parties(name, abbreviation)")
+          .select("id, election_year, status, measurability_score, category, is_status_quo, parties(name, abbreviation)")
           .order("created_at", { ascending: false });
 
         if (error) throw error;

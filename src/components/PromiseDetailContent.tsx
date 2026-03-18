@@ -8,6 +8,7 @@ import { CitedText } from "@/components/CitedText";
 import { CitationFootnotes } from "@/components/CitationFootnotes";
 import { PromiseDetailSkeleton } from "@/components/PromiseDetailSkeleton";
 import { PromiseInsightRadar } from "@/components/PromiseInsightRadar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
