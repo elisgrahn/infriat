@@ -214,14 +214,16 @@ ${evidenceChain}
 ## Statusdefinitioner
 ${statusDefinitions}
 
-## Svar
-Ge din bedömning i detta format:
+    ## Svar
+    Ge din bedömning i detta format:
+    
+    **Status:** [en av: fulfilled, partially-fulfilled, in-progress, not-fulfilled, broken]
+    
+    **Förklaring:** [3–5 meningar. Utgå från beviskedjan ovan. Nämn konkreta beslut, propositionsnummer, budgetposter eller motionsnummer om sådana finns. Förklara varför du valt just denna status utifrån mandattypen.]
+    
+    **Källor:** [lista med relevanta källor och URL:er]
 
-**Status:** [en av: fulfilled, partially-fulfilled, in-progress, not-fulfilled, broken]
-
-**Förklaring:** [3–5 meningar. Utgå från beviskedjan ovan. Nämn konkreta beslut, propositionsnummer, budgetposter eller motionsnummer om sådana finns. Förklara varför du valt just denna status utifrån mandattypen.]
-
-**Källor:** [lista med relevanta källor och URL:er]`;
+    **TL;DR:** [1–2 korta meningar på svenska som sammanfattar slutbedömningen. Skriv detta SIST av allt, först när du är helt färdig med analysen ovan, så att TL;DR bygger på din slutliga status och förklaring.]`;
 
     const response = await fetch(geminiUrl(apiKey), {
       method: 'POST',
@@ -240,21 +242,21 @@ Ge din bedömning i detta format:
     }
 
     const aiData = await response.json();
-    
+
     const parts = aiData.candidates?.[0]?.content?.parts || [];
     const textContent = parts
       .filter((part: any) => part.text)
       .map((part: any) => part.text)
       .join('\n')
       .trim();
-      
+
     if (!textContent) {
       throw new Error('AI-analysen gav inget svar. Försök igen.');
     }
 
     // Parse status
     let status: 'infriat' | 'delvis-infriat' | 'utreds' | 'ej-infriat' | 'brutet' = 'utreds';
-    
+
     const lowerText = textContent.toLowerCase();
     if (lowerText.includes('status:** fulfilled') || lowerText.includes('status: fulfilled')) {
       status = 'infriat';
@@ -267,12 +269,14 @@ Ge din bedömning i detta format:
     } else if (lowerText.includes('status:** broken') || lowerText.includes('status: broken')) {
       status = 'brutet';
     }
-    
-    // Extract raw explanation
-    const explanationMatch = textContent.match(/\*\*Förklaring:\*\*\s*([^*]+?)(?=\n\n\*\*Källor|\n\*\*Källor|$)/is) ||
-                            textContent.match(/Förklaring:\s*([^*]+?)(?=Källor|$)/is);
-    
+
+    const explanationMatch = textContent.match(/\*\*Förklaring:\*\*\s*([\s\S]+?)(?=\n\n\*\*Källor|\n\*\*Källor|$)/i) ||
+      textContent.match(/Förklaring:\s*([\s\S]+?)(?=\n\n(?:\*\*)?Källor|\n(?:\*\*)?Källor|$)/i);
+    const tldrMatch = textContent.match(/\*\*TL;DR:\*\*\s*([\s\S]+?)$/i) ||
+      textContent.match(/TL;DR:\s*([\s\S]+?)$/i);
+
     const rawExplanation = explanationMatch ? explanationMatch[1].trim() : textContent;
+    const rawTldr = tldrMatch?.[1]?.trim() || rawExplanation.split(/(?<=[.!?])\s+/)[0]?.trim() || rawExplanation;
 
     // Build cited explanation with inline [n] markers
     const groundingMetadata = aiData.candidates?.[0]?.groundingMetadata;
@@ -297,7 +301,8 @@ Ge din bedömning i detta format:
       .update({
         status,
         status_explanation: citedText,
-        status_sources: sourceUrls
+        status_sources: sourceUrls,
+        status_tldr: rawTldr,
       })
       .eq('id', promiseId);
 
@@ -337,7 +342,7 @@ Ge din bedömning i detta format:
 
     return jsonResponse({
       success: true,
-      analysis: { status, explanation: citedText, sources: sourceUrls }
+      analysis: { status, tldr: rawTldr, explanation: citedText, sources: sourceUrls }
     });
 
   } catch (error: any) {

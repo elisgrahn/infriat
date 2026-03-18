@@ -292,20 +292,29 @@ export function PromiseDetailContent({
         </>
       )}
 
-      {promise.status_explanation && (
+      {(promise.status_tldr || promise.status_explanation) && (
         <>
           <Separator />
-          <section className="space-y-2">
+          <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
               <Search className="w-4 h-4" />
               Statusbedömning
             </h2>
-            <p className="text-sm leading-relaxed text-foreground">
-              <CitedText
-                text={promise.status_explanation}
-                sources={citationSources}
-              />
-            </p>
+            {promise.status_tldr && (
+              <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
+                <p className="text-sm font-medium leading-relaxed text-foreground">
+                  {promise.status_tldr}
+                </p>
+              </div>
+            )}
+            {promise.status_explanation && (
+              <p className="text-sm leading-relaxed text-foreground">
+                <CitedText
+                  text={promise.status_explanation}
+                  sources={citationSources}
+                />
+              </p>
+            )}
           </section>
         </>
       )}
