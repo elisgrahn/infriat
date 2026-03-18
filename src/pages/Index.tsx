@@ -413,7 +413,7 @@ const Index = () => {
 
             {/* Filters Sidebar (desktop) */}
             <aside className="hidden lg:block lg:col-span-1">
-              <div className="sticky top-20 bg-card rounded-2xl p-4 border">
+              <div className="sticky top-20 bg-card rounded-2xl p-6 border">
                 <h2 className="text-xl font-bold mb-6 text-foreground">
                   Filtrera
                 </h2>

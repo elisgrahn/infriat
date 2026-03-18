@@ -228,10 +228,10 @@ export function PromiseDetailContent({
 
   return (
     <div className="space-y-4">
-      <PromiseInsightRadar
+      {/* <PromiseInsightRadar
         promise={promise}
         citationCount={citationSources.length}
-      />
+      /> */}
 
       {promise.summary && (
         <section className="space-y-2">
