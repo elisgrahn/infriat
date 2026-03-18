@@ -10,6 +10,7 @@ import { ResponsiveProvider } from "@/contexts/ResponsiveContext";
 import { Navbar } from "@/components/Navbar";
 import Index from "./pages/Index";
 import Statistics from "./pages/Statistics";
+import StatisticsLab from "./pages/StatisticsLab";
 import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -39,6 +40,7 @@ const App = () => (
                   <Route path="/" element={<Index />} />
                   <Route path="/lofte/:id" element={<Index />} />
                   <Route path="/statistik" element={<Statistics />} />
+                  <Route path="/statistik/labb" element={<StatisticsLab />} />
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/auth" element={<Auth />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

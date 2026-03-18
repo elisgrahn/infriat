@@ -7,6 +7,7 @@ import { CommunityNotes } from "@/components/CommunityNotes";
 import { CitedText } from "@/components/CitedText";
 import { CitationFootnotes } from "@/components/CitationFootnotes";
 import { PromiseDetailSkeleton } from "@/components/PromiseDetailSkeleton";
+import { PromiseInsightRadar } from "@/components/PromiseInsightRadar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -108,7 +109,9 @@ export function PromiseDetailContent({
   const [governmentPeriods, setGovernmentPeriods] = useState<GovernmentPeriod[]>(
     [],
   );
-  const [citationSources, setCitationSources] = useState<{ url: string; title: string | null }[]>([]);
+  const [citationSources, setCitationSources] = useState<
+    { url: string; title: string | null }[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -225,12 +228,17 @@ export function PromiseDetailContent({
 
   return (
     <div className="space-y-4">
+      <PromiseInsightRadar
+        promise={promise}
+        citationCount={citationSources.length}
+      />
+
       {promise.summary && (
         <section className="space-y-2">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
-              <CircleHelp className="w-4 h-4" />
-              Sammanfattning
-            </h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+            <CircleHelp className="w-4 h-4" />
+            Sammanfattning
+          </h2>
           <p className="text-sm leading-relaxed text-foreground">
             {promise.summary}
           </p>
@@ -304,7 +312,10 @@ export function PromiseDetailContent({
               <Link className="w-4 h-4" />
               Källor
             </h2>
-            <CitationFootnotes sources={citationSources} className="border-border/50" />
+            <CitationFootnotes
+              sources={citationSources}
+              className="border-border/50"
+            />
           </section>
         </>
       )}
@@ -351,7 +362,9 @@ export function PromiseDetailContent({
                 className="gap-1.5"
               >
                 <Ruler className="w-3.5 h-3.5" />
-                {isAnalyzingMeasurability ? "Analyserar…" : "Analysera mätbarhet"}
+                {isAnalyzingMeasurability
+                  ? "Analyserar…"
+                  : "Analysera mätbarhet"}
               </Button>
               {promise.manifest_pdf_url && promise.page_number && (
                 <Button
