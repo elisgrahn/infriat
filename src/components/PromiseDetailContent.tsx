@@ -42,6 +42,8 @@ interface PromiseDetailData {
   direct_quote: string | null;
   measurability_reason: string | null;
   measurability_score: number | null;
+  category: string | null;
+  is_status_quo: boolean;
   status: PromiseStatus;
   status_explanation: string | null;
   status_sources: string[] | null;

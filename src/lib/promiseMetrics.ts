@@ -1,10 +1,25 @@
 import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
 
+export type PolicyCategory =
+  | "valfard"
+  | "halsa"
+  | "utbildning"
+  | "arbetsmarknad"
+  | "migration"
+  | "rattssakerhet"
+  | "forsvar"
+  | "klimat-miljo"
+  | "bostad"
+  | "demokrati"
+  | "ovrigt";
+
 export interface AnalyticsPromise {
   id?: string;
   election_year: number;
   status: PromiseStatus;
   measurability_score: number | null;
+  category?: PolicyCategory | null;
+  is_status_quo?: boolean | null;
   parties: {
     name: string;
     abbreviation: string;
@@ -19,6 +34,8 @@ export interface AnalyticsPromise {
 export interface PromiseProfileSource {
   status: PromiseStatus;
   measurability_score: number | null;
+  category?: PolicyCategory | null;
+  is_status_quo?: boolean | null;
   summary?: string | null;
   direct_quote?: string | null;
   status_explanation?: string | null;
@@ -37,6 +54,34 @@ export interface PartyStatusRadarRow {
 }
 
 export const PARTY_ORDER = ["V", "S", "MP", "C", "L", "KD", "M", "SD"] as const;
+
+export const POLICY_CATEGORY_ORDER: PolicyCategory[] = [
+  "valfard",
+  "halsa",
+  "utbildning",
+  "arbetsmarknad",
+  "migration",
+  "rattssakerhet",
+  "forsvar",
+  "klimat-miljo",
+  "bostad",
+  "demokrati",
+  "ovrigt",
+];
+
+export const POLICY_CATEGORY_LABELS: Record<PolicyCategory, string> = {
+  valfard: "Välfärd",
+  halsa: "Hälsa",
+  utbildning: "Utbildning",
+  arbetsmarknad: "Arbetsmarknad",
+  migration: "Migration",
+  rattssakerhet: "Rättssäkerhet",
+  forsvar: "Försvar",
+  "klimat-miljo": "Klimat & miljö",
+  bostad: "Bostad",
+  demokrati: "Demokrati",
+  ovrigt: "Övrigt",
+};
 
 export const CHARTABLE_STATUSES: Array<Exclude<PromiseStatus, "pending-analysis">> = [
   "infriat",
@@ -227,6 +272,59 @@ export function buildAverageMeasurabilityByParty(promises: AnalyticsPromise[]) {
   );
 }
 
+export function buildAverageMeasurabilityByCategory(promises: AnalyticsPromise[]) {
+  const grouped = promises.reduce(
+    (acc, promise) => {
+      if (!promise.category || promise.measurability_score === null) return acc;
+
+      if (!acc[promise.category]) {
+        acc[promise.category] = { category: promise.category, measured: 0, sum: 0 };
+      }
+
+      acc[promise.category].measured += 1;
+      acc[promise.category].sum += promise.measurability_score;
+      return acc;
+    },
+    {} as Record<PolicyCategory, { category: PolicyCategory; measured: number; sum: number }>,
+  );
+
+  return POLICY_CATEGORY_ORDER.filter((category) => accessoryHasOwn(acc, category)).map((category) => ({
+    category,
+    label: POLICY_CATEGORY_LABELS[category],
+    average: round(acc[category].sum / acc[category].measured, 2),
+    measured: acc[category].measured,
+  }));
+}
+
+export function buildStatusQuoBreakdownByParty(promises: AnalyticsPromise[]) {
+  const grouped = promises.reduce(
+    (acc, promise) => {
+      const party = promise.parties.abbreviation;
+      if (!acc[party]) {
+        acc[party] = { party, total: 0, statusQuo: 0, change: 0 };
+      }
+
+      acc[party].total += 1;
+      if (promise.is_status_quo) {
+        acc[party].statusQuo += 1;
+      } else {
+        acc[party].change += 1;
+      }
+
+      return acc;
+    },
+    {} as Record<string, { party: string; total: number; statusQuo: number; change: number }>,
+  );
+
+  return sortByPartyOrder(
+    Object.values(grouped).map((entry) => ({
+      ...entry,
+      statusQuoShare: entry.total > 0 ? round((entry.statusQuo / entry.total) * 100) : 0,
+      changeShare: entry.total > 0 ? round((entry.change / entry.total) * 100) : 0,
+    })),
+  );
+}
+
 export function buildPartyPerformanceScatterData(promises: AnalyticsPromise[]) {
   const grouped = promises.reduce(
     (acc, promise) => {
@@ -273,4 +371,8 @@ export function buildPartyPerformanceScatterData(promises: AnalyticsPromise[]) {
         total: entry.total,
       })),
   );
+}
+
+function accessoryHasOwn<T extends object>(obj: T, key: PropertyKey): key is keyof T {
+  return Object.prototype.hasOwnProperty.call(obj, key);
 }
