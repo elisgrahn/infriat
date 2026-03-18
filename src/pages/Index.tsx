@@ -30,15 +30,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useFilters } from "@/contexts/FilterContext";
 import { PromiseDetailOverlay } from "@/components/PromiseDetailOverlay";
-
-interface GovernmentPeriod {
-  id: string;
-  name: string;
-  start_year: number;
-  end_year: number | null;
-  governing_parties: string[];
-  support_parties: string[] | null;
-}
+import { getMandateType, type GovernmentPeriod } from "@/lib/utils";
 
 interface Promise {
   id: string;
@@ -48,6 +40,8 @@ interface Promise {
   summary: string | null;
   direct_quote: string | null;
   measurability_score: number | null;
+  category: import("@/integrations/supabase/types").Database["public"]["Enums"]["policy_category"] | null;
+  is_status_quo: boolean;
   status:
     | "infriat"
     | "delvis-infriat"
@@ -124,7 +118,7 @@ const Index = () => {
     try {
       const { data, error } = await supabase
         .from("promises")
-        .select("id, party_id, election_year, promise_text, summary, measurability_score, status, page_number, manifest_pdf_url, direct_quote, created_at, updated_at, parties(name, abbreviation)")
+        .select("id, party_id, election_year, promise_text, summary, measurability_score, category, is_status_quo, status, page_number, manifest_pdf_url, direct_quote, created_at, updated_at, parties(name, abbreviation)")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -153,30 +147,18 @@ const Index = () => {
   const getGovernmentStatus = (
     partyName: string,
     electionYear: number,
-  ): "governing" | "opposition" => {
-    // If a specific period is selected, use that period's data
+  ): "governing" | "support" | "opposition" => {
+    // If a specific period is selected, use that period's data directly
     if (selectedPeriodId) {
       const period = governmentPeriods.find((p) => p.id === selectedPeriodId);
       if (!period) return "opposition";
-      return period.governing_parties.includes(partyName) ||
-        period.support_parties?.includes(partyName)
-        ? "governing"
-        : "opposition";
+      if (period.governing_parties.includes(partyName)) return "governing";
+      if (period.support_parties?.includes(partyName)) return "support";
+      return "opposition";
     }
 
-    // Otherwise, find the period based on election year
-    const period = governmentPeriods.find(
-      (p) =>
-        electionYear >= p.start_year &&
-        (p.end_year === null || electionYear <= p.end_year),
-    );
-
-    if (!period) return "opposition";
-
-    return period.governing_parties.includes(partyName) ||
-      period.support_parties?.includes(partyName)
-      ? "governing"
-      : "opposition";
+    // Find the period that started as a result of the election year
+    return getMandateType(partyName, electionYear, governmentPeriods);
   };
 
   const filteredPromises = promises.filter((promise) => {
@@ -549,6 +531,8 @@ const Index = () => {
                           measurabilityScore={
                             promise.measurability_score || undefined
                           }
+                          category={promise.category}
+                          isStatusQuo={promise.is_status_quo}
                           onStatusUpdate={fetchPromises}
                         />
                       </div>

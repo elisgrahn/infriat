@@ -36,7 +36,10 @@ import { StatusBadge } from "@/components/badges/StatusBadge";
 import { PartyBadge } from "@/components/badges/PartyBadge";
 import { GovernmentBadge } from "@/components/badges/GovernmentBadge";
 import { MeasurabilityBadge } from "@/components/badges/MeasurabilityBadge";
+import { CategoryBadge } from "@/components/badges/CategoryBadge";
+import { StatusQuoBadge } from "@/components/badges/StatusQuoBadge";
 import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
+import type { Category } from "@/config/categoryConfig";
 import { ShareButton } from "./ShareButton";
 
 
@@ -48,7 +51,7 @@ interface PromiseCardProps {
   sharedCompactBadges?: boolean;
   onCompactNeedChange?: (promiseId: string, needsCompact: boolean) => void;
   electionYear: number;
-  governmentStatus: 'governing' | 'opposition';
+  governmentStatus: 'governing' | 'support' | 'opposition';
   createdAt: string;
   updatedAt: string;
   status: PromiseStatus;
@@ -59,6 +62,8 @@ interface PromiseCardProps {
   pageNumber?: number;
   manifestPdfUrl?: string;
   measurabilityScore?: number;
+  category?: Category | null;
+  isStatusQuo?: boolean | null;
   onStatusUpdate?: () => void;
 }
 
@@ -81,6 +86,8 @@ export const PromiseCard = ({
   pageNumber,
   manifestPdfUrl,
   measurabilityScore,
+  category,
+  isStatusQuo,
   onStatusUpdate,
 }: PromiseCardProps) => {
   const config = STATUS_CONFIG[status];
@@ -277,6 +284,20 @@ export const PromiseCard = ({
                   className="shrink-0"
                 />
               )}
+              {category && (
+                <CategoryBadge
+                  category={category}
+                  compact={compactBadges}
+                  className="shrink-0"
+                />
+              )}
+              {isStatusQuo != null && (
+                <StatusQuoBadge
+                  isStatusQuo={isStatusQuo}
+                  compact={compactBadges}
+                  className="shrink-0"
+                />
+              )}
             </div>
           </div>
 
@@ -294,6 +315,12 @@ export const PromiseCard = ({
               <GovernmentBadge governmentStatus={governmentStatus} className="shrink-0" />
               {measurabilityScore && (
                 <MeasurabilityBadge score={measurabilityScore} className="shrink-0" />
+              )}
+              {category && (
+                <CategoryBadge category={category} className="shrink-0" />
+              )}
+              {isStatusQuo != null && (
+                <StatusQuoBadge isStatusQuo={isStatusQuo} className="shrink-0" />
               )}
             </div>
           </div>

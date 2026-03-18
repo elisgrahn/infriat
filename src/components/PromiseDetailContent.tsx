@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { usePromiseAdminActions } from "@/hooks/usePromiseAdminActions";
 import { toast } from "sonner";
+import { getMandateType, type GovernmentPeriod } from "@/lib/utils";
 
 interface PromiseDetailData {
   id: string;
@@ -59,14 +60,6 @@ interface PromiseDetailData {
   };
 }
 
-interface GovernmentPeriod {
-  id: string;
-  start_year: number;
-  end_year: number | null;
-  governing_parties: string[];
-  support_parties: string[] | null;
-}
-
 interface PromiseDetailContentProps {
   promiseId: string;
   onClose: () => void;
@@ -78,26 +71,8 @@ export interface PromiseDetailHeaderData {
   title: string;
   status: PromiseStatus;
   partyName: string;
-  governmentStatus: "governing" | "opposition";
+  governmentStatus: "governing" | "support" | "opposition";
   measurabilityScore: number | null;
-}
-
-function getGovernmentStatus(
-  partyName: string,
-  electionYear: number,
-  periods: GovernmentPeriod[],
-): "governing" | "opposition" {
-  const period = periods.find(
-    (p) =>
-      p.start_year <= electionYear &&
-      (p.end_year === null || p.end_year >= electionYear),
-  );
-  if (!period) return "opposition";
-  const allGoverning = [
-    ...(period.governing_parties || []),
-    ...(period.support_parties || []),
-  ];
-  return allGoverning.includes(partyName) ? "governing" : "opposition";
 }
 
 const categoryLabels: Record<string, string> = {
@@ -201,7 +176,7 @@ export function PromiseDetailContent({
       title: promise.promise_text,
       status: promise.status,
       partyName: promise.parties.name,
-      governmentStatus: getGovernmentStatus(
+      governmentStatus: getMandateType(
         promise.parties.name,
         promise.election_year,
         governmentPeriods,
