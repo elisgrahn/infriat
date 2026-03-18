@@ -249,6 +249,19 @@ export function PromiseDetailContent({
         citationCount={citationSources.length}
       /> */}
 
+      {(promise.category || typeof promise.is_status_quo === "boolean") && (
+        <section className="flex flex-wrap gap-2">
+          {promise.category && (
+            <Badge variant="secondary" className="bg-secondary/70 text-secondary-foreground">
+              Politikområde: {categoryLabels[promise.category] ?? promise.category}
+            </Badge>
+          )}
+          <Badge variant="outline">
+            {promise.is_status_quo ? "Status quo-löfte" : "Förändringslöfte"}
+          </Badge>
+        </section>
+      )}
+
       {promise.summary && (
         <section className="space-y-2">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">

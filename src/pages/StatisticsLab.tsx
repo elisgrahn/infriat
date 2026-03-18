@@ -7,13 +7,14 @@ import { ExperimentalCharts } from "@/components/ExperimentalCharts";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { PromiseStatus } from "@/config/statusConfig";
+import type { PolicyCategory } from "@/lib/promiseMetrics";
 
 interface AnalyticsPromiseRow {
   id: string;
   election_year: number;
   status: PromiseStatus;
   measurability_score: number | null;
-  category: string | null;
+  category: PolicyCategory | null;
   is_status_quo: boolean;
   parties: {
     name: string;
