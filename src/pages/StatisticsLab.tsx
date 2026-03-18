@@ -7,12 +7,15 @@ import { ExperimentalCharts } from "@/components/ExperimentalCharts";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { PromiseStatus } from "@/config/statusConfig";
+import type { PolicyCategory } from "@/lib/promiseMetrics";
 
 interface AnalyticsPromiseRow {
   id: string;
   election_year: number;
   status: PromiseStatus;
   measurability_score: number | null;
+  category: PolicyCategory | null;
+  is_status_quo: boolean;
   parties: {
     name: string;
     abbreviation: string;
@@ -29,7 +32,7 @@ const StatisticsLab = () => {
       try {
         const { data, error } = await supabase
           .from("promises")
-          .select("id, election_year, status, measurability_score, parties(name, abbreviation)")
+          .select("id, election_year, status, measurability_score, category, is_status_quo, parties(name, abbreviation)")
           .order("created_at", { ascending: false });
 
         if (error) throw error;

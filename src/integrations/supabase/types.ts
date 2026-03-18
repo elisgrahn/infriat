@@ -116,7 +116,7 @@ export type Database = {
           direct_quote: string | null
           election_year: number
           id: string
-          is_status_quo: boolean | null
+          is_status_quo: boolean
           manifest_pdf_url: string | null
           measurability_reason: string | null
           measurability_score: number | null
@@ -135,7 +135,7 @@ export type Database = {
           direct_quote?: string | null
           election_year: number
           id?: string
-          is_status_quo?: boolean | null
+          is_status_quo?: boolean
           manifest_pdf_url?: string | null
           measurability_reason?: string | null
           measurability_score?: number | null
@@ -154,7 +154,7 @@ export type Database = {
           direct_quote?: string | null
           election_year?: number
           id?: string
-          is_status_quo?: boolean | null
+          is_status_quo?: boolean
           manifest_pdf_url?: string | null
           measurability_reason?: string | null
           measurability_score?: number | null

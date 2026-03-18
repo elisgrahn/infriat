@@ -27,9 +27,11 @@ import {
 } from "@/components/ui/card";
 import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
 import {
+  buildAverageMeasurabilityByCategory,
   buildAverageMeasurabilityByParty,
   buildPartyPerformanceScatterData,
   buildPartyStatusRadarData,
+  buildStatusQuoBreakdownByParty,
   CHARTABLE_STATUSES,
   type AnalyticsPromise,
 } from "@/lib/promiseMetrics";
@@ -64,6 +66,16 @@ export function ExperimentalCharts({
 
   const measurabilityData = useMemo(
     () => buildAverageMeasurabilityByParty(visiblePromises),
+    [visiblePromises],
+  );
+
+  const categoryMeasurabilityData = useMemo(
+    () => buildAverageMeasurabilityByCategory(visiblePromises),
+    [visiblePromises],
+  );
+
+  const statusQuoData = useMemo(
+    () => buildStatusQuoBreakdownByParty(visiblePromises),
     [visiblePromises],
   );
 
@@ -178,6 +190,97 @@ export function ExperimentalCharts({
                     labelFormatter={(label) => `Parti: ${label}`}
                   />
                   <Bar dataKey="average" name="Mätbarhet" radius={[10, 10, 0, 0]} fill="hsl(var(--primary))" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Mätbarhet per politikområde</CardTitle>
+            <CardDescription>
+              De nya kategori-fälten används här för att jämföra snittet mellan politikområden.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[360px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={categoryMeasurabilityData} margin={{ top: 8, right: 8, left: 0, bottom: 48 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis
+                    dataKey="label"
+                    angle={-28}
+                    textAnchor="end"
+                    height={72}
+                    interval={0}
+                    tick={{ fill: "hsl(var(--foreground))", fontSize: 11 }}
+                    axisLine={{ stroke: "hsl(var(--border))" }}
+                    tickLine={{ stroke: "hsl(var(--border))" }}
+                  />
+                  <YAxis
+                    domain={[0, 5]}
+                    tickCount={6}
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                    axisLine={{ stroke: "hsl(var(--border))" }}
+                    tickLine={{ stroke: "hsl(var(--border))" }}
+                  />
+                  <Tooltip
+                    contentStyle={tooltipStyle}
+                    formatter={(value: number, _name, item) => [
+                      `${value.toFixed(2)} / 5`,
+                      `${item?.payload?.measured ?? 0} bedömda löften`,
+                    ]}
+                    labelFormatter={(label) => `Område: ${label}`}
+                  />
+                  <Bar dataKey="average" name="Mätbarhet" radius={[10, 10, 0, 0]} fill="hsl(var(--accent))" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Status quo vs förändring</CardTitle>
+            <CardDescription>
+              Det nya is_status_quo-fältet visar hur stor del av partiernas löften som handlar om att bevara respektive förändra.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[360px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={statusQuoData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis
+                    dataKey="party"
+                    tick={{ fill: "hsl(var(--foreground))", fontSize: 12 }}
+                    axisLine={{ stroke: "hsl(var(--border))" }}
+                    tickLine={{ stroke: "hsl(var(--border))" }}
+                  />
+                  <YAxis
+                    domain={[0, 100]}
+                    tickFormatter={(value) => `${value}%`}
+                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                    axisLine={{ stroke: "hsl(var(--border))" }}
+                    tickLine={{ stroke: "hsl(var(--border))" }}
+                  />
+                  <Tooltip
+                    contentStyle={tooltipStyle}
+                    formatter={(value: number, name: string, item) => {
+                      const count =
+                        name === "statusQuoShare"
+                          ? item?.payload?.statusQuo ?? 0
+                          : item?.payload?.change ?? 0;
+                      return [`${value}% (${count} st)`, name === "statusQuoShare" ? "Status quo" : "Förändring"];
+                    }}
+                    labelFormatter={(label) => `Parti: ${label}`}
+                  />
+                  <Legend />
+                  <Bar dataKey="statusQuoShare" name="Status quo" stackId="promise-type" fill="hsl(var(--secondary))" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="changeShare" name="Förändring" stackId="promise-type" fill="hsl(var(--primary))" radius={[10, 10, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
