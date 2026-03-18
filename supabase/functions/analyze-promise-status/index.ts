@@ -142,29 +142,86 @@ serve(async (req) => {
 
     console.log(`Analyzing status for promise: ${promise.promise_text}`);
 
-    const prompt = `Analysera detta svenska politiska vallöfte:
+    // Determine mandate type from government_periods table
+    let mandateType: 'government' | 'support' | 'opposition' = 'opposition';
+    const partyAbbreviation = promise.parties.abbreviation;
 
-Parti: ${promise.parties.name}
-Valår: ${promise.election_year}
-Vallöfte: ${promise.promise_text}
-Sammanfattning: ${promise.summary}
+    const { data: govPeriods } = await userClient
+      .from('government_periods')
+      .select('*')
+      .lte('start_year', promise.election_year)
+      .order('start_year', { ascending: false })
+      .limit(1);
 
-${context ? `Ytterligare kontext: ${context}` : ''}
+    if (govPeriods && govPeriods.length > 0) {
+      const period = govPeriods[0];
+      if (period.governing_parties?.includes(partyAbbreviation)) {
+        mandateType = 'government';
+      } else if (period.support_parties?.includes(partyAbbreviation)) {
+        mandateType = 'support';
+      }
+    }
 
-Ge en strukturerad bedömning enligt detta format:
+    console.log(`Mandate type for ${partyAbbreviation}: ${mandateType}`);
 
-**Status:** [välj EN av: fulfilled, partially-fulfilled, in-progress, not-fulfilled, eller broken]
+    // Build dynamic mandate context
+    const mandateContext = {
+      government: `${promise.parties.name} ingick i REGERINGEN efter valet ${promise.election_year} och hade fullt mandat att genomföra sin politik via propositioner och budgetarbete.`,
+      support: `${promise.parties.name} var STÖDPARTI efter valet ${promise.election_year}. Partiet ingick inte i regeringen men gav den parlamentariskt stöd och hade därmed visst inflytande, men lade inte egna propositioner.`,
+      opposition: `${promise.parties.name} var OPPOSITIONSPARTI efter valet ${promise.election_year} och saknade mandat att självständigt genomföra politik. Partiet kunde påverka via motioner och voteringar, men inte lägga propositioner.`
+    }[mandateType];
 
+    // Build status definitions based on mandate type
+    const statusDefinitions = mandateType === 'opposition'
+      ? `
+Statusdefinitioner (oppositionsparti — använd ALDRIG "broken"):
+- fulfilled:           Löftet genomfördes under mandatperioden OCH partiet drev aktivt frågan (motioner, voteringar, offentliga uttalanden i linje med löftet).
+- partially-fulfilled: Löftet genomfördes delvis och partiet drev det aktivt.
+- in-progress:         Frågan bereds av sittande regering och partiet har drivit den.
+- not-fulfilled:       Löftet genomfördes inte. STANDARDSTATUS för ouppfyllda oppositionslöften — ett oppositionsparti kan inte bryta ett löfte det inte hade mandat att genomföra.
+- broken:              ANVÄND EJ för oppositionspartier.`
+      : `
 Statusdefinitioner:
-- fulfilled: Löftet är helt genomfört – beslut fattat och målet uppnått.
-- partially-fulfilled: Regeringen har vidtagit konkreta åtgärder, t.ex. lagt en proposition, ökat utbildningsplatser eller påbörjat reformen, men målet är inte helt nått.
-- in-progress: En utredning, departementspromemoria eller liknande arbete pågår för att möjliggöra reformen, men inga politiska beslut har fattats.
-- not-fulfilled: Inga tydliga steg mot genomförande har tagits, men regeringen sitter fortfarande kvar och kan agera.
-- broken: Regeringsperioden är avslutad och löftet har inte uppfyllts.
+- fulfilled:           Löftet är helt genomfört. Proposition överensstämmer med löftet och har bifallits, ELLER motsvarande förändring har genomförts via budget eller myndighetsbeslut.
+- partially-fulfilled: Proposition eller budgetåtgärd har vidtagits men överensstämmer bara delvis med löftet, eller riksdagen har bara delvis bifallit.
+- in-progress:         Utredning, kommission eller departementspromemoria pågår. Inga politiska beslut fattade ännu.
+- not-fulfilled:       Inga konkreta steg tagna. Mandatperioden pågår fortfarande — partiet kan fortfarande agera.
+- broken:              Partiet har AKTIVT verkat mot löftet (proposition i motsatt riktning, explicit uppgivet ståndpunkten), ELLER mandatperioden är avslutad utan att ens initiala steg tagits trots fullt mandat.`;
 
-**Förklaring:** [3-5 meningar som förklarar statusen baserat på konkreta åtgärder, lagförslag, beslut och aktuella nyheter]
+    const evidenceChain = `
+## Beviskedja att söka igenom (i prioritetsordning)
+1. PROPOSITION — Har en proposition lagts och bifallits av riksdagen? Överensstämmer den med löftet?
+2. BUDGETPROPOSITION — Finns anslagsförändringar i linje med löftet?
+3. MYNDIGHETSBESLUT / REGLERINGSBREV — Har regeringen instruerat myndighet att agera enligt löftet?
+4. UTREDNING / KOMMISSION — Har en utredning tillsatts?
+5. MOTIONER (oppositionspartier) — Har partiet lämnat motioner i linje med löftet?
+6. INGET AGERANDE — Inga av ovan.`;
 
-**Källor:** [lista med relevanta källor]`;
+    const prompt = `Du analyserar ett svensk politiskt vallöfte från valåret ${promise.election_year}.
+
+## Partiets mandatsituation
+${mandateContext}
+
+## Löftet
+Parti: ${promise.parties.name}
+Löfte: ${promise.promise_text}
+Sammanfattning: ${promise.summary}
+Politikområde: ${promise.category ?? 'okänt'}
+${promise.direct_quote ? `Direktcitat: "${promise.direct_quote}"` : ''}
+${context ? `\nYtterligare kontext: ${context}` : ''}
+${evidenceChain}
+
+## Statusdefinitioner
+${statusDefinitions}
+
+## Svar
+Ge din bedömning i detta format:
+
+**Status:** [en av: fulfilled, partially-fulfilled, in-progress, not-fulfilled, broken]
+
+**Förklaring:** [3–5 meningar. Utgå från beviskedjan ovan. Nämn konkreta beslut, propositionsnummer, budgetposter eller motionsnummer om sådana finns. Förklara varför du valt just denna status utifrån mandattypen.]
+
+**Källor:** [lista med relevanta källor och URL:er]`;
 
     const response = await fetch(geminiUrl(apiKey), {
       method: 'POST',

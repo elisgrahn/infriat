@@ -4,6 +4,21 @@ import { corsResponse, jsonResponse, errorResponse } from '../_shared/cors.ts';
 import { requireAdmin } from '../_shared/auth.ts';
 import { requireGoogleApiKey, geminiUrl } from '../_shared/gemini.ts';
 
+// Policy categories constant — shared between tool schema and system prompt
+const POLICY_CATEGORIES = `
+- valfard        (äldreomsorg, socialtjänst, funktionsstöd, barnfamiljer)
+- halsa          (sjukvård, tandvård, folkhälsa, psykiatri)
+- utbildning     (förskola, skola, högskola, forskning, komvux)
+- arbetsmarknad  (jobb, löner, socialförsäkringar, skatter, näringsliv, ekonomi)
+- migration      (invandring, asyl, flyktingmottagning, integration)
+- rattssakerhet  (polis, domstolar, kriminalitet, gängvåld, straff)
+- forsvar        (försvarsmakten, NATO, utrikes, bistånd, säkerhetspolitik)
+- klimat-miljo   (energi, klimat, miljö, djurskydd, jordbruk)
+- bostad         (bostadsbyggande, hyresrätt, infrastruktur, transport, kollektivtrafik)
+- demokrati      (valsystem, grundlag, medier, offentlighet, korruption)
+- ovrigt         (passar ej in i ovan)
+`.trim();
+
 // Tool schema shared between single-request and chunked paths
 const extractPromisesTool = {
   functionDeclarations: [{
@@ -17,16 +32,44 @@ const extractPromisesTool = {
           items: {
             type: "OBJECT",
             properties: {
-              promise_text: { type: "STRING", description: "Kort sammanfattning (max 10-15 ord)" },
-              summary: { type: "STRING", description: "Kort sammanfattning (max 2 meningar)" },
-              direct_quote: { type: "STRING", description: "Exakt citat från manifestet" },
-              measurability_reason: { type: "STRING", description: "Varför löftet är mätbart" },
+              promise_text: {
+                type: "STRING",
+                description: "Kort rubrik för löftet (max 10-15 ord)"
+              },
+              summary: {
+                type: "STRING",
+                description: "Sammanfattning (max 2 meningar)"
+              },
+              direct_quote: {
+                type: "STRING",
+                description: "Exakt ordagrann citat från manifestet, 1-3 meningar"
+              },
+              category: {
+                type: "STRING",
+                description: `Politikområde. Välj ETT av: valfard, halsa, utbildning, arbetsmarknad, migration, rattssakerhet, forsvar, klimat-miljo, bostad, demokrati, ovrigt`
+              },
+              is_status_quo: {
+                type: "BOOLEAN",
+                description: "true om löftet handlar om att BEVARA något befintligt, false om det handlar om FÖRÄNDRING"
+              },
               measurability_score: {
                 type: "INTEGER",
-                description: "Score 1-5. 5 = mycket mätbart med siffror och tidsram, 1 = vagt"
+                description: "Score 1-5. 5 = specifika siffror OCH tidsram, 4 = siffror ELLER tidsram, 3 = tydlig verifierbar åtgärd, 2 = relativ förändring, 1 = vagt"
+              },
+              measurability_reason: {
+                type: "STRING",
+                description: "En mening som motiverar mätbarhetspoängen"
               }
             },
-            required: ["promise_text", "summary", "direct_quote", "measurability_reason", "measurability_score"]
+            required: [
+              "promise_text",
+              "summary",
+              "direct_quote",
+              "category",
+              "is_status_quo",
+              "measurability_score",
+              "measurability_reason"
+            ]
           }
         }
       },
@@ -35,43 +78,48 @@ const extractPromisesTool = {
   }]
 };
 
+const VALID_CATEGORIES = [
+  'valfard', 'halsa', 'utbildning', 'arbetsmarknad', 'migration',
+  'rattssakerhet', 'forsvar', 'klimat-miljo', 'bostad', 'demokrati', 'ovrigt'
+];
+
 function buildSystemPrompt(chunkInfo?: { num: number; total: number }): string {
   const chunkNote = chunkInfo
-    ? `\nOBS: Detta är chunk ${chunkInfo.num} av ${chunkInfo.total} från ett större manifest. Fokusera endast på att extrahera löften från denna del.`
+    ? `\nOBS: Detta är chunk ${chunkInfo.num} av ${chunkInfo.total} från ett större manifest. Extrahera löften endast från denna del — undvik dubbletter med tidigare chunks.`
     : '';
 
-  return `Du är en expert på att analysera politiska valmanifest och extrahera mätbara vallöften.
+  return `Du är en expert på att analysera svenska politiska valmanifest och extrahera vallöften.
 
-Din uppgift är att:
-1. Identifiera ALLA konkreta, mätbara vallöften i texten - var GENERÖS med vad som räknas som ett löfte
-2. För varje vallöfte, ge en kort sammanfattning
-3. Inkludera ett direkt citat från manifestet
-4. Förklara varför löftet är mätbart
-5. GE EN MEASURABILITY SCORE (1-5) baserat på hur konkret och mätbart löftet är
+## Vad räknas som ett vallöfte?
+Ett vallöfte är en utsaga som binder partiet vid ett konkret agerande eller utfall som går att följa upp. Det krävs INTE att texten innehåller ordet "lovar" — formuleringar som "vi ska", "vi vill", "vi föreslår" följt av en konkret åtgärd räknas. Vaga visioner som "vi vill ha ett tryggare Sverige" utan konkret åtgärd räknas INTE.
 
-MEASURABILITY SCORE GUIDE:
-- Score 5: Extremt mätbart - Innehåller specifika numeriska mål OCH tidsram
-- Score 4: Mycket mätbart - Konkreta numeriska mål ELLER tidsram
-- Score 3: Måttligt mätbart - Tydlig åtgärd utan siffror
-- Score 2: Svagt mätbart - Relativa förändringar utan konkreta mål
-- Score 1: Nästan omätbart - Vaga formuleringar
-${chunkNote}
+## Var generös men inte slentrianmässig
+Inkludera löften som uppfyller minst ett kriterium:
+- Konkreta lagändringar, reformer eller avskaffanden av policy
+- Specifika siffror, mål eller tidsramar
+- En tydlig åtgärd som kan verifieras (t.ex. "inrätta en ny myndighet", "sänka skatten på X")
+- Relativa förändringar ("fler poliser", "kortare vårdköer") — dessa är svagare men räknas
 
-KRITISKT VIKTIGT OM CITAT:
-- Citatet MÅSTE vara en EXAKT kopia från manifestet - ord för ord, tecken för tecken
-- Ändra ALDRIG ordningen på meningar i citatet
-- Parafrasera ALDRIG eller omformulera texten
-- Ta ett citat som är 1-3 meningar långt och som är EXAKT från texten
+## Citat — KRITISKT
+- Citatet ska vara ORDAGRANT från manifestet, tecken för tecken
+- Ändra aldrig ordning, parafrasera aldrig
+- 1–3 sammanhängande meningar som bäst belyser löftet
 
-VIKTIGT - VAR GENERÖS: Ett löfte är mätbart om det uppfyller minst ett av dessa kriterier:
-- Innehåller specifika siffror eller mål
-- Beskriver konkreta lagändringar eller politiska reformer
-- Lovar att införa, avskaffa, höja, sänka, stärka eller förändra en specifik policy
-- Beskriver en tydlig åtgärd som kan verifieras
-- Innehåller ord som "ska", "vill", "föreslår" följt av en konkret åtgärd
-- Relativa förändringar utan konkreta siffror ÄR MÄTBARA
+## Kategorisering
+Välj ETT primärt politikområde per löfte:
+${POLICY_CATEGORIES}
 
-Anropa funktionen extract_promises med de löften du hittar.`;
+## Status quo vs. förändring
+Markera is_status_quo: true om löftet handlar om att BEVARA något (t.ex. "vi ska inte höja skatten", "vi värnar om nuvarande pensionssystem"). Dessa löften är historiskt sett lättare att uppfylla.
+
+## Mätbarhetsskala
+- 5: Specifika numeriska mål OCH tidsram (t.ex. "1 000 nya poliser till 2026")
+- 4: Numeriska mål ELLER tidsram, men inte båda
+- 3: Tydlig, verifierbar åtgärd utan siffror (t.ex. "avskaffa värnskatten")
+- 2: Relativ förändring utan konkreta mål (t.ex. "fler lärare")
+- 1: Vag vision utan verifierbar åtgärd
+
+Anropa funktionen extract_promises med de löften du hittar.${chunkNote}`;
 }
 
 serve(async (req) => {
@@ -454,6 +502,8 @@ serve(async (req) => {
       direct_quote: p.direct_quote,
       page_number: null,
       manifest_pdf_url: manifestPdfUrl || null,
+      category: VALID_CATEGORIES.includes(p.category) ? p.category : 'ovrigt',
+      is_status_quo: typeof p.is_status_quo === 'boolean' ? p.is_status_quo : false,
       measurability_reason: p.measurability_reason || null,
       measurability_score: p.measurability_score || null,
       status: 'pending-analysis'

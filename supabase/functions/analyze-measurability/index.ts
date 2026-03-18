@@ -57,22 +57,21 @@ serve(async (req) => {
           body: JSON.stringify({
             contents: [{
               parts: [{
-                text: `Du är en expert på att bedöma mätbarheten av politiska vallöften. 
-              
-Bedöm mätbarheten på en skala 1-5:
-- 5: Mycket mätbart - KRÄVER BÅDE konkreta siffror/mätbara mål OCH en tydlig tidsram (årtal)
-- 4: Mätbart - har ANTINGEN konkreta siffror/mätbara mål ELLER en tydlig tidsram
-- 3: Delvis mätbart (vissa mätbara delar)
-- 2: Svårmätbart (vaga formuleringar)
-- 1: Omätbart (inga konkreta mål alls)
+                text: `Du bedömer mätbarheten av ett svenskt politiskt vallöfte.
 
-Svara ENDAST med ett JSON-objekt: {"score": X, "reason": "kort förklaring"}
+## Skala
+- 5: Specifika numeriska mål OCH tidsram (t.ex. "1 000 nya poliser till 2026")
+- 4: Numeriska mål ELLER tidsram, men inte båda (t.ex. "sänka skatten med 2 %")
+- 3: Tydlig, verifierbar åtgärd utan siffror (t.ex. "avskaffa värnskatten", "inrätta en haverikommission")
+- 2: Relativ förändring utan konkreta mål (t.ex. "fler lärare", "kortare vårdköer")
+- 1: Vag vision utan verifierbar åtgärd (t.ex. "stärka välfärden", "ett tryggare Sverige")
 
-Bedöm mätbarheten för detta vallöfte:
-
+## Löfte att bedöma
 ${promise.promise_text}
+${promise.direct_quote ? `\nDirektcitat: "${promise.direct_quote}"` : ''}
 
-${promise.direct_quote ? `Direkt citat: ${promise.direct_quote}` : ''}`
+Svara ENDAST med ett JSON-objekt utan markdown-formatering:
+{"score": <1-5>, "reason": "<en mening som motiverar poängen med direkt hänvisning till vad som finns eller saknas i löftet>"}`
               }]
             }],
             generationConfig: { temperature: 0.2, topP: 0.8 },
