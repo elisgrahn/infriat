@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { ComposedChart, Bar, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Line } from "recharts";
 import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
 import { getBadgeColor } from "@/utils/partyColors";
 
 interface Promise {
   election_year: number;
   status: string;
+  measurability_score: number | null;
   parties: {
     name: string;
     abbreviation: string;
@@ -80,6 +81,8 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
           investigating: 0,
           notFulfilled: 0,
           pendingAnalysis: 0,
+          measurabilitySum: 0,
+          measurabilityCount: 0,
         };
       }
       
@@ -90,9 +93,13 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
       if (promise.status === 'utreds') acc[abbr].investigating++;
       if (promise.status === 'ej-infriat') acc[abbr].notFulfilled++;
       if (promise.status === 'pending-analysis') acc[abbr].pendingAnalysis++;
+      if (promise.measurability_score != null) {
+        acc[abbr].measurabilitySum += promise.measurability_score;
+        acc[abbr].measurabilityCount++;
+      }
       
       return acc;
-    }, {} as Record<string, { name: string; total: number; fulfilled: number; partial: number; broken: number; investigating: number; notFulfilled: number; pendingAnalysis: number }>);
+    }, {} as Record<string, { name: string; total: number; fulfilled: number; partial: number; broken: number; investigating: number; notFulfilled: number; pendingAnalysis: number; measurabilitySum: number; measurabilityCount: number }>);
 
   // Political spectrum order from left to right
   const partyOrder = ['V', 'S', 'MP', 'C', 'L', 'KD', 'M', 'SD'];
@@ -107,6 +114,9 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
       'Brutna': d.broken,
       ...(isAdmin && { 'Under analys': d.pendingAnalysis }),
       total: d.total,
+      avgMeasurability: d.measurabilityCount > 0
+        ? Math.round((d.measurabilitySum / d.measurabilityCount) * 10) / 10
+        : null,
     }))
     .sort((a, b) => {
       const indexA = partyOrder.indexOf(a.name);
@@ -126,6 +136,7 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
     'Ej infriade': d.total > 0 ? d['Ej infriade'] / d.total : 0,
     'Brutna': d.total > 0 ? d['Brutna'] / d.total : 0,
     ...(isAdmin && { 'Under analys': d.total > 0 ? (d['Under analys'] || 0) / d.total : 0 }),
+    avgMeasurability: d.avgMeasurability,
   }));
 
   return (
@@ -147,7 +158,7 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
         </div>
         <ResponsiveContainer width="100%" height={300}>
           {chartType === "bar" ? (
-            <BarChart data={partyChartData}>
+            <ComposedChart data={partyChartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis 
                 dataKey="name" 
@@ -155,8 +166,22 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
                 tick={<CustomPartyTick />}
               />
               <YAxis 
-                stroke="hsl(var(--foreground))"
-                tick={{ fill: 'hsl(var(--foreground))' }}
+                yAxisId="left"
+                stroke="hsl(var(--muted-foreground))"
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                tickFormatter={(v) => v === 0 ? '' : String(v)}
+                label={{ value: 'Antal', angle: -90, position: 'insideLeft', offset: 0, style: { fill: 'hsl(var(--muted-foreground))', fontSize: 11 } }}
+                width={40}
+              />
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                domain={[0, 5]}
+                ticks={[0, 1, 2, 3, 4, 5]}
+                stroke="hsl(var(--muted-foreground))"
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                tickFormatter={(v) => v === 0 ? '' : String(v)}
+                label={{ value: 'Mätbarhet', angle: 90, position: 'insideRight', offset: 0, style: { fill: 'hsl(var(--muted-foreground))', fontSize: 11 } }}
                 width={40}
               />
               <Tooltip 
@@ -185,17 +210,29 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
                   { value: 'Utreds', type: 'rect', color: STATUS_CONFIG['utreds' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' },
                   { value: 'Delvis infriade', type: 'rect', color: STATUS_CONFIG['delvis-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' },
                   { value: 'Infriade', type: 'rect', color: STATUS_CONFIG['infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' },
+                  { value: 'Snitt mätbarhet', type: 'line' as const, color: 'hsl(var(--foreground))' },
                 ]}
               />
-              {isAdmin && <Bar dataKey="Under analys" stackId="a" fill={STATUS_CONFIG['pending-analysis' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />}
-              <Bar dataKey="Brutna" stackId="a" fill={STATUS_CONFIG['brutet' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
-              <Bar dataKey="Ej infriade" stackId="a" fill={STATUS_CONFIG['ej-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
-              <Bar dataKey="Utreds" stackId="a" fill={STATUS_CONFIG['utreds' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
-              <Bar dataKey="Delvis infriade" stackId="a" fill={STATUS_CONFIG['delvis-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
-              <Bar dataKey="Infriade" stackId="a" fill={STATUS_CONFIG['infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
-            </BarChart>
+              {isAdmin && <Bar yAxisId="left" dataKey="Under analys" stackId="a" fill={STATUS_CONFIG['pending-analysis' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />}
+              <Bar yAxisId="left" dataKey="Brutna" stackId="a" fill={STATUS_CONFIG['brutet' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
+              <Bar yAxisId="left" dataKey="Ej infriade" stackId="a" fill={STATUS_CONFIG['ej-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
+              <Bar yAxisId="left" dataKey="Utreds" stackId="a" fill={STATUS_CONFIG['utreds' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
+              <Bar yAxisId="left" dataKey="Delvis infriade" stackId="a" fill={STATUS_CONFIG['delvis-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
+              <Bar yAxisId="left" dataKey="Infriade" stackId="a" fill={STATUS_CONFIG['infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
+              <Line
+                yAxisId="right"
+                type="step"
+                dataKey="avgMeasurability"
+                name="Snitt mätbarhet"
+                stroke="hsl(var(--card-foreground))"
+                strokeWidth={1.5}
+                strokeDasharray="5 3"
+                dot={false}
+                connectNulls
+              />
+            </ComposedChart>
           ) : (
-            <BarChart data={partyChartDataPercent}>
+            <ComposedChart data={partyChartDataPercent}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis 
                 dataKey="name" 
@@ -203,10 +240,23 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
                 tick={<CustomPartyTick />}
               />
               <YAxis 
-                stroke="hsl(var(--foreground))"
-                tick={{ fill: 'hsl(var(--foreground))' }}
+                yAxisId="left"
+                stroke="hsl(var(--muted-foreground))"
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
                 domain={[0, 1]}
                 tickFormatter={(value) => `${(value * 100).toFixed(0)}%`}
+                label={{ value: 'Andel', angle: -90, position: 'insideLeft', offset: 0, style: { fill: 'hsl(var(--muted-foreground))', fontSize: 11 } }}
+                width={40}
+              />
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                domain={[0, 5]}
+                ticks={[0, 1, 2, 3, 4, 5]}
+                stroke="hsl(var(--muted-foreground))"
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+                tickFormatter={(v) => v === 0 ? '' : String(v)}
+                label={{ value: 'Mätbarhet', angle: 90, position: 'insideRight', offset: 0, style: { fill: 'hsl(var(--muted-foreground))', fontSize: 11 } }}
                 width={40}
               />
               <Tooltip 
@@ -238,15 +288,27 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
                   { value: 'Utreds', type: 'rect', color: STATUS_CONFIG['utreds' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' },
                   { value: 'Delvis infriade', type: 'rect', color: STATUS_CONFIG['delvis-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' },
                   { value: 'Infriade', type: 'rect', color: STATUS_CONFIG['infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' },
+                  { value: 'Snitt mätbarhet', type: 'line' as const, color: 'hsl(var(--foreground))' },
                 ]}
               />
-              {isAdmin && <Bar dataKey="Under analys" stackId="a" fill={STATUS_CONFIG['pending-analysis' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />}
-              <Bar dataKey="Brutna" stackId="a" fill={STATUS_CONFIG['brutet' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
-              <Bar dataKey="Ej infriade" stackId="a" fill={STATUS_CONFIG['ej-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
-              <Bar dataKey="Utreds" stackId="a" fill={STATUS_CONFIG['utreds' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
-              <Bar dataKey="Delvis infriade" stackId="a" fill={STATUS_CONFIG['delvis-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
-              <Bar dataKey="Infriade" stackId="a" fill={STATUS_CONFIG['infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
-            </BarChart>
+              {isAdmin && <Bar yAxisId="left" dataKey="Under analys" stackId="a" fill={STATUS_CONFIG['pending-analysis' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />}
+              <Bar yAxisId="left" dataKey="Brutna" stackId="a" fill={STATUS_CONFIG['brutet' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
+              <Bar yAxisId="left" dataKey="Ej infriade" stackId="a" fill={STATUS_CONFIG['ej-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
+              <Bar yAxisId="left" dataKey="Utreds" stackId="a" fill={STATUS_CONFIG['utreds' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
+              <Bar yAxisId="left" dataKey="Delvis infriade" stackId="a" fill={STATUS_CONFIG['delvis-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
+              <Bar yAxisId="left" dataKey="Infriade" stackId="a" fill={STATUS_CONFIG['infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
+              <Line
+                yAxisId="right"
+                type="step"
+                dataKey="avgMeasurability"
+                name="Snitt mätbarhet"
+                stroke="hsl(var(--card-foreground))"
+                strokeWidth={1.5}
+                strokeDasharray="5 3"
+                dot={false}
+                connectNulls
+              />
+            </ComposedChart>
           )}
         </ResponsiveContainer>
       </div>
