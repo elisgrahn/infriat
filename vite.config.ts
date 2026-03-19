@@ -17,6 +17,12 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     target: 'es2022',
+    minify: 'esbuild',
+    ...(mode === 'production' ? {
+      esbuildOptions: {
+        drop: ['console', 'debugger'],
+      },
+    } : {}),
   },
   optimizeDeps: {
     esbuildOptions: {
