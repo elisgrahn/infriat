@@ -364,7 +364,7 @@ export function PromiseDetailContent({
                   ? "Analyserar…"
                   : "Analysera mätbarhet"}
               </Button>
-              {promise.manifest_pdf_url && promise.page_number && (
+              {promise.manifest_pdf_url && promise.direct_quote && (
                 <Button
                   size="sm"
                   variant="outline"
@@ -373,7 +373,11 @@ export function PromiseDetailContent({
                   className="gap-1.5"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
-                  {isReanalyzingPage ? "Analyserar…" : "Omanalysera sida"}
+                  {isReanalyzingPage
+                    ? "Söker…"
+                    : promise.page_number
+                      ? "Sök sida igen"
+                      : "Hitta sida i PDF"}
                 </Button>
               )}
               <AlertDialog>
