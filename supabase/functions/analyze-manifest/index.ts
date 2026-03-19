@@ -154,12 +154,36 @@ serve(async (req) => {
 
     console.log(`Analyzing manifest for ${partyAbbreviation} ${electionYear}`);
 
+    // Validate URLs to prevent SSRF attacks
+    function validateExternalUrl(url: string): void {
+      const parsed = new URL(url);
+      if (parsed.protocol !== 'https:') {
+        throw new Error('Endast HTTPS-URL:er är tillåtna.');
+      }
+      const hostname = parsed.hostname.toLowerCase();
+      const blockedPatterns = [
+        /^localhost$/,
+        /^127\./,
+        /^10\./,
+        /^172\.(1[6-9]|2\d|3[01])\./,
+        /^192\.168\./,
+        /^169\.254\./,
+        /^0\./,
+        /^\[/,
+        /^metadata\.google\.internal$/,
+      ];
+      if (blockedPatterns.some(p => p.test(hostname))) {
+        throw new Error('URL:en pekar mot en otillåten adress.');
+      }
+    }
+
     // Get manifest text (either from input or download from URL)
     let finalManifestText = manifestText;
     if (!finalManifestText && txtUrl) {
+      validateExternalUrl(txtUrl);
       console.log('Downloading TXT from URL:', txtUrl);
       try {
-        const txtResponse = await fetch(txtUrl);
+        const txtResponse = await fetch(txtUrl, { signal: AbortSignal.timeout(30000) });
         if (!txtResponse.ok) {
           throw new Error(`HTTP ${txtResponse.status} ${txtResponse.statusText}`);
         }
