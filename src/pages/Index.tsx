@@ -69,6 +69,8 @@ const Index = () => {
     selectedParties,
     selectedStatuses,
     selectedGovStatus,
+    selectedCategories,
+    selectedStatusQuo,
     searchQuery,
     sortBy,
     setSearchQuery,
@@ -207,12 +209,22 @@ const Index = () => {
       }
     }
 
+    const matchesCategory =
+      selectedCategories.length === 0 ||
+      (promise.category != null && selectedCategories.includes(promise.category as import('@/config/categoryConfig').Category));
+
+    const matchesStatusQuo =
+      selectedStatusQuo.length === 0 ||
+      selectedStatusQuo.includes(String(promise.is_status_quo));
+
     return (
       matchesParty &&
       matchesStatus &&
       matchesGovStatus &&
       matchesSearch &&
-      matchesPeriod
+      matchesPeriod &&
+      matchesCategory &&
+      matchesStatusQuo
     );
   });
 
@@ -295,6 +307,8 @@ const Index = () => {
     selectedParties,
     selectedStatuses,
     selectedGovStatus,
+    selectedCategories,
+    selectedStatusQuo,
     searchQuery,
     sortBy,
     selectedPeriodId,
@@ -395,7 +409,7 @@ const Index = () => {
 
             {/* Filters Sidebar (desktop) */}
             <aside className="hidden lg:block lg:col-span-1">
-              <div className="sticky top-20 bg-card rounded-2xl p-6 border">
+              <div className="sticky top-20 bg-card rounded-2xl p-6 border max-h-[calc(100vh-6rem)] overflow-y-auto">
                 <h2 className="text-xl font-bold mb-6 text-foreground">
                   Filtrera
                 </h2>

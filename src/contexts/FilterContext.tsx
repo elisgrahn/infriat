@@ -4,6 +4,7 @@ import {
   PARTY_ABBREVIATION_TO_NAME,
   getPartyAbbreviation,
 } from '@/utils/partyAbbreviations';
+import type { Category } from '@/config/categoryConfig';
 
 interface GovernmentPeriod {
   id: string;
@@ -21,6 +22,10 @@ interface FilterContextType {
   setSelectedStatuses: (statuses: string[]) => void;
   selectedGovStatus: string[];
   setSelectedGovStatus: (govStatus: string[]) => void;
+  selectedCategories: Category[];
+  setSelectedCategories: (categories: Category[]) => void;
+  selectedStatusQuo: string[];
+  setSelectedStatusQuo: (statusQuo: string[]) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   sortBy: string;
@@ -51,6 +56,16 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
   const [selectedGovStatus, setSelectedGovStatus] = useState<string[]>(() => {
     const govStatus = searchParams.get('govStatus');
     return govStatus ? govStatus.split(',') : [];
+  });
+
+  const [selectedCategories, setSelectedCategories] = useState<Category[]>(() => {
+    const cats = searchParams.get('categories');
+    return cats ? (cats.split(',') as Category[]) : [];
+  });
+
+  const [selectedStatusQuo, setSelectedStatusQuo] = useState<string[]>(() => {
+    const sq = searchParams.get('statusQuo');
+    return sq ? sq.split(',') : [];
   });
   
   const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || "");
@@ -84,6 +99,18 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
         params.delete('govStatus');
       }
 
+      if (selectedCategories.length > 0) {
+        params.set('categories', selectedCategories.join(','));
+      } else {
+        params.delete('categories');
+      }
+
+      if (selectedStatusQuo.length > 0) {
+        params.set('statusQuo', selectedStatusQuo.join(','));
+      } else {
+        params.delete('statusQuo');
+      }
+
       if (searchQuery) {
         params.set('search', searchQuery);
       } else {
@@ -104,7 +131,7 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
 
       return params;
     }, { replace: true });
-  }, [selectedParties, selectedStatuses, selectedGovStatus, searchQuery, sortBy, selectedPeriodId, setSearchParams]);
+  }, [selectedParties, selectedStatuses, selectedGovStatus, selectedCategories, selectedStatusQuo, searchQuery, sortBy, selectedPeriodId, setSearchParams]);
 
   return (
     <FilterContext.Provider
@@ -115,6 +142,10 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
         setSelectedStatuses,
         selectedGovStatus,
         setSelectedGovStatus,
+        selectedCategories,
+        setSelectedCategories,
+        selectedStatusQuo,
+        setSelectedStatusQuo,
         searchQuery,
         setSearchQuery,
         sortBy,
