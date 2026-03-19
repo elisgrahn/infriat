@@ -413,11 +413,24 @@ const Index = () => {
 
             {/* Filters Sidebar (desktop) */}
             <aside className="hidden lg:block lg:col-span-1">
-              <div className="sticky top-20 bg-card rounded-2xl p-6 border max-h-[calc(100vh-6rem)] overflow-y-auto">
-                <h2 className="text-xl font-bold mb-6 text-foreground">
-                  Filtrera
-                </h2>
-                <PromiseFilters />
+              <div className="sticky top-20 bg-card rounded-2xl border max-h-[calc(100vh-6rem)] flex flex-col">
+                <div className="p-6 pb-4 space-y-4 shrink-0">
+                  <h2 className="text-xl font-bold text-foreground">
+                    Filtrera
+                  </h2>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Sök efter löften..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                <div className="px-6 pb-6 overflow-y-auto">
+                  <PromiseFilters showSearch={false} />
+                </div>
               </div>
             </aside>
 
