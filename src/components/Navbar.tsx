@@ -69,18 +69,16 @@ export function Navbar() {
               )}
             </Button>
           )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleAuthClick}
-            title={user ? "Logga ut" : "Logga in"}
-          >
-            {user ? (
+          {user && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleAuthClick}
+              title="Logga ut"
+            >
               <LogOut className="w-5 h-5" />
-            ) : (
-              <LogIn className="w-5 h-5" />
-            )}
-          </Button>
+            </Button>
+          )}
         </div>
       </div>
       {/* Animate the changing of padding */}
