@@ -164,6 +164,7 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
                 dataKey="name" 
                 stroke="hsl(var(--foreground))"
                 tick={<CustomPartyTick />}
+                padding={{ left: 30, right: 30 }}
               />
               <YAxis 
                 yAxisId="left"
@@ -238,6 +239,7 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
                 dataKey="name" 
                 stroke="hsl(var(--foreground))"
                 tick={<CustomPartyTick />}
+                padding={{ left: 30, right: 30 }}
               />
               <YAxis 
                 yAxisId="left"

@@ -1,4 +1,4 @@
-import { Settings, LogIn, LogOut } from "lucide-react";
+import { Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
@@ -69,18 +69,16 @@ export function Navbar() {
               )}
             </Button>
           )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleAuthClick}
-            title={user ? "Logga ut" : "Logga in"}
-          >
-            {user ? (
+          {user && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleAuthClick}
+              title="Logga ut"
+            >
               <LogOut className="w-5 h-5" />
-            ) : (
-              <LogIn className="w-5 h-5" />
-            )}
-          </Button>
+            </Button>
+          )}
         </div>
       </div>
       {/* Animate the changing of padding */}

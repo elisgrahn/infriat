@@ -375,6 +375,10 @@ const Index = () => {
                 demokratiskt samhälle.
               </p>
 
+              <p className="text-sm text-primary-foreground/60 max-w-2xl mx-auto">
+                ⚠️ Statusbedömningar genereras med hjälp av AI och kan innehålla fel.
+              </p>
+
               <div className="grid grid-cols-3 gap-2 sm:gap-6 pt-12 max-w-4xl mx-auto">
                 <HeroStatCard
                   icon={Scale}
@@ -409,11 +413,24 @@ const Index = () => {
 
             {/* Filters Sidebar (desktop) */}
             <aside className="hidden lg:block lg:col-span-1">
-              <div className="sticky top-20 bg-card rounded-2xl p-6 border max-h-[calc(100vh-6rem)] overflow-y-auto">
-                <h2 className="text-xl font-bold mb-6 text-foreground">
-                  Filtrera
-                </h2>
-                <PromiseFilters />
+              <div className="sticky top-20 bg-card rounded-2xl border max-h-[calc(100vh-6rem)] flex flex-col">
+                <div className="p-6 pb-4 space-y-4 shrink-0">
+                  <h2 className="text-xl font-bold text-foreground">
+                    Filtrera
+                  </h2>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Sök efter löften..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                <div className="px-6 pb-6 overflow-y-auto">
+                  <PromiseFilters showSearch={false} />
+                </div>
               </div>
             </aside>
 
@@ -565,15 +582,55 @@ const Index = () => {
         </main>
 
         {/* Footer */}
-        <footer className="bg-muted mt-20 py-12">
-          <div className="container mx-auto px-4 text-center">
-            <p className="text-muted-foreground">
-              En plattform för att granska politiska löften och skapa
-              transparens.
-            </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              Byggt med öppenhet och ansvarstagande som grund.
-            </p>
+        <footer className="bg-muted mt-20 py-12 border-t">
+          <div className="container mx-auto px-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-sm text-muted-foreground">
+              {/* About */}
+              <div className="space-y-2">
+                <h3 className="font-semibold text-foreground">Om Infriat</h3>
+                <p>
+                  En plattform för att granska politiska löften och skapa
+                  transparens i svensk politik.
+                </p>
+                <p className="text-xs">
+                  ⚠️ Statusbedömningar genereras med hjälp av AI och kan innehålla fel.
+                  Verifiera alltid med originalkällorna.
+                </p>
+              </div>
+
+              {/* Contact */}
+              <div className="space-y-2">
+                <h3 className="font-semibold text-foreground">Kontakt</h3>
+                <p>
+                  Frågor eller feedback?{" "}
+                  <a
+                    href="mailto:elis@grahn.ai"
+                    className="text-primary hover:underline"
+                  >
+                    elis@grahn.ai
+                  </a>
+                </p>
+                <p className="text-xs">
+                  Denna webbplats använder inga spårningscookies.
+                </p>
+              </div>
+
+              {/* Support */}
+              <div className="space-y-2">
+                <h3 className="font-semibold text-foreground">Stöd projektet</h3>
+                <p>
+                  Infriat drivs ideellt. Vill du hjälpa till att täcka
+                  driftkostnader? Swisha valfritt belopp.
+                </p>
+                <p className="text-xs italic">
+                  Swish-nummer läggs till snart.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-border/50 text-center text-xs text-muted-foreground">
+              © {new Date().getFullYear()} Elis Grahn. Byggt med öppenhet och ansvarstagande som grund.
+            </div>
           </div>
         </footer>
       </div>
