@@ -220,9 +220,10 @@ serve(async (req) => {
       manifestPdfUrl = publicUrl;
       console.log('PDF uploaded:', publicUrl);
     } else if (pdfUrl) {
+      validateExternalUrl(pdfUrl);
       console.log('Downloading PDF from URL:', pdfUrl);
       try {
-        const pdfResponse = await fetch(pdfUrl);
+        const pdfResponse = await fetch(pdfUrl, { signal: AbortSignal.timeout(60000) });
         if (!pdfResponse.ok) {
           throw new Error(`HTTP ${pdfResponse.status} ${pdfResponse.statusText}`);
         }
