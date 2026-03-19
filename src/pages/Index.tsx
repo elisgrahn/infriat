@@ -375,6 +375,10 @@ const Index = () => {
                 demokratiskt samhälle.
               </p>
 
+              <p className="text-sm text-primary-foreground/60 max-w-2xl mx-auto">
+                ⚠️ Statusbedömningar genereras med hjälp av AI och kan innehålla fel.
+              </p>
+
               <div className="grid grid-cols-3 gap-2 sm:gap-6 pt-12 max-w-4xl mx-auto">
                 <HeroStatCard
                   icon={Scale}
