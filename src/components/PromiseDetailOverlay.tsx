@@ -16,6 +16,8 @@ import { StatusBadge } from "@/components/badges/StatusBadge";
 import { PartyBadge } from "@/components/badges/PartyBadge";
 import { GovernmentBadge } from "@/components/badges/GovernmentBadge";
 import { MeasurabilityBadge } from "@/components/badges/MeasurabilityBadge";
+import { CategoryBadge } from "@/components/badges/CategoryBadge";
+import { StatusQuoBadge } from "@/components/badges/StatusQuoBadge";
 
 const OVERLAY_STATE_KEY = "promise-detail-overlay-state-v1";
 
@@ -182,6 +184,20 @@ export function PromiseDetailOverlay({
                 {headerData.measurabilityScore !== null && (
                   <MeasurabilityBadge
                     score={headerData.measurabilityScore}
+                    compact={false}
+                    className="shrink-0"
+                  />
+                )}
+                {headerData.isStatusQuo !== null && (
+                  <StatusQuoBadge
+                    isStatusQuo={headerData.isStatusQuo}
+                    compact={false}
+                    className="shrink-0"
+                  />
+                )}
+                {headerData.category && (
+                  <CategoryBadge
+                    category={headerData.category}
                     compact={false}
                     className="shrink-0"
                   />

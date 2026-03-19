@@ -244,7 +244,7 @@ export function ExperimentalCharts({
 
         <Card>
           <CardHeader>
-            <CardTitle>Status quo vs förändring</CardTitle>
+            <CardTitle>Bevara- vs förändra</CardTitle>
             <CardDescription>
               Det nya is_status_quo-fältet visar hur stor del av partiernas löften som handlar om att bevara respektive förändra.
             </CardDescription>
@@ -274,13 +274,13 @@ export function ExperimentalCharts({
                         name === "statusQuoShare"
                           ? item?.payload?.statusQuo ?? 0
                           : item?.payload?.change ?? 0;
-                      return [`${value}% (${count} st)`, name === "statusQuoShare" ? "Status quo" : "Förändring"];
+                      return [`${value}% (${count} st)`, name === "statusQuoShare" ? "Bevara" : "Förändra"];
                     }}
                     labelFormatter={(label) => `Parti: ${label}`}
                   />
                   <Legend />
-                  <Bar dataKey="statusQuoShare" name="Status quo" stackId="promise-type" fill="hsl(var(--secondary))" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="changeShare" name="Förändring" stackId="promise-type" fill="hsl(var(--primary))" radius={[10, 10, 0, 0]} />
+                  <Bar dataKey="statusQuoShare" name="Bevara" stackId="promise-type" fill="hsl(var(--secondary))" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="changeShare" name="Förändra" stackId="promise-type" fill="hsl(var(--primary))" radius={[10, 10, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

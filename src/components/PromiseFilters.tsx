@@ -154,8 +154,8 @@ export const PromiseFilters = ({
               <SelectItem value="created-asc">Skapat datum (stigande)</SelectItem>
               <SelectItem value="year-desc">Valår (fallande)</SelectItem>
               <SelectItem value="year-asc">Valår (stigande)</SelectItem>
-              <SelectItem value="measurability-desc">Mätbarhet (högst först)</SelectItem>
-              <SelectItem value="measurability-asc">Mätbarhet (lägst först)</SelectItem>
+              <SelectItem value="measurability-desc">Mätbart (högst först)</SelectItem>
+              <SelectItem value="measurability-asc">Mätbart (lägst först)</SelectItem>
               <SelectItem value="status-asc">Status (infriade först)</SelectItem>
               <SelectItem value="status-desc">Status (brutna först)</SelectItem>
             </SelectContent>

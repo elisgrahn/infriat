@@ -51,7 +51,7 @@ export function MeasurabilityBadge({
             </div>
             <Ruler className="w-3 h-3 relative" />
             <span className="relative">
-              {compact ? `${score}/5` : `Mätbarhet: ${score}/5`}
+              {compact ? `${score}/5` : `Mätbart: ${score}/5`}
             </span>
           </Badge>
         </TooltipTrigger>

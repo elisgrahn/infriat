@@ -95,8 +95,8 @@ const Index = () => {
     { value: "created-asc", label: "Skapat datum (stigande)" },
     { value: "year-desc", label: "Valår (fallande)" },
     { value: "year-asc", label: "Valår (stigande)" },
-    { value: "measurability-desc", label: "Mätbarhet (högst först)" },
-    { value: "measurability-asc", label: "Mätbarhet (lägst först)" },
+    { value: "measurability-desc", label: "Mätbart (högst först)" },
+    { value: "measurability-asc", label: "Mätbart (lägst först)" },
     { value: "status-asc", label: "Status (infriade först)" },
     { value: "status-desc", label: "Status (brutna först)" },
   ] as const;

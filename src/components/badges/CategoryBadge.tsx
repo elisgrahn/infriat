@@ -20,7 +20,7 @@ export function CategoryBadge({
   compact = false,
   className,
 }: CategoryBadgeProps) {
-  const config = CATEGORY_CONFIG[category];
+  const config = CATEGORY_CONFIG[category] ?? CATEGORY_CONFIG["ovrigt"];
   const Icon = config.icon;
 
   return (
@@ -29,11 +29,11 @@ export function CategoryBadge({
         <TooltipTrigger asChild>
           <Badge
             variant="outline"
-            className={cn("gap-1.5", config.colorClass, className)}
+            className={cn("gap-1.5 overflow-hidden", config.colorClass, className)}
           >
             <Icon className="w-3 h-3 shrink-0" />
             {!compact && (
-              <span className="truncate max-w-[140px]">{config.label}</span>
+              <span className="truncate">{config.label}</span>
             )}
           </Badge>
         </TooltipTrigger>

@@ -8,7 +8,6 @@ import { CitedText } from "@/components/CitedText";
 import { CitationFootnotes } from "@/components/CitationFootnotes";
 import { PromiseDetailSkeleton } from "@/components/PromiseDetailSkeleton";
 import { PromiseInsightRadar } from "@/components/PromiseInsightRadar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -36,6 +35,9 @@ import {
 import { usePromiseAdminActions } from "@/hooks/usePromiseAdminActions";
 import { toast } from "sonner";
 import { getMandateType, type GovernmentPeriod } from "@/lib/utils";
+import { CategoryBadge } from "@/components/badges/CategoryBadge";
+import { StatusQuoBadge } from "@/components/badges/StatusQuoBadge";
+import { type Category } from "@/config/categoryConfig";
 
 interface PromiseDetailData {
   id: string;
@@ -74,21 +76,11 @@ export interface PromiseDetailHeaderData {
   partyName: string;
   governmentStatus: "governing" | "support" | "opposition";
   measurabilityScore: number | null;
+  category: Category | null;
+  isStatusQuo: boolean | null;
 }
 
-const categoryLabels: Record<string, string> = {
-  valfard: "Välfärd",
-  halsa: "Hälsa",
-  utbildning: "Utbildning",
-  arbetsmarknad: "Arbetsmarknad",
-  migration: "Migration",
-  rattssakerhet: "Rättssäkerhet",
-  forsvar: "Försvar",
-  "klimat-miljo": "Klimat & miljö",
-  bostad: "Bostad",
-  demokrati: "Demokrati",
-  ovrigt: "Övrigt",
-};
+
 
 export function PromiseDetailContent({
   promiseId,
@@ -183,6 +175,8 @@ export function PromiseDetailContent({
         governmentPeriods,
       ),
       measurabilityScore: promise.measurability_score,
+      category: (promise.category as Category | null) ?? null,
+      isStatusQuo: typeof promise.is_status_quo === "boolean" ? promise.is_status_quo : null,
     });
   }, [governmentPeriods, onHeaderDataChange, promise]);
 
@@ -226,18 +220,7 @@ export function PromiseDetailContent({
         citationCount={citationSources.length}
       /> */}
 
-      {(promise.category || typeof promise.is_status_quo === "boolean") && (
-        <section className="flex flex-wrap gap-2">
-          {promise.category && (
-            <Badge variant="secondary" className="bg-secondary/70 text-secondary-foreground">
-              Politikområde: {categoryLabels[promise.category] ?? promise.category}
-            </Badge>
-          )}
-          <Badge variant="outline">
-            {promise.is_status_quo ? "Status quo-löfte" : "Förändringslöfte"}
-          </Badge>
-        </section>
-      )}
+
 
       {promise.summary && (
         <section className="space-y-2">

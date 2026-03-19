@@ -101,14 +101,14 @@ export const STATUS_QUO_CONFIG: Record<"true" | "false", StatusQuoConfigEntry> =
   {
     true: {
       icon: MoveRight,
-      label: "Bevarandelöfte",
+      label: "Bevara",
       description: "Partiet lovar att behålla något som redan finns",
-      colorClass: "text-slate-500",
+      colorClass: "text-muted-foreground",
     },
     false: {
       icon: LaneChange, // Custom icon
-      label: "Förändringslöfte",
+      label: "Förändra",
       description: "Partiet lovar att förändra något",
-      colorClass: "text-blue-500",
+      colorClass: "text-card-foreground",
     },
   };

@@ -294,7 +294,7 @@ export default function PromiseDetail() {
           <section className="space-y-2">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
               <Ruler className="w-4 h-4" />
-              Mätbarhet
+              Mätbart
             </h2>
             <p className="text-sm leading-relaxed text-foreground">
               {promise.measurability_reason}

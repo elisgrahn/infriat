@@ -21,7 +21,7 @@ export function StatusQuoBadge({
   className,
 }: StatusQuoBadgeProps) {
   const key = String(isStatusQuo) as "true" | "false";
-  const config = STATUS_QUO_CONFIG[key];
+  const config = STATUS_QUO_CONFIG[key] ?? STATUS_QUO_CONFIG["false"];
   const Icon = config.icon;
 
   return (
