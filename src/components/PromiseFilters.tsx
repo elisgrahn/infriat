@@ -289,7 +289,7 @@ export const PromiseFilters = ({
                 value={cat}
                 className={cn(
                   TOGGLE_BTN,
-                  "data-[state=on]:text-white",
+                  "data-[state=on]:text-background",
                   // off state: muted bg, coloured icon via cfg.colorClass applied to the icon
                   "data-[state=off]:bg-muted data-[state=off]:text-foreground data-[state=off]:hover:bg-muted/80",
                   "data-[state=on]:bg-foreground data-[state=on]:border-foreground",
