@@ -1,31 +1,19 @@
 import { Card } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
-
-interface Promise {
-  id: string;
-  party_id: string;
-  election_year: number;
-  promise_text: string;
-  status: 'infriat' | 'delvis-infriat' | 'utreds' | 'ej-infriat' | 'brutet' | 'pending-analysis';
-  parties: {
-    name: string;
-    abbreviation: string;
-  };
-  created_at: string;
-}
+import { type AnalyticsPromise } from "@/lib/promiseMetrics";
 
 interface EnhancedStatisticsChartsProps {
-  promises: Promise[];
+  promises: AnalyticsPromise[];
   isAdmin?: boolean;
 }
 
-
 export function EnhancedStatisticsCharts({ promises }: EnhancedStatisticsChartsProps) {
-  // Status distribution pie chart
-  const statusData = promises.reduce((acc, promise) => {
-    if (promise.status === 'pending-analysis') return acc;
+  // pending-analysis already filtered by the caller — but guard defensively
+  const analysed = promises.filter((p) => p.status !== "pending-analysis");
     
+  // Status distribution pie chart
+  const statusData = analysed.reduce((acc, promise) => {
     const existing = acc.find(item => item.status === promise.status);
     if (existing) {
       existing.value++;
@@ -42,9 +30,7 @@ export function EnhancedStatisticsCharts({ promises }: EnhancedStatisticsChartsP
   }, [] as Array<{ status: string; value: number; name: string }>);
 
   // Party comparison bar chart
-  const partyData = promises
-    .filter(p => p.status !== 'pending-analysis')
-    .reduce((acc, promise) => {
+  const partyData = analysed.reduce((acc, promise) => {
       const abbr = promise.parties.abbreviation;
       
       if (!acc[abbr]) {

@@ -1,18 +1,21 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { FlaskConical } from "lucide-react";
-import { StatisticsCharts } from "@/components/StatisticsCharts";
-import { EnhancedStatisticsCharts } from "@/components/EnhancedStatisticsCharts";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { EnhancedStatisticsCharts } from "@/components/EnhancedStatisticsCharts";
+import { ExperimentalCharts } from "@/components/ExperimentalCharts";
+import { Separator } from "@/components/ui/separator";
+import type { PromiseStatus } from "@/config/statusConfig";
+import type { PolicyCategory } from "@/lib/promiseMetrics";
 
-interface Promise {
+interface AnalyticsPromise {
   id: string;
   party_id: string;
   election_year: number;
   promise_text: string;
-  status: 'infriat' | 'delvis-infriat' | 'utreds' | 'ej-infriat' | 'brutet' | 'pending-analysis';
+  status: PromiseStatus;
+  measurability_score: number | null;
+  category: PolicyCategory | null;
+  is_status_quo: boolean | null;
   parties: {
     name: string;
     abbreviation: string;
@@ -21,55 +24,53 @@ interface Promise {
 }
 
 const Statistics = () => {
-  const [promises, setPromises] = useState<Promise[]>([]);
+  const [promises, setPromises] = useState<AnalyticsPromise[]>([]);
   const [loading, setLoading] = useState(true);
   const { isAdmin } = useAuth();
 
   useEffect(() => {
+    const fetchPromises = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("promises")
+          .select("id, party_id, election_year, promise_text, status, measurability_score, category, is_status_quo, created_at, parties(name, abbreviation)")
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+        setPromises((data as AnalyticsPromise[]) || []);
+      } catch {
+        // Silently handle error
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchPromises();
   }, []);
 
-  const fetchPromises = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('promises')
-        .select('*, parties(*)')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setPromises(data || []);
-    } catch (error) {
-      // Silently handle error
-    } finally {
-      setLoading(false);
-    }
-  };
+  // All charts only show analysed promises (never pending-analysis), unless admin
+  const analysedPromises = promises.filter(
+    (p) => isAdmin || p.status !== "pending-analysis",
+  );
 
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-gradient-to-br from-primary via-primary-light to-primary-dark text-primary-foreground py-12">
-        <div className="container mx-auto px-4 space-y-4">
-          <div className="flex justify-center sm:justify-end">
-            <Button asChild variant="secondary" className="gap-2">
-              <Link to="/statistik/labb">
-                <FlaskConical className="h-4 w-4" />
-                Öppna diagramlabb
-              </Link>
-            </Button>
-          </div>
+        <div className="container mx-auto px-4">
           <h1 className="text-4xl font-bold text-center">Statistik</h1>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-12 space-y-8">
+      <main className="container mx-auto px-4 py-12 space-y-12">
         {loading ? (
           <div className="text-center py-16">
             <p className="text-muted-foreground text-lg">Laddar statistik...</p>
           </div>
         ) : (
           <>
-            <EnhancedStatisticsCharts promises={promises} isAdmin={isAdmin} />
-            <StatisticsCharts promises={promises} />
+            <EnhancedStatisticsCharts promises={analysedPromises} isAdmin={isAdmin} />
+            <Separator />
+            <ExperimentalCharts promises={analysedPromises} isAdmin={isAdmin} />
           </>
         )}
       </main>
@@ -78,3 +79,4 @@ const Statistics = () => {
 };
 
 export default Statistics;
+

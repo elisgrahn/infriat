@@ -376,3 +376,83 @@ export function buildPartyPerformanceScatterData(promises: AnalyticsPromise[]) {
 function accessoryHasOwn<T extends object>(obj: T, key: PropertyKey): key is keyof T {
   return Object.prototype.hasOwnProperty.call(obj, key);
 }
+
+export interface CategoryStatusRadarRow {
+  category: PolicyCategory;
+  label: string;
+  total: number;
+  infriat: number;
+  "delvis-infriat": number;
+  utreds: number;
+  "ej-infriat": number;
+  brutet: number;
+}
+
+/**
+ * Builds radar data where each row is a policy category and each key is a
+ * status value (as a percentage share of that category's analysed promises).
+ */
+export function buildStatusByCategoryRadarData(
+  promises: AnalyticsPromise[],
+  mode: "share" | "count" = "share",
+): CategoryStatusRadarRow[] {
+  const grouped = promises.reduce(
+    (acc, promise) => {
+      if (!promise.category || promise.status === "pending-analysis") return acc;
+
+      const cat = promise.category;
+      if (!acc[cat]) {
+        acc[cat] = {
+          category: cat,
+          total: 0,
+          statuses: {
+            infriat: 0,
+            "delvis-infriat": 0,
+            utreds: 0,
+            "ej-infriat": 0,
+            brutet: 0,
+          },
+        };
+      }
+
+      acc[cat].total += 1;
+      acc[cat].statuses[promise.status as Exclude<PromiseStatus, "pending-analysis">] += 1;
+      return acc;
+    },
+    {} as Record<
+      PolicyCategory,
+      {
+        category: PolicyCategory;
+        total: number;
+        statuses: Record<Exclude<PromiseStatus, "pending-analysis">, number>;
+      }
+    >,
+  );
+
+  return POLICY_CATEGORY_ORDER.map((cat) => {
+    const entry = grouped[cat];
+    const total = entry?.total ?? 0;
+    const statuses = entry?.statuses ?? {
+      infriat: 0,
+      "delvis-infriat": 0,
+      utreds: 0,
+      "ej-infriat": 0,
+      brutet: 0,
+    };
+    const val = (status: Exclude<PromiseStatus, "pending-analysis">) =>
+      mode === "share" && total > 0
+        ? round((statuses[status] / total) * 100)
+        : statuses[status];
+
+    return {
+      category: cat,
+      label: POLICY_CATEGORY_LABELS[cat],
+      total,
+      infriat: val("infriat"),
+      "delvis-infriat": val("delvis-infriat"),
+      utreds: val("utreds"),
+      "ej-infriat": val("ej-infriat"),
+      brutet: val("brutet"),
+    };
+  });
+}

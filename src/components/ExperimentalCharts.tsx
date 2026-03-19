@@ -31,6 +31,7 @@ import {
   buildAverageMeasurabilityByParty,
   buildPartyPerformanceScatterData,
   buildPartyStatusRadarData,
+  buildStatusByCategoryRadarData,
   buildStatusQuoBreakdownByParty,
   CHARTABLE_STATUSES,
   type AnalyticsPromise,
@@ -53,6 +54,7 @@ export function ExperimentalCharts({
   isAdmin = false,
 }: ExperimentalChartsProps) {
   const [radarMode, setRadarMode] = useState<"share" | "count">("share");
+  const [categoryRadarMode, setCategoryRadarMode] = useState<"share" | "count">("share");
 
   const visiblePromises = useMemo(
     () => promises.filter((promise) => isAdmin || promise.status !== "pending-analysis"),
@@ -83,6 +85,16 @@ export function ExperimentalCharts({
     () => buildPartyPerformanceScatterData(visiblePromises),
     [visiblePromises],
   );
+
+  const categoryRadarData = useMemo(
+    () => buildStatusByCategoryRadarData(visiblePromises, categoryRadarMode),
+    [visiblePromises, categoryRadarMode],
+  );
+
+  const categoryRadarMax =
+    categoryRadarMode === "share"
+      ? 100
+      : Math.max(3, ...categoryRadarData.map((r) => r.total));
 
   const radarMax =
     radarMode === "share"
@@ -287,6 +299,76 @@ export function ExperimentalCharts({
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader className="gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-1">
+            <CardTitle>Status per politikområde</CardTitle>
+            <CardDescription>
+              Varje axel är ett politikområde. Visar hur löften inom varje kategori fördelas på de olika statusarna.
+            </CardDescription>
+          </div>
+          <div className="inline-flex rounded-lg border border-border bg-muted/40 p-1">
+            <Button
+              variant={categoryRadarMode === "share" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setCategoryRadarMode("share")}
+            >
+              Andel
+            </Button>
+            <Button
+              variant={categoryRadarMode === "count" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setCategoryRadarMode("count")}
+            >
+              Antal
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[420px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart data={categoryRadarData} outerRadius="72%">
+                <PolarGrid stroke="hsl(var(--border))" />
+                <PolarAngleAxis
+                  dataKey="label"
+                  tick={{ fill: "hsl(var(--foreground))", fontSize: 11 }}
+                />
+                <PolarRadiusAxis
+                  angle={90}
+                  domain={[0, categoryRadarMax]}
+                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+                  tickFormatter={(v) => categoryRadarMode === "share" ? `${v}%` : `${v}`}
+                />
+                <Tooltip
+                  contentStyle={tooltipStyle}
+                  formatter={(value: number, name: string) => {
+                    const label = STATUS_CONFIG[name as PromiseStatus]?.label ?? name;
+                    return [
+                      categoryRadarMode === "share" ? `${value}%` : `${value} st`,
+                      label,
+                    ];
+                  }}
+                />
+                <Legend
+                  formatter={(name) => STATUS_CONFIG[name as PromiseStatus]?.label ?? name}
+                />
+                {CHARTABLE_STATUSES.map((status) => (
+                  <Radar
+                    key={status}
+                    name={status}
+                    dataKey={status}
+                    stroke={STATUS_CONFIG[status].chartColor}
+                    fill={STATUS_CONFIG[status].chartColor}
+                    fillOpacity={0.16}
+                    strokeWidth={2}
+                  />
+                ))}
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
