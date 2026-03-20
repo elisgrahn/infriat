@@ -39,14 +39,25 @@ const TOGGLE_BTN =
 function FilterSectionHeader({
   icon: Icon,
   label,
+  helpAnchor,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
+  helpAnchor?: string;
 }) {
   return (
     <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
       <Icon className="w-4 h-4" />
       {label}
+      {helpAnchor && (
+        <Link
+          to={`/om#${helpAnchor}`}
+          className="ml-auto text-muted-foreground/60 hover:text-foreground transition-colors"
+          aria-label={`Läs mer om ${label}`}
+        >
+          <HelpCircle className="w-3.5 h-3.5" />
+        </Link>
+      )}
     </h3>
   );
 }
