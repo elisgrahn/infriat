@@ -1,8 +1,17 @@
 import { useState } from "react";
+import React from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ComposedChart, Bar, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Line } from "recharts";
+import { ComposedChart, Bar, XAxis, YAxis, CartesianGrid, Line } from "recharts";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
 import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
 import { getBadgeColor } from "@/utils/partyColors";
 
@@ -31,6 +40,37 @@ interface TimelineComparisonProps {
   isAdmin?: boolean;
 }
 
+const baseChartConfig = {
+  infriade: {
+    label: 'Infriade',
+    color: STATUS_CONFIG['infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))',
+  },
+  delvisInfriade: {
+    label: 'Delvis infriade',
+    color: STATUS_CONFIG['delvis-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))',
+  },
+  utreds: {
+    label: 'Utreds',
+    color: STATUS_CONFIG['utreds' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))',
+  },
+  ejInfriade: {
+    label: 'Ej infriade',
+    color: STATUS_CONFIG['ej-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))',
+  },
+  brutna: {
+    label: 'Brutna',
+    color: STATUS_CONFIG['brutet' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))',
+  },
+  underAnalys: {
+    label: 'Under analys',
+    color: STATUS_CONFIG['pending-analysis' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))',
+  },
+  avgMeasurability: {
+    label: 'Snitt mätbarhet',
+    color: 'hsl(var(--foreground))',
+  },
+} satisfies ChartConfig;
+
 export function TimelineComparison({ promises, isAdmin = false }: TimelineComparisonProps) {
   const [chartType, setChartType] = useState<"bar" | "area">("bar");
 
@@ -47,7 +87,7 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
   };
 
   // Custom tick component for party labels
-  const CustomPartyTick = ({ x, y, payload }: any) => {
+  const CustomPartyTick = ({ x = 0, y = 0, payload = { value: '' } }: { x?: number; y?: number; payload?: { value: string } }) => {
     const partyAbbr = payload.value;
     const partyName = abbrToPartyName[partyAbbr] || partyAbbr;
     const colorClass = getBadgeColor(partyName);
@@ -107,12 +147,12 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
   const partyChartData = Object.values(partyData)
     .map(d => ({
       name: d.name,
-      'Infriade': d.fulfilled,
-      'Delvis infriade': d.partial,
-      'Utreds': d.investigating,
-      'Ej infriade': d.notFulfilled,
-      'Brutna': d.broken,
-      ...(isAdmin && { 'Under analys': d.pendingAnalysis }),
+      infriade: d.fulfilled,
+      delvisInfriade: d.partial,
+      utreds: d.investigating,
+      ejInfriade: d.notFulfilled,
+      brutna: d.broken,
+      ...(isAdmin && { underAnalys: d.pendingAnalysis }),
       total: d.total,
       avgMeasurability: d.measurabilityCount > 0
         ? Math.round((d.measurabilitySum / d.measurabilityCount) * 10) / 10
@@ -130,12 +170,12 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
   // Convert to percentage for area chart
   const partyChartDataPercent = partyChartData.map(d => ({
     name: d.name,
-    'Infriade': d.total > 0 ? d['Infriade'] / d.total : 0,
-    'Delvis infriade': d.total > 0 ? d['Delvis infriade'] / d.total : 0,
-    'Utreds': d.total > 0 ? d['Utreds'] / d.total : 0,
-    'Ej infriade': d.total > 0 ? d['Ej infriade'] / d.total : 0,
-    'Brutna': d.total > 0 ? d['Brutna'] / d.total : 0,
-    ...(isAdmin && { 'Under analys': d.total > 0 ? (d['Under analys'] || 0) / d.total : 0 }),
+    infriade: d.total > 0 ? d.infriade / d.total : 0,
+    delvisInfriade: d.total > 0 ? d.delvisInfriade / d.total : 0,
+    utreds: d.total > 0 ? d.utreds / d.total : 0,
+    ejInfriade: d.total > 0 ? d.ejInfriade / d.total : 0,
+    brutna: d.total > 0 ? d.brutna / d.total : 0,
+    ...(isAdmin && { underAnalys: d.total > 0 ? (d.underAnalys ?? 0) / d.total : 0 }),
     avgMeasurability: d.avgMeasurability,
   }));
 
@@ -156,19 +196,16 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
             </TabsList>
           </Tabs>
         </div>
-        <ResponsiveContainer width="100%" height={300}>
-          {chartType === "bar" ? (
+        {chartType === "bar" ? (
+          <ChartContainer config={baseChartConfig} className="h-[300px] w-full">
             <ComposedChart data={partyChartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis 
-                dataKey="name" 
-                stroke="hsl(var(--foreground))"
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis
+                dataKey="name"
                 tick={<CustomPartyTick />}
               />
-              <YAxis 
+              <YAxis
                 yAxisId="left"
-                stroke="hsl(var(--muted-foreground))"
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
                 tickFormatter={(v) => v === 0 ? '' : String(v)}
                 label={{ value: 'Antal', angle: -90, position: 'insideLeft', offset: 0, style: { fill: 'hsl(var(--muted-foreground))', fontSize: 11 } }}
                 width={40}
@@ -178,71 +215,92 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
                 orientation="right"
                 domain={[0, 5]}
                 ticks={[0, 1, 2, 3, 4, 5]}
-                stroke="hsl(var(--muted-foreground))"
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
                 tickFormatter={(v) => v === 0 ? '' : String(v)}
                 label={{ value: 'Mätbarhet', angle: 90, position: 'insideRight', offset: 0, style: { fill: 'hsl(var(--muted-foreground))', fontSize: 11 } }}
                 width={40}
               />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(var(--background))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
-                }}
-                labelFormatter={(label) => abbrToPartyName[label] || label}
-                formatter={(value: number, name: string, props: any) => {
-                  const total = props.payload.total;
-                  const percentage = total > 0 ? ((value / total) * 100).toFixed(0) : 0;
-                  return `${value} st (${percentage}%)`;
-                }}
-                itemSorter={(item) => {
-                  const order = ['Infriade', 'Delvis infriade', 'Utreds', 'Ej infriade', 'Brutna', 'Under analys'];
-                  return order.indexOf(item.name as string);
+              <ChartTooltip
+                cursor={false}
+                content={({ active, payload, label }) => {
+                  const sorted = payload
+                    ? [
+                        ...[...payload].filter(p => p.dataKey !== 'avgMeasurability').reverse(),
+                        ...payload.filter(p => p.dataKey === 'avgMeasurability'),
+                      ]
+                    : payload;
+                  const total = (payload?.[0]?.payload as { total: number } | undefined)?.total ?? 0;
+                  return (
+                    <ChartTooltipContent
+                      active={active}
+                      payload={sorted}
+                      label={label}
+                      labelFormatter={(lbl) => `${abbrToPartyName[lbl] || lbl} (${total} st)`}
+                      formatter={(value, name, item) => {
+                        const num = Number(value);
+                        const cfg = baseChartConfig[name as keyof typeof baseChartConfig];
+                        const displayValue = item.dataKey === 'avgMeasurability'
+                          ? `${num} / 5`
+                          : (() => {
+                              const pct = total > 0 ? ((num / total) * 100).toFixed(0) : 0;
+                              return `${num} st (${pct}%)`;
+                            })();
+                        return (
+                          <>
+                            <div
+                              className="h-2.5 w-2.5 shrink-0 rounded-[2px] bg-[--color-bg]"
+                              style={{ "--color-bg": cfg?.color } as React.CSSProperties}
+                            />
+                            {cfg?.label ?? name}
+                            <div className="ml-auto flex items-baseline gap-0.5 font-mono font-medium tabular-nums text-foreground">
+                              {displayValue}
+                            </div>
+                          </>
+                        );
+                      }}
+                    />
+                  );
                 }}
               />
-              <Legend 
-                wrapperStyle={{ paddingTop: '20px' }}
-                payload={[
-                  ...(isAdmin ? [{ value: 'Under analys', type: 'rect' as const, color: STATUS_CONFIG['pending-analysis' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' }] : []),
-                  { value: 'Brutna', type: 'rect', color: STATUS_CONFIG['brutet' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' },
-                  { value: 'Ej infriade', type: 'rect', color: STATUS_CONFIG['ej-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' },
-                  { value: 'Utreds', type: 'rect', color: STATUS_CONFIG['utreds' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' },
-                  { value: 'Delvis infriade', type: 'rect', color: STATUS_CONFIG['delvis-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' },
-                  { value: 'Infriade', type: 'rect', color: STATUS_CONFIG['infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' },
-                  { value: 'Snitt mätbarhet', type: 'line' as const, color: 'hsl(var(--foreground))' },
-                ]}
+              <ChartLegend
+                content={({ payload }) => {
+                  const sorted = payload
+                    ? [
+                        ...[...payload].filter(p => p.dataKey !== 'avgMeasurability').reverse(),
+                        ...payload.filter(p => p.dataKey === 'avgMeasurability'),
+                      ]
+                    : payload;
+                  return <ChartLegendContent payload={sorted} className="flex-wrap" />;
+                }}
               />
-              {isAdmin && <Bar yAxisId="left" dataKey="Under analys" stackId="a" fill={STATUS_CONFIG['pending-analysis' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />}
-              <Bar yAxisId="left" dataKey="Brutna" stackId="a" fill={STATUS_CONFIG['brutet' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
-              <Bar yAxisId="left" dataKey="Ej infriade" stackId="a" fill={STATUS_CONFIG['ej-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
-              <Bar yAxisId="left" dataKey="Utreds" stackId="a" fill={STATUS_CONFIG['utreds' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
-              <Bar yAxisId="left" dataKey="Delvis infriade" stackId="a" fill={STATUS_CONFIG['delvis-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
-              <Bar yAxisId="left" dataKey="Infriade" stackId="a" fill={STATUS_CONFIG['infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
+              {isAdmin && <Bar yAxisId="left" dataKey="underAnalys" stackId="a" fill="var(--color-underAnalys)" fillOpacity={0.8} />}
+              <Bar yAxisId="left" dataKey="brutna" stackId="a" fill="var(--color-brutna)" fillOpacity={0.8} />
+              <Bar yAxisId="left" dataKey="ejInfriade" stackId="a" fill="var(--color-ejInfriade)" fillOpacity={0.8} />
+              <Bar yAxisId="left" dataKey="utreds" stackId="a" fill="var(--color-utreds)" fillOpacity={0.8} />
+              <Bar yAxisId="left" dataKey="delvisInfriade" stackId="a" fill="var(--color-delvisInfriade)" fillOpacity={0.8} />
+              <Bar yAxisId="left" dataKey="infriade" stackId="a" fill="var(--color-infriade)" fillOpacity={0.8} />
               <Line
                 yAxisId="right"
                 type="step"
                 dataKey="avgMeasurability"
                 name="Snitt mätbarhet"
-                stroke="hsl(var(--card-foreground))"
+                stroke="var(--color-avgMeasurability)"
                 strokeWidth={1.5}
                 strokeDasharray="5 3"
                 dot={false}
                 connectNulls
               />
             </ComposedChart>
-          ) : (
+          </ChartContainer>
+        ) : (
+          <ChartContainer config={baseChartConfig} className="h-[300px] w-full">
             <ComposedChart data={partyChartDataPercent}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis 
-                dataKey="name" 
-                stroke="hsl(var(--foreground))"
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis
+                dataKey="name"
                 tick={<CustomPartyTick />}
               />
-              <YAxis 
+              <YAxis
                 yAxisId="left"
-                stroke="hsl(var(--muted-foreground))"
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
                 domain={[0, 1]}
                 tickFormatter={(value) => `${(value * 100).toFixed(0)}%`}
                 label={{ value: 'Andel', angle: -90, position: 'insideLeft', offset: 0, style: { fill: 'hsl(var(--muted-foreground))', fontSize: 11 } }}
@@ -253,64 +311,86 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
                 orientation="right"
                 domain={[0, 5]}
                 ticks={[0, 1, 2, 3, 4, 5]}
-                stroke="hsl(var(--muted-foreground))"
-                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
                 tickFormatter={(v) => v === 0 ? '' : String(v)}
                 label={{ value: 'Mätbarhet', angle: 90, position: 'insideRight', offset: 0, style: { fill: 'hsl(var(--muted-foreground))', fontSize: 11 } }}
                 width={40}
               />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'hsl(var(--background))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
-                }}
-                labelFormatter={(label) => abbrToPartyName[label] || label}
-                formatter={(value: number, name: string, props: any) => {
-                  const partyAbbr = props.payload.name;
-                  const originalPartyData = partyChartData.find(p => p.name === partyAbbr);
-                  const statusKey = name as keyof typeof originalPartyData;
-                  const actualCount = originalPartyData?.[statusKey] || 0;
-                  const percentage = (value * 100).toFixed(0);
-                  return `${percentage}% (${actualCount} st)`;
-                }}
-                itemSorter={(item) => {
-                  const order = ['Infriade', 'Delvis infriade', 'Utreds', 'Ej infriade', 'Brutna', 'Under analys'];
-                  return order.indexOf(item.name as string);
+              <ChartTooltip
+                cursor={false}
+                content={({ active, payload, label }) => {
+                  const sorted = payload
+                    ? [
+                        ...[...payload].filter(p => p.dataKey !== 'avgMeasurability').reverse(),
+                        ...payload.filter(p => p.dataKey === 'avgMeasurability'),
+                      ]
+                    : payload;
+                  const partyEntry = payload?.[0]?.payload as { name: string } | undefined;
+                  const originalPartyData = partyEntry ? partyChartData.find(p => p.name === partyEntry.name) : undefined;
+                  const total = originalPartyData?.total ?? 0;
+                  return (
+                    <ChartTooltipContent
+                      active={active}
+                      payload={sorted}
+                      label={label}
+                      labelFormatter={(lbl) => `${abbrToPartyName[lbl] || lbl} (${total} st)`}
+                      formatter={(value, name, item) => {
+                        const cfg = baseChartConfig[name as keyof typeof baseChartConfig];
+                        const statusKey = name as keyof typeof originalPartyData;
+                        const displayValue = item.dataKey === 'avgMeasurability'
+                          ? `${Number(value)} / 5`
+                          : (() => {
+                              const actualCount = Number(originalPartyData?.[statusKey] ?? 0);
+                              const percentage = (Number(value) * 100).toFixed(0);
+                              return `${percentage}% (${actualCount} st)`;
+                            })();
+                        return (
+                          <>
+                            <div
+                              className="h-2.5 w-2.5 shrink-0 rounded-[2px] bg-[--color-bg]"
+                              style={{ "--color-bg": cfg?.color } as React.CSSProperties}
+                            />
+                            {cfg?.label ?? name}
+                            <div className="ml-auto flex items-baseline gap-0.5 font-mono font-medium tabular-nums text-foreground">
+                              {displayValue}
+                            </div>
+                          </>
+                        );
+                      }}
+                    />
+                  );
                 }}
               />
-              <Legend 
-                wrapperStyle={{ paddingTop: '20px' }}
-                payload={[
-                  ...(isAdmin ? [{ value: 'Under analys', type: 'rect' as const, color: STATUS_CONFIG['pending-analysis' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' }] : []),
-                  { value: 'Brutna', type: 'rect', color: STATUS_CONFIG['brutet' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' },
-                  { value: 'Ej infriade', type: 'rect', color: STATUS_CONFIG['ej-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' },
-                  { value: 'Utreds', type: 'rect', color: STATUS_CONFIG['utreds' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' },
-                  { value: 'Delvis infriade', type: 'rect', color: STATUS_CONFIG['delvis-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' },
-                  { value: 'Infriade', type: 'rect', color: STATUS_CONFIG['infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))' },
-                  { value: 'Snitt mätbarhet', type: 'line' as const, color: 'hsl(var(--foreground))' },
-                ]}
+              <ChartLegend
+                content={({ payload }) => {
+                  const sorted = payload
+                    ? [
+                        ...[...payload].filter(p => p.dataKey !== 'avgMeasurability').reverse(),
+                        ...payload.filter(p => p.dataKey === 'avgMeasurability'),
+                      ]
+                    : payload;
+                  return <ChartLegendContent payload={sorted} className="flex-wrap" />;
+                }}
               />
-              {isAdmin && <Bar yAxisId="left" dataKey="Under analys" stackId="a" fill={STATUS_CONFIG['pending-analysis' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />}
-              <Bar yAxisId="left" dataKey="Brutna" stackId="a" fill={STATUS_CONFIG['brutet' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
-              <Bar yAxisId="left" dataKey="Ej infriade" stackId="a" fill={STATUS_CONFIG['ej-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
-              <Bar yAxisId="left" dataKey="Utreds" stackId="a" fill={STATUS_CONFIG['utreds' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
-              <Bar yAxisId="left" dataKey="Delvis infriade" stackId="a" fill={STATUS_CONFIG['delvis-infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
-              <Bar yAxisId="left" dataKey="Infriade" stackId="a" fill={STATUS_CONFIG['infriat' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))'} fillOpacity={0.8} />
+              {isAdmin && <Bar yAxisId="left" dataKey="underAnalys" stackId="a" fill="var(--color-underAnalys)" fillOpacity={0.8} />}
+              <Bar yAxisId="left" dataKey="brutna" stackId="a" fill="var(--color-brutna)" fillOpacity={0.8} />
+              <Bar yAxisId="left" dataKey="ejInfriade" stackId="a" fill="var(--color-ejInfriade)" fillOpacity={0.8} />
+              <Bar yAxisId="left" dataKey="utreds" stackId="a" fill="var(--color-utreds)" fillOpacity={0.8} />
+              <Bar yAxisId="left" dataKey="delvisInfriade" stackId="a" fill="var(--color-delvisInfriade)" fillOpacity={0.8} />
+              <Bar yAxisId="left" dataKey="infriade" stackId="a" fill="var(--color-infriade)" fillOpacity={0.8} />
               <Line
                 yAxisId="right"
                 type="step"
                 dataKey="avgMeasurability"
                 name="Snitt mätbarhet"
-                stroke="hsl(var(--card-foreground))"
+                stroke="var(--color-avgMeasurability)"
                 strokeWidth={1.5}
                 strokeDasharray="5 3"
                 dot={false}
                 connectNulls
               />
             </ComposedChart>
-          )}
-        </ResponsiveContainer>
+          </ChartContainer>
+        )}
       </div>
     </Card>
   );
