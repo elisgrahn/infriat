@@ -318,7 +318,7 @@ export const PromiseFilters = ({
 
       {/* Bevara / Förändra */}
       <div className="space-y-3">
-        <FilterSectionHeader icon={Shuffle} label="Typ av löfte" />
+        <FilterSectionHeader icon={Shuffle} label="Typ av löfte" helpAnchor="typ" />
         <ToggleGroup
           type="multiple"
           value={selectedStatusQuo}
