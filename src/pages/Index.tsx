@@ -8,7 +8,7 @@ import { TimelineComparison } from "@/components/TimelineComparison";
 import { HeroStatCard } from "@/components/HeroStatCard";
 import { PromisePagination } from "@/components/PromisePagination";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ShieldCheck,
   Scale,
@@ -17,6 +17,7 @@ import {
   SlidersHorizontal,
   ArrowUpDown,
   Search,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +33,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useFilters } from "@/contexts/FilterContext";
 import { PromiseDetailOverlay } from "@/components/PromiseDetailOverlay";
 import { cn, getMandateType, type GovernmentPeriod } from "@/lib/utils";
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
 
 interface Promise {
   id: string;
@@ -414,25 +416,32 @@ const Index = () => {
 
             {/* Filters Sidebar (desktop) */}
             <aside className="hidden lg:block lg:col-span-1">
-              <div className="sticky top-20 bg-card rounded-2xl border max-h-[calc(100vh-6rem)] flex flex-col">
-                <div className="p-6 pb-4 space-y-4 shrink-0">
-                  <h2 className="text-xl font-bold text-foreground">
+              <Card className="sticky top-20 bg-card rounded-2xl border max-h-[calc(100vh-6rem)] flex flex-col">
+                <CardHeader className="p-6 pb-4 space-y-4 shrink-0">
+                  <CardTitle className="text-lg font-bold text-foreground">
                     Filtrera ({filteredPromises.length === 1 ? "1 löfte" : `${filteredPromises.length} löften`})
-                  </h2>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Sök efter löften..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
+                  </CardTitle>
+                  <InputGroup>
+                    <InputGroupInput placeholder="Sök efter löften..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                    <InputGroupAddon>
+                      <Search />
+                    </InputGroupAddon>
+                    <InputGroupAddon align="inline-end" className={cn(!searchQuery && "invisible")}>
+                      <InputGroupButton
+                        aria-label="Copy"
+                        title="Copy"
+                        size="icon-xs"
+                        onClick={() => setSearchQuery("")}
+                      >
+                        <X />
+                      </InputGroupButton>
+                    </InputGroupAddon>
+                  </InputGroup>
+                </CardHeader>
                 <div className="px-6 pb-6 overflow-y-auto">
                   <PromiseFilters showSearch={false} />
                 </div>
-              </div>
+              </Card>
             </aside>
 
             {/* Promises List */}
