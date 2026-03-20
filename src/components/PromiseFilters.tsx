@@ -348,7 +348,7 @@ export const PromiseFilters = ({
 
       {/* Kategorier */}
       <div className="space-y-3">
-        <FilterSectionHeader icon={Tags} label="Politikområde" />
+        <FilterSectionHeader icon={Tags} label="Politikområde" helpAnchor="politikomrade" />
         <ToggleGroup
           type="multiple"
           value={selectedCategories}
