@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 type SourceType = 'news' | 'official' | 'research' | 'other';
 
@@ -126,7 +127,7 @@ export const SourcesList = ({ promiseId, isAdmin }: SourcesListProps) => {
               <ExternalLink className="w-3 h-3 shrink-0" />
               <span className="truncate">{displayTitle}</span>
             </a>
-            <Badge variant="outline" className={`text-[10px] px-1.5 py-0 shrink-0 gap-1 ${config.className}`}>
+            <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 shrink-0 gap-1", config.className)}>
               {config.icon}
               {config.label}
             </Badge>

@@ -12,6 +12,7 @@ import {
   type PromiseDetailHeaderData,
 } from "@/components/PromiseDetailContent";
 import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
+import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/badges/StatusBadge";
 import { PartyBadge } from "@/components/badges/PartyBadge";
 import { GovernmentBadge } from "@/components/badges/GovernmentBadge";
@@ -155,8 +156,8 @@ export function PromiseDetailOverlay({
     >
       <ResponsiveOverlayContent
         className="flex flex-col w-full max-w-[100vw] p-0 bg-card backdrop-blur supports-[backdrop-filter]:bg-card/95 dark:supports-[backdrop-filter]:bg-card/80"
-        mobileClassName={`max-h-[75vh] border-t-4 ${drawerBorderClass} rounded-t-2xl`}
-        desktopClassName={`sm:max-w-2xl border-l-4 ${statusBorderClass} rounded-l-2xl gap-0`}
+        mobileClassName={cn("max-h-[75vh] border-t-4 rounded-t-2xl", drawerBorderClass)}
+        desktopClassName={cn("sm:max-w-2xl border-l-4 rounded-l-2xl gap-0", statusBorderClass)}
         side="right"  
         onCloseComplete={handleOverlayCloseComplete}
       >

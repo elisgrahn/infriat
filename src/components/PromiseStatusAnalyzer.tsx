@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Loader2, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { extractFunctionError } from "@/lib/utils";
@@ -25,7 +25,6 @@ export const PromiseStatusAnalyzer = ({
 }: PromiseStatusAnalyzerProps) => {
   const [context, setContext] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const { toast } = useToast();
 
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
@@ -42,9 +41,8 @@ export const PromiseStatusAnalyzer = ({
 
       if (error) throw error;
 
-      toast({
-        title: "Analys klar!",
-        description: `Status: ${data.analysis.status === 'kept' ? 'Uppfyllt' : data.analysis.status === 'broken' ? 'Brutet' : 'Pågående'}`
+      toast.success('Analys klar!', {
+        description: `Status: ${data.analysis.status === 'kept' ? 'Uppfyllt' : data.analysis.status === 'broken' ? 'Brutet' : 'Pågående'}`,
       });
 
       setContext("");
@@ -58,11 +56,7 @@ export const PromiseStatusAnalyzer = ({
         errorMessage = await extractFunctionError(error);
       }
       
-      toast({
-        title: "Fel vid analys",
-        description: errorMessage,
-        variant: "destructive"
-      });
+      toast.error('Fel vid analys', { description: errorMessage });
     } finally {
       setIsAnalyzing(false);
     }

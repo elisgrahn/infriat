@@ -8,6 +8,7 @@ import { TimelineComparison } from "@/components/TimelineComparison";
 import { HeroStatCard } from "@/components/HeroStatCard";
 import { PromisePagination } from "@/components/PromisePagination";
 import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 import {
   ShieldCheck,
   Scale,
@@ -30,7 +31,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useFilters } from "@/contexts/FilterContext";
 import { PromiseDetailOverlay } from "@/components/PromiseDetailOverlay";
-import { getMandateType, type GovernmentPeriod } from "@/lib/utils";
+import { cn, getMandateType, type GovernmentPeriod } from "@/lib/utils";
 
 interface Promise {
   id: string;
@@ -444,7 +445,7 @@ const Index = () => {
               />
               <div className="lg:hidden sticky top-[56px] z-30 -mx-4 mb-2">
                 <div className="px-4 text-muted-foreground bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                  <div className={`flex items-center gap-2 py-2`}>
+                  <div className="flex items-center gap-2 py-2">
                     <div className="relative flex-1 min-w-0">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" />
                       <Input
@@ -515,7 +516,7 @@ const Index = () => {
                   </div>
                 </div>
                 <div
-                  className={`${isMobileBarStuck ? "border-b" : "h-px"}`}
+                  className={cn(isMobileBarStuck ? "border-b" : "h-px")}
                 />
               </div>
 
@@ -526,11 +527,11 @@ const Index = () => {
                   ))}
                 </div>
               ) : sortedPromises.length === 0 ? (
-                <div className="text-center py-16 bg-card rounded-xl border">
+                <Card className="text-center py-16">
                   <p className="text-muted-foreground text-lg">
                     Inga löften hittades som matchar dina filter.
                   </p>
-                </div>
+                </Card>
               ) : (
                 <>
                   <div className="grid gap-4">

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Loader2, Upload, Link as LinkIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
@@ -36,7 +36,6 @@ export const ManifestUpload = () => {
   const [selectedParty, setSelectedParty] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const { toast } = useToast();
 
   // Helper to ensure URL has protocol
   const ensureProtocol = (url: string) => {
@@ -208,10 +207,8 @@ export const ManifestUpload = () => {
     
     // Either TXT or PDF is required, not both mandatory
     if (!selectedParty || !selectedYear || (!hasTxt && !hasPdf)) {
-      toast({
-        title: "Saknade uppgifter",
-        description: "Ange TXT (för fullständig analys) eller PDF (för att lägga till sidnummer) samt parti och år",
-        variant: "destructive"
+      toast.error('Saknade uppgifter', {
+        description: 'Ange TXT (för fullständig analys) eller PDF (för att lägga till sidnummer) samt parti och år',
       });
       return;
     }
@@ -219,9 +216,8 @@ export const ManifestUpload = () => {
     setIsAnalyzing(true);
     
     // Show initial progress toast
-    toast({
-      title: "Startar analys...",
-      description: "Förbereder filer för uppladdning"
+    toast.info('Startar analys...', {
+      description: 'Förbereder filer för uppladdning',
     });
     
     try {
@@ -250,9 +246,8 @@ export const ManifestUpload = () => {
       }
 
       // Show upload progress
-      toast({
-        title: "Laddar upp filer...",
-        description: hasPdf ? "Laddar upp manifest till servern" : "Förbereder textfil"
+      toast.info('Laddar upp filer...', {
+        description: hasPdf ? 'Laddar upp manifest till servern' : 'Förbereder textfil',
       });
 
       // Send to edge function for analysis (it will handle URL downloads and PDF upload)
@@ -262,18 +257,15 @@ export const ManifestUpload = () => {
 
       // Show AI analysis toast after a delay
       const analysisToastTimer = setTimeout(() => {
-        toast({
-          title: "Analyserar manifest med AI...",
-          description: "Detta kan ta 1-2 minuter för stora manifest"
+        toast.info('Analyserar manifest med AI...', {
+          description: 'Detta kan ta 1-2 minuter för stora manifest',
         });
       }, 3000);
 
       // Show warning if it takes too long
       const warningToastTimer = setTimeout(() => {
-        toast({
-          title: "Analysen tar längre tid än förväntat...",
-          description: "Stora manifest kan ta upp till 5 minuter. Vänligen ha tålamod.",
-          variant: "default"
+        toast.warning('Analysen tar längre tid än förväntat...', {
+          description: 'Stora manifest kan ta upp till 5 minuter. Vänligen ha tålamod.',
         });
       }, 30000);
 
@@ -312,9 +304,8 @@ export const ManifestUpload = () => {
 
       // If we got a timeout or error, check database for newly created promises
       if (timedOut || error || !data) {
-        toast({
-          title: "⏱️ Verifierar resultat...",
-          description: "Kontrollerar om löften skapades i databasen",
+        toast.info('Verifierar resultat...', {
+          description: 'Kontrollerar om löften skapades i databasen',
         });
 
         try {
@@ -337,8 +328,7 @@ export const ManifestUpload = () => {
 
             if (!checkError && recentPromises && recentPromises.length > 0) {
               // Success! Promises were created despite timeout
-              toast({
-                title: "✅ Analys lyckades!",
+              toast.success('Analys lyckades!', {
                 description: `${recentPromises.length} vallöften hittades i databasen. Analysen slutfördes trots timeout.`,
               });
 
@@ -346,9 +336,8 @@ export const ManifestUpload = () => {
               const pdfUrlToSearch = finalPdfUrl || (pdfBase64 ? 'uploaded' : null);
               if (pdfUrlToSearch && pdfUrlToSearch !== 'uploaded') {
                 // Run PDF search...
-                toast({
-                  title: "🔍 Söker efter sidnummer i PDF...",
-                  description: "Detta kan ta 1-3 minuter beroende på PDF-storlek",
+                toast.info('Söker efter sidnummer i PDF...', {
+                  description: 'Detta kan ta 1-3 minuter beroende på PDF-storlek',
                 });
 
                 try {
@@ -358,16 +347,13 @@ export const ManifestUpload = () => {
                     parseInt(selectedYear)
                   );
 
-                  toast({
-                    title: "✅ Sidnummer uppdaterade!",
+                  toast.success('Sidnummer uppdaterade!', {
                     description: `${result.updated} av ${result.total} löften fick sidnummer`,
                   });
                 } catch (pdfError) {
                   console.error('PDF search error:', pdfError);
-                  toast({
-                    title: "⚠️ Kunde inte söka i PDF",
-                    description: pdfError instanceof Error ? pdfError.message : "Okänt fel vid PDF-sökning",
-                    variant: "destructive"
+                  toast.error('Kunde inte söka i PDF', {
+                    description: pdfError instanceof Error ? pdfError.message : 'Okänt fel vid PDF-sökning',
                   });
                 }
               }
@@ -426,17 +412,14 @@ export const ManifestUpload = () => {
         toastMessage += `\n\n${data.duplicatesRemoved} befintliga löften raderades.`;
       }
 
-      toast({
-        title: "✅ Analys klar!",
+      toast.success('Analys klar!', {
         description: toastMessage,
-        variant: data.warnings ? "default" : "default"
       });
 
       // For PDF-only mode, run page number search locally
       if (data.pdfOnly && data.pdfUrl) {
-        toast({
-          title: "🔍 Söker efter sidnummer i PDF...",
-          description: "Detta kan ta 1-3 minuter beroende på PDF-storlek",
+        toast.info('Söker efter sidnummer i PDF...', {
+          description: 'Detta kan ta 1-3 minuter beroende på PDF-storlek',
         });
 
         try {
@@ -458,28 +441,22 @@ export const ManifestUpload = () => {
           );
 
           if (result.updated > 0) {
-            toast({
-              title: "✅ Sidnummer hittade!",
+            toast.success('Sidnummer hittade!', {
               description: `${result.updated} av ${result.total} löften fick sidnummer från PDF:en`,
             });
           } else if (result.total > 0) {
-            toast({
-              title: "⚠️ Inga sidnummer hittade",
+            toast.error('Inga sidnummer hittade', {
               description: `Kunde inte matcha några citat i PDF:en (${result.total} löften hade citat). Detta kan bero på att citaten är annorlunda formaterade i PDF:en.`,
-              variant: "destructive"
             });
           } else {
-            toast({
-              title: "ℹ️ Inga citat att söka",
-              description: "Inga löften med direktcitat hittades",
+            toast.info('Inga citat att söka', {
+              description: 'Inga löften med direktcitat hittades',
             });
           }
         } catch (pdfError) {
           console.error('PDF search error:', pdfError);
-          toast({
-            title: "⚠️ Kunde inte söka i PDF",
-            description: pdfError instanceof Error ? pdfError.message : "Okänt fel vid PDF-sökning",
-            variant: "destructive"
+          toast.error('Kunde inte söka i PDF', {
+            description: pdfError instanceof Error ? pdfError.message : 'Okänt fel vid PDF-sökning',
           });
         }
       }
@@ -516,11 +493,7 @@ export const ManifestUpload = () => {
         }
       }
       
-      toast({
-        title: errorTitle,
-        description: errorMessage,
-        variant: "destructive"
-      });
+      toast.error(errorTitle, { description: errorMessage });
     } finally {
       setIsAnalyzing(false);
     }

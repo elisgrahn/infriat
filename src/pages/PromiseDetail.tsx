@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
+import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/badges/StatusBadge";
 import { PartyBadge } from "@/components/badges/PartyBadge";
 import { GovernmentBadge } from "@/components/badges/GovernmentBadge";
@@ -197,7 +198,7 @@ export default function PromiseDetail() {
       </Button>
 
       {/* Hero band */}
-      <div className={`rounded-xl border-l-4 ${config.borderColor} bg-card p-6 shadow-sm space-y-4`}>
+      <div className={cn("rounded-xl border-l-4 bg-card p-6 shadow-sm space-y-4", config.borderColor)}>
         {/* Badges */}
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge status={promise.status} />

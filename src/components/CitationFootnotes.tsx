@@ -1,4 +1,5 @@
 import { ExternalLink } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Source {
   url: string;
@@ -25,7 +26,7 @@ export function CitationFootnotes({ sources, className }: CitationFootnotesProps
   if (!sources || sources.length === 0) return null;
 
   return (
-    <ol className={`space-y-1.5 text-sm text-muted-foreground ${className ?? ""}`}>
+    <ol className={cn("space-y-1.5 text-sm text-muted-foreground", className)}>
       {sources.map((source, index) => (
         <li key={index} className="flex items-start gap-2">
           <span className="shrink-0 font-semibold text-primary/70 min-w-[1.25rem] text-right">

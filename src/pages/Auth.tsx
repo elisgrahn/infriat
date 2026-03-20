@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
 
@@ -21,7 +21,6 @@ export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const { user, signIn, signUp } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   useEffect(() => {
     if (user) {
@@ -38,23 +37,20 @@ export default function Auth() {
       const { error } = await signIn(validatedData.email, validatedData.password);
 
       if (error) {
-        toast({
-          title: 'Fel vid inloggning',
-          description: error.message === 'Invalid login credentials' 
-            ? 'Felaktigt email eller lösenord' 
-            : error.message === 'Email not confirmed'
-            ? 'Du måste bekräfta din e-post innan du kan logga in. Kolla din inkorg!'
-            : 'Ett fel uppstod vid inloggning',
-          variant: 'destructive',
-        });
+        const message = error.message === 'Invalid login credentials' 
+          ? 'Felaktigt email eller lösenord' 
+          : error.message === 'Email not confirmed'
+          ? 'Du måste bekräfta din e-post innan du kan logga in. Kolla din inkorg!'
+          : 'Ett fel uppstod vid inloggning';
+        toast.error('Fel vid inloggning', { description: message });
       } else {
-        toast({ title: 'Välkommen!', description: 'Du är nu inloggad' });
+        toast.success('Välkommen!', { description: 'Du är nu inloggad' });
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
-        toast({ title: 'Ogiltig inmatning', description: error.errors[0].message, variant: 'destructive' });
+        toast.error('Ogiltig inmatning', { description: error.errors[0].message });
       } else {
-        toast({ title: 'Fel vid inloggning', description: 'Ett oväntat fel uppstod', variant: 'destructive' });
+        toast.error('Fel vid inloggning', { description: 'Ett oväntat fel uppstod' });
       }
     } finally {
       setIsLoading(false);
@@ -70,24 +66,20 @@ export default function Auth() {
       const { error } = await signUp(validatedData.email, validatedData.password);
 
       if (error) {
-        toast({
-          title: 'Fel vid registrering',
-          description: error.message === 'User already registered' 
-            ? 'Det finns redan ett konto med denna e-post' 
-            : 'Ett fel uppstod vid registrering',
-          variant: 'destructive',
-        });
+        const message = error.message === 'User already registered' 
+          ? 'Det finns redan ett konto med denna e-post' 
+          : 'Ett fel uppstod vid registrering';
+        toast.error('Fel vid registrering', { description: message });
       } else {
-        toast({
-          title: 'Konto skapat!',
+        toast.success('Konto skapat!', {
           description: 'Kolla din e-post för att bekräfta ditt konto innan du loggar in.',
         });
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
-        toast({ title: 'Ogiltig inmatning', description: error.errors[0].message, variant: 'destructive' });
+        toast.error('Ogiltig inmatning', { description: error.errors[0].message });
       } else {
-        toast({ title: 'Fel vid registrering', description: 'Ett oväntat fel uppstod', variant: 'destructive' });
+        toast.error('Fel vid registrering', { description: 'Ett oväntat fel uppstod' });
       }
     } finally {
       setIsLoading(false);

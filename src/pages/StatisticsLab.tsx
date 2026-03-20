@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { ExperimentalCharts } from "@/components/ExperimentalCharts";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import type { PromiseStatus } from "@/config/statusConfig";
 import type { PolicyCategory } from "@/lib/promiseMetrics";
 
@@ -76,7 +77,7 @@ const StatisticsLab = () => {
             {[0, 1, 2].map((item) => (
               <Card
                 key={item}
-                className={`h-[420px] animate-pulse rounded-2xl ${item === 2 ? "xl:col-span-2" : ""}`}
+                className={cn("h-[420px] animate-pulse rounded-2xl", item === 2 && "xl:col-span-2")}
               />
             ))}
           </div>

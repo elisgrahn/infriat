@@ -7,8 +7,8 @@ import { ArrowLeft, Target, Check, X, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { extractFunctionError } from "@/lib/utils";
+import { toast } from "sonner";
+import { cn, extractFunctionError } from "@/lib/utils";
 import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
 
 interface SuggestionWithPromise {
@@ -28,7 +28,6 @@ interface SuggestionWithPromise {
 const Admin = () => {
   const navigate = useNavigate();
   const { user, isAdmin, loading } = useAuth();
-  const { toast } = useToast();
   const [isAnalyzingMeasurability, setIsAnalyzingMeasurability] = useState(false);
   const [isBatchAnalyzing, setIsBatchAnalyzing] = useState(false);
   const [batchProgress, setBatchProgress] = useState<string | null>(null);
@@ -93,20 +92,20 @@ const Admin = () => {
       // Remove applied suggestion
       await supabase.from('status_suggestions').delete().eq('id', suggestion.id);
 
-      toast({ title: 'Status uppdaterad', description: 'Förslaget har tillämpats' });
+      toast.success('Status uppdaterad', { description: 'Förslaget har tillämpats' });
       fetchSuggestions();
     } catch {
-      toast({ title: 'Fel', description: 'Kunde inte tillämpa förslaget', variant: 'destructive' });
+      toast.error('Fel', { description: 'Kunde inte tillämpa förslaget' });
     }
   };
 
   const handleDismiss = async (suggestionId: string) => {
     try {
       await supabase.from('status_suggestions').delete().eq('id', suggestionId);
-      toast({ title: 'Förslag avfärdat' });
+      toast.success('Förslag avfärdat');
       fetchSuggestions();
     } catch {
-      toast({ title: 'Fel', description: 'Kunde inte avfärda förslaget', variant: 'destructive' });
+      toast.error('Fel', { description: 'Kunde inte avfärda förslaget' });
     }
   };
 
@@ -127,7 +126,7 @@ const Admin = () => {
       );
 
       if (needsReanalysis.length === 0) {
-        toast({ title: "Alla löften har redan citations", description: "Inget att omanalysera." });
+        toast.info('Alla löften har redan citations', { description: 'Inget att omanalysera.' });
         return;
       }
 
@@ -144,10 +143,10 @@ const Admin = () => {
         }
       }
 
-      toast({ title: "Batch-analys klar!", description: `${done} löften omanalyserade.` });
+      toast.success('Batch-analys klar!', { description: `${done} löften omanalyserade.` });
     } catch (err) {
       const msg = await extractFunctionError(err);
-      toast({ title: "Fel vid batch-analys", description: msg, variant: "destructive" });
+      toast.error('Fel vid batch-analys', { description: msg });
     } finally {
       setIsBatchAnalyzing(false);
       setBatchProgress(null);
@@ -166,9 +165,8 @@ const Admin = () => {
 
   const handleAnalyzeMeasurability = async (reanalyze: boolean) => {
     setIsAnalyzingMeasurability(true);
-    toast({
-      title: reanalyze ? "Återanalyserar alla löften..." : "Analyserar mätbarhet...",
-      description: "Detta kan ta några minuter beroende på antalet löften"
+    toast.info(reanalyze ? 'Återanalyserar alla löften...' : 'Analyserar mätbarhet...', {
+      description: 'Detta kan ta några minuter beroende på antalet löften',
     });
 
     try {
@@ -176,11 +174,11 @@ const Admin = () => {
         body: { reanalyze }
       });
       if (error) throw error;
-      toast({ title: "✅ Analys klar!", description: `${data.analyzed} av ${data.total} löften analyserade` });
+      toast.success('Analys klar!', { description: `${data.analyzed} av ${data.total} löften analyserade` });
     } catch (error) {
       const msg = await extractFunctionError(error);
       console.error('analyze-measurability error:', error);
-      toast({ title: "❌ Fel vid analys", description: msg, variant: "destructive" });
+      toast.error('Fel vid analys', { description: msg });
     } finally {
       setIsAnalyzingMeasurability(false);
     }
@@ -236,7 +234,7 @@ const Admin = () => {
               variant="outline"
               className="w-full"
             >
-              <RefreshCw className={`w-4 h-4 mr-2 ${isBatchAnalyzing ? "animate-spin" : ""}`} />
+              <RefreshCw className={cn("w-4 h-4 mr-2", isBatchAnalyzing && "animate-spin")} />
               {isBatchAnalyzing
                 ? (batchProgress || "Analyserar...")
                 : "Omanalysera statusar (löften utan citations)"}

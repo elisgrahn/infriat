@@ -8,6 +8,7 @@ import { ThumbsUp, ThumbsDown, MessageSquare, Plus, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
 
 interface Suggestion {
@@ -230,7 +231,7 @@ export const CommunityNotes = ({ promiseId }: CommunityNotesProps) => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className={`h-6 text-xs gap-1 ${userVote?.vote_type === "up" ? "text-emerald-600" : ""}`}
+                    className={cn("h-6 text-xs gap-1", userVote?.vote_type === "up" && "text-emerald-600")}
                     onClick={() => handleVote(suggestion.id, "up")}
                   >
                     <ThumbsUp className="w-3 h-3" /> {suggestion.upvotes}
@@ -238,7 +239,7 @@ export const CommunityNotes = ({ promiseId }: CommunityNotesProps) => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className={`h-6 text-xs gap-1 ${userVote?.vote_type === "down" ? "text-rose-600" : ""}`}
+                    className={cn("h-6 text-xs gap-1", userVote?.vote_type === "down" && "text-rose-600")}
                     onClick={() => handleVote(suggestion.id, "down")}
                   >
                     <ThumbsDown className="w-3 h-3" /> {suggestion.downvotes}

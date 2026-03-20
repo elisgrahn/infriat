@@ -39,7 +39,7 @@ export function Navbar() {
   };
 
   return (
-    <nav className={`sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-shadow`}>
+    <nav className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-shadow">
       <div className="container mx-auto px-4 h-14 flex items-center justify-between">
         {/* Logo */}
         <button

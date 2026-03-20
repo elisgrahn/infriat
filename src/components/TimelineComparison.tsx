@@ -12,6 +12,7 @@ import {
   ChartLegendContent,
   type ChartConfig,
 } from "@/components/ui/chart";
+import { cn } from "@/lib/utils";
 import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
 import { getBadgeColor } from "@/utils/partyColors";
 
@@ -96,7 +97,7 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
       <g transform={`translate(${x},${y})`}>
         <foreignObject x={-30} y={0} width={60} height={30}>
           <div className="flex items-center justify-center">
-            <Badge className={`${colorClass} text-xs px-1 py-0.5 rounded-sm`}>
+            <Badge className={cn(colorClass, "text-xs px-1 py-0.5 rounded-sm")}>
               {partyAbbr}
             </Badge>
           </div>

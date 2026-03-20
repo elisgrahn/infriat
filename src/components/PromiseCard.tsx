@@ -41,6 +41,7 @@ import { StatusQuoBadge } from "@/components/badges/StatusQuoBadge";
 import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
 import type { Category } from "@/config/categoryConfig";
 import { ShareButton } from "./ShareButton";
+import { cn } from "@/lib/utils";
 
 interface PromiseCardProps {
   promiseId: string;
@@ -178,7 +179,12 @@ export const PromiseCard = ({
 
   return (
     <Card
-      className={`relative p-6 hover:shadow-lg transition-all duration-300 border-l-4 rounded-2xl ${config.borderColor} ${config.cardHoverClassName} ${config.cardFocusClassName} cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2`}
+      className={cn(
+        "relative p-6 hover:shadow-lg transition-all duration-300 border-l-4 rounded-2xl cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+        config.borderColor,
+        config.cardHoverClassName,
+        config.cardFocusClassName,
+      )}
       role="button"
       tabIndex={0}
       onClick={() => navigate(`/?promise=${promiseId}`)}
@@ -220,7 +226,7 @@ export const PromiseCard = ({
                     disabled={isAnalyzing}
                   >
                     <RefreshCw
-                      className={`w-4 h-4 mr-2 ${isAnalyzing ? "animate-spin" : ""}`}
+                      className={cn("w-4 h-4 mr-2", isAnalyzing && "animate-spin")}
                     />
                     {isAnalyzing
                       ? "Analyserar..."
@@ -234,7 +240,7 @@ export const PromiseCard = ({
                     disabled={isAnalyzingMeasurability}
                   >
                     <Ruler
-                      className={`w-4 h-4 mr-2 ${isAnalyzingMeasurability ? "animate-spin" : ""}`}
+                      className={cn("w-4 h-4 mr-2", isAnalyzingMeasurability && "animate-spin")}
                     />
                     {isAnalyzingMeasurability
                       ? "Analyserar..."
@@ -249,7 +255,7 @@ export const PromiseCard = ({
                       disabled={isReanalyzingPage}
                     >
                       <Search
-                        className={`w-4 h-4 mr-2 ${isReanalyzingPage ? "animate-spin" : ""}`}
+                        className={cn("w-4 h-4 mr-2", isReanalyzingPage && "animate-spin")}
                       />
                       {isReanalyzingPage ? "Söker..." : "Hitta sidnummer"}
                     </DropdownMenuItem>
