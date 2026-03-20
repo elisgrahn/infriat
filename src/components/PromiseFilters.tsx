@@ -286,7 +286,7 @@ export const PromiseFilters = ({
 
       {/* Parti */}
       <div className="space-y-3">
-        <FilterSectionHeader icon={Users} label="Parti" />
+        <FilterSectionHeader icon={Users} label="Parti" helpAnchor="parti-roll" />
 
         {governingParties.length > 0 && (
           <div className="space-y-2">
