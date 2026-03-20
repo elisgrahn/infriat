@@ -374,12 +374,12 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
                   return <ChartLegendContent payload={sorted} className="flex-wrap" />;
                 }}
               />
-              {isAdmin && <Bar yAxisId="left" dataKey="underAnalys" stackId="a" fill="var(--color-underAnalys)" fillOpacity={0.8} />}
-              <Bar yAxisId="left" dataKey="brutna" stackId="a" fill="var(--color-brutna)" fillOpacity={0.8} />
-              <Bar yAxisId="left" dataKey="ejInfriade" stackId="a" fill="var(--color-ejInfriade)" fillOpacity={0.8} />
-              <Bar yAxisId="left" dataKey="utreds" stackId="a" fill="var(--color-utreds)" fillOpacity={0.8} />
-              <Bar yAxisId="left" dataKey="delvisInfriade" stackId="a" fill="var(--color-delvisInfriade)" fillOpacity={0.8} />
-              <Bar yAxisId="left" dataKey="infriade" stackId="a" fill="var(--color-infriade)" fillOpacity={0.8} />
+              {isAdmin && <Bar yAxisId="left" dataKey="underAnalys" stackId="a" fill="var(--color-underAnalys)" fillOpacity={0.8} isAnimationActive animationDuration={600} animationEasing="ease-in-out" />}
+              <Bar yAxisId="left" dataKey="brutna" stackId="a" fill="var(--color-brutna)" fillOpacity={0.8} isAnimationActive animationDuration={600} animationEasing="ease-in-out" />
+              <Bar yAxisId="left" dataKey="ejInfriade" stackId="a" fill="var(--color-ejInfriade)" fillOpacity={0.8} isAnimationActive animationDuration={600} animationEasing="ease-in-out" />
+              <Bar yAxisId="left" dataKey="utreds" stackId="a" fill="var(--color-utreds)" fillOpacity={0.8} isAnimationActive animationDuration={600} animationEasing="ease-in-out" />
+              <Bar yAxisId="left" dataKey="delvisInfriade" stackId="a" fill="var(--color-delvisInfriade)" fillOpacity={0.8} isAnimationActive animationDuration={600} animationEasing="ease-in-out" />
+              <Bar yAxisId="left" dataKey="infriade" stackId="a" fill="var(--color-infriade)" fillOpacity={0.8} isAnimationActive animationDuration={600} animationEasing="ease-in-out" />
               <Line
                 yAxisId="right"
                 type="step"
@@ -390,6 +390,9 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
                 strokeDasharray="5 3"
                 dot={false}
                 connectNulls
+                isAnimationActive
+                animationDuration={800}
+                animationEasing="ease-in-out"
               />
             </ComposedChart>
           </ChartContainer>
