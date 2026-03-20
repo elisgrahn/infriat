@@ -10,20 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn, extractFunctionError } from "@/lib/utils";
 import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
-
-interface SuggestionWithPromise {
-  id: string;
-  promise_id: string;
-  suggested_status: string;
-  explanation: string;
-  sources: string[] | null;
-  upvotes: number;
-  downvotes: number;
-  created_at: string;
-  promise_text: string;
-  current_status: string;
-  party_name: string;
-}
+import type { SuggestionWithPromise } from "@/types/promise";
 
 const Admin = () => {
   const navigate = useNavigate();

@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { InfriatLogo } from "@/components/icons/InfriatLogo";
-import { useStickyBar } from "@/contexts/StickyBarContext";
+import { useStickyBar } from "@/store/StickyBarContext";
 
 export function Navbar() {
   const { isMobileBarStuck } = useStickyBar();

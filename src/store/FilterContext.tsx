@@ -5,15 +5,7 @@ import {
   getPartyAbbreviation,
 } from '@/utils/partyAbbreviations';
 import type { Category } from '@/config/categoryConfig';
-
-interface GovernmentPeriod {
-  id: string;
-  name: string;
-  start_year: number;
-  end_year: number | null;
-  governing_parties: string[];
-  support_parties: string[] | null;
-}
+import type { GovernmentPeriod } from '@/types/promise';
 
 interface FilterContextType {
   selectedParties: string[];
@@ -44,7 +36,6 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
   const [selectedParties, setSelectedParties] = useState<string[]>(() => {
     const parties = searchParams.get('parties');
     if (!parties) return [];
-    // Convert abbreviations from URL to party names
     return parties.split(',').map(abbr => PARTY_ABBREVIATION_TO_NAME[abbr] || abbr).filter(Boolean);
   });
   

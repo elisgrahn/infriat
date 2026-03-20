@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { partyColors, statusColors } from "@/utils/partyColors";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useFilters } from "@/contexts/FilterContext";
+import { useFilters } from "@/store/FilterContext";
 import { CATEGORY_CONFIG, STATUS_QUO_CONFIG, type Category } from "@/config/categoryConfig";
 import { STATUS_CONFIG, VISIBLE_STATUSES } from "@/config/statusConfig";
 import { getPartyAbbreviation } from "@/utils/partyAbbreviations";

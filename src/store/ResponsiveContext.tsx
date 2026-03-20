@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useMediaQuery } from "usehooks-ts";
-import { ResponsiveContext } from "@/contexts/responsive-context";
+import { ResponsiveContext } from "@/store/responsive-context";
 
 const MOBILE_BREAKPOINT = 768;
 

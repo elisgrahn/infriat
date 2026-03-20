@@ -2,28 +2,12 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
-import { FilterProvider } from "@/contexts/FilterContext";
-import { StickyBarProvider } from "@/contexts/StickyBarContext";
-import { ResponsiveProvider } from "@/contexts/ResponsiveContext";
-import { Navbar } from "@/components/Navbar";
-import Index from "./pages/Index";
-import Statistics from "./pages/Statistics";
-import Admin from "./pages/Admin";
-import Auth from "./pages/Auth";
-import NotFound from "./pages/NotFound";
-import About from "./pages/About";
+import { BrowserRouter } from "react-router-dom";
+import { FilterProvider } from "@/store/FilterContext";
+import { ResponsiveProvider } from "@/store/ResponsiveContext";
+import { AppRoutes } from "@/router";
 
 const queryClient = new QueryClient();
-
-const Layout = () => (
-  <StickyBarProvider>
-    <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
-      <Outlet />
-    </div>
-  </StickyBarProvider>
-);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -33,19 +17,7 @@ const App = () => (
           <BrowserRouter>
             <FilterProvider>
               <Sonner />
-              <Routes>
-                <Route element={<Layout />}>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/lofte/:id" element={<Index />} />
-                  <Route path="/statistik" element={<Statistics />} />
-                  <Route path="/statistik/labb" element={<Navigate to="/statistik" replace />} />
-                  <Route path="/admin" element={<Admin />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/om" element={<About />} />
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                  <Route path="*" element={<NotFound />} />
-                </Route>
-              </Routes>
+              <AppRoutes />
             </FilterProvider>
           </BrowserRouter>
         </TooltipProvider>

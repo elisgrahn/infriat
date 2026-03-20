@@ -39,7 +39,9 @@ import {
 } from "lucide-react";
 import { usePromiseAdminActions } from "@/hooks/usePromiseAdminActions";
 import { toast } from "sonner";
-import { getMandateType, type GovernmentPeriod } from "@/lib/utils";
+import { getMandateType } from "@/lib/utils";
+import type { GovernmentPeriod } from "@/types/promise";
+import { fetchGovernmentPeriods } from "@/services/promises";
 
 interface PromiseDetailData {
   id: string;
@@ -95,13 +97,10 @@ export default function PromiseDetail() {
     }
   };
 
-  const fetchGovernmentPeriods = async () => {
+  const loadGovernmentPeriods = async () => {
     try {
-      const { data, error } = await supabase
-        .from("government_periods")
-        .select("*")
-        .order("start_year", { ascending: true });
-      if (!error && data) setGovernmentPeriods(data as GovernmentPeriod[]);
+      const data = await fetchGovernmentPeriods();
+      setGovernmentPeriods(data);
     } catch {
       // Silently ignore
     }
@@ -123,7 +122,7 @@ export default function PromiseDetail() {
   useEffect(() => {
     if (!id) return;
     fetchPromise();
-    fetchGovernmentPeriods();
+    loadGovernmentPeriods();
     fetchCitationSources();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);

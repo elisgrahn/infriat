@@ -65,17 +65,28 @@ import { supabase } from "@/integrations/supabase/client";
 Role check: `user_roles` table, `role = 'admin'`. The `useAuth()` hook exposes `{ user, session, isAdmin, loading }`. Admin UI (manifest upload, bulk AI analysis, suggestion approval) is gated behind `isAdmin` on the `/admin` route.
 
 ### Responsive / mobile patterns
-- `ResponsiveContext` + `useResponsive` for breakpoint-aware rendering
-- `StickyBarContext` (`useStickyBar`) tracks whether the mobile filter bar is stuck, used for visual feedback in `Index.tsx`
+- `ResponsiveContext` + `useResponsive` for breakpoint-aware rendering (in `src/store/`)
+- `StickyBarContext` (`useStickyBar`) tracks whether the mobile filter bar is stuck (in `src/store/`)
+- `MobileFilterBar` component handles mobile search/filter/sort drawers
 - `PromiseCard` has a `sharedCompactBadges` prop — when many cards are displayed, badge compactness is coordinated via `onCompactNeedChange` callbacks to keep the grid uniform
 
 ## Key Files
 
 | Path | Purpose |
 |------|---------|
-| `src/App.tsx` | Provider stack order, all routes |
-| `src/pages/Index.tsx` | Main promise list, filter logic, pagination |
-| `src/contexts/FilterContext.tsx` | URL-synced filter state |
+| `src/App.tsx` | Provider stack order (no routes/layout) |
+| `src/router.tsx` | All route definitions |
+| `src/layouts/MainLayout.tsx` | Navbar + Footer + Outlet wrapper |
+| `src/layouts/Footer.tsx` | Site-wide footer (shown on all pages) |
+| `src/pages/Index.tsx` | Main promise list page (composes sub-components) |
+| `src/store/FilterContext.tsx` | URL-synced filter state |
+| `src/types/promise.ts` | Shared TypeScript types (`PromiseData`, `GovernmentPeriod`, etc.) |
+| `src/services/promises.ts` | Data fetching functions for promises & periods |
+| `src/hooks/usePromises.ts` | Hook: fetching, filtering, sorting, stats |
+| `src/components/HeroSection.tsx` | Hero banner with stats |
+| `src/components/DesktopFilterSidebar.tsx` | Desktop filter sidebar |
+| `src/components/MobileFilterBar.tsx` | Mobile sticky search/filter/sort bar |
+| `src/components/PromiseList.tsx` | Paginated promise card list |
 | `src/config/statusConfig.ts` | Single source of truth for status UI |
 | `src/config/categoryConfig.ts` | Single source of truth for category UI |
 | `src/lib/utils.ts` | `cn()`, `getMandateType()`, `extractFunctionError()` |
