@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { PromiseCard } from "@/components/PromiseCard";
 import { PromiseCardSkeleton } from "@/components/PromiseCardSkeleton";
 import { PromisePagination } from "@/components/PromisePagination";
+import { useAuth } from "@/hooks/useAuth";
 import type { PromiseData, GovernmentStatus } from "@/types/promise";
 
 interface PromiseListProps {
@@ -24,6 +25,7 @@ export function PromiseList({
   filterKey,
 }: PromiseListProps) {
   const [currentPage, setCurrentPage] = useState(1);
+  const { isAdmin } = useAuth();
   const [cardCompactNeeds, setCardCompactNeeds] = useState<
     Record<string, boolean>
   >({});
@@ -102,6 +104,7 @@ export function PromiseList({
               measurabilityScore={promise.measurability_score || undefined}
               category={promise.category}
               isStatusQuo={promise.is_status_quo}
+              isAdmin={isAdmin}
               onStatusUpdate={onStatusUpdate}
             />
           </div>

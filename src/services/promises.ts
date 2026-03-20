@@ -1,6 +1,15 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { PromiseData, GovernmentPeriod } from "@/types/promise";
 
+// --- Query keys ---
+export const promiseKeys = {
+  all: ["promises"] as const,
+  detail: (id: string) => ["promises", id] as const,
+  governmentPeriods: ["government-periods"] as const,
+};
+
+// --- Fetch functions ---
+
 export async function fetchPromises(): Promise<PromiseData[]> {
   const { data, error } = await supabase
     .from("promises")

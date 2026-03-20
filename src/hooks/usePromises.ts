@@ -1,13 +1,15 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useMemo, useCallback, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFilters } from "@/store/FilterContext";
 import { useAuth } from "@/hooks/useAuth";
 import { getMandateType } from "@/lib/utils";
-import { fetchPromises, fetchGovernmentPeriods } from "@/services/promises";
+import { fetchPromises, fetchGovernmentPeriods, promiseKeys } from "@/services/promises";
 import type { PromiseData, GovernmentStatus } from "@/types/promise";
 import type { Category } from "@/config/categoryConfig";
 
 export function usePromises() {
   const { isAdmin } = useAuth();
+  const queryClient = useQueryClient();
   const {
     selectedParties,
     selectedStatuses,
@@ -21,27 +23,32 @@ export function usePromises() {
     setGovernmentPeriods,
   } = useFilters();
 
-  const [promises, setPromises] = useState<PromiseData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: promises = [],
+    isLoading: promisesLoading,
+  } = useQuery({
+    queryKey: promiseKeys.all,
+    queryFn: fetchPromises,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
 
+  const {
+    data: fetchedPeriods = [],
+    isLoading: periodsLoading,
+  } = useQuery({
+    queryKey: promiseKeys.governmentPeriods,
+    queryFn: fetchGovernmentPeriods,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Sync fetched periods into FilterContext (for other consumers)
   useEffect(() => {
-    const load = async () => {
-      try {
-        const [promiseData, periodData] = await Promise.all([
-          fetchPromises(),
-          fetchGovernmentPeriods(),
-        ]);
-        setPromises(promiseData);
-        setGovernmentPeriods(periodData);
-      } catch {
-        // Data already initialized to empty arrays
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (fetchedPeriods.length > 0) {
+      setGovernmentPeriods(fetchedPeriods);
+    }
+  }, [fetchedPeriods, setGovernmentPeriods]);
+
+  const loading = promisesLoading || periodsLoading;
 
   const getGovernmentStatus = useCallback((
     partyName: string,
@@ -215,14 +222,9 @@ export function usePromises() {
     ],
   );
 
-  const refetchPromises = async () => {
-    try {
-      const data = await fetchPromises();
-      setPromises(data);
-    } catch {
-      // silently handle
-    }
-  };
+  const refetchPromises = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: promiseKeys.all });
+  }, [queryClient]);
 
   return {
     promises,

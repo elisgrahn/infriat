@@ -14,7 +14,7 @@ export function ShareButton({ promiseId }: { promiseId: string }) {
   const [copied, setCopied] = useState(false);
 
   const handleShare = async () => {
-    const url = `${window.location.origin}/lofte/${promiseId}`;
+    const url = `${window.location.origin}?promise=${promiseId}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);

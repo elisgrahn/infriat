@@ -26,13 +26,6 @@ const Index = () => {
     refetchPromises,
   } = usePromises();
 
-  // Support legacy /lofte/:id deep-links by normalizing to query param
-  useEffect(() => {
-    if (legacyPromiseId && searchParams.get("promise") !== legacyPromiseId) {
-      navigate(`/?promise=${legacyPromiseId}`, { replace: true });
-    }
-  }, [legacyPromiseId, searchParams, navigate]);
-
   const selectedPromiseStatus = sortedPromises.find(
     (promise) => promise.id === selectedPromiseId,
   )?.status;

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   PARTY_ABBREVIATION_TO_NAME,
@@ -67,86 +67,107 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
   // Update URL when filters change – use the callback form of setSearchParams
   // so we always read the *latest* params and never accidentally strip unrelated
   // query params (e.g. ?promise=).
+  // Debounced to avoid per-keystroke URL thrashing.
+  const urlSyncTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
   useEffect(() => {
-    setSearchParams((prev) => {
-      const params = new URLSearchParams(prev);
+    clearTimeout(urlSyncTimerRef.current);
+    urlSyncTimerRef.current = setTimeout(() => {
+      setSearchParams((prev) => {
+        const params = new URLSearchParams(prev);
 
-      if (selectedParties.length > 0) {
-        const abbreviations = selectedParties.map(name => getPartyAbbreviation(name) || name).filter(Boolean);
-        params.set('parties', abbreviations.join(','));
-      } else {
-        params.delete('parties');
-      }
+        if (selectedParties.length > 0) {
+          const abbreviations = selectedParties.map(name => getPartyAbbreviation(name) || name).filter(Boolean);
+          params.set('parties', abbreviations.join(','));
+        } else {
+          params.delete('parties');
+        }
 
-      if (selectedStatuses.length > 0) {
-        params.set('statuses', selectedStatuses.join(','));
-      } else {
-        params.delete('statuses');
-      }
+        if (selectedStatuses.length > 0) {
+          params.set('statuses', selectedStatuses.join(','));
+        } else {
+          params.delete('statuses');
+        }
 
-      if (selectedGovStatus.length > 0) {
-        params.set('govStatus', selectedGovStatus.join(','));
-      } else {
-        params.delete('govStatus');
-      }
+        if (selectedGovStatus.length > 0) {
+          params.set('govStatus', selectedGovStatus.join(','));
+        } else {
+          params.delete('govStatus');
+        }
 
-      if (selectedCategories.length > 0) {
-        params.set('categories', selectedCategories.join(','));
-      } else {
-        params.delete('categories');
-      }
+        if (selectedCategories.length > 0) {
+          params.set('categories', selectedCategories.join(','));
+        } else {
+          params.delete('categories');
+        }
 
-      if (selectedStatusQuo.length > 0) {
-        params.set('statusQuo', selectedStatusQuo.join(','));
-      } else {
-        params.delete('statusQuo');
-      }
+        if (selectedStatusQuo.length > 0) {
+          params.set('statusQuo', selectedStatusQuo.join(','));
+        } else {
+          params.delete('statusQuo');
+        }
 
-      if (searchQuery) {
-        params.set('search', searchQuery);
-      } else {
-        params.delete('search');
-      }
+        if (searchQuery) {
+          params.set('search', searchQuery);
+        } else {
+          params.delete('search');
+        }
 
-      if (sortBy !== 'created-desc') {
-        params.set('sort', sortBy);
-      } else {
-        params.delete('sort');
-      }
+        if (sortBy !== 'created-desc') {
+          params.set('sort', sortBy);
+        } else {
+          params.delete('sort');
+        }
 
-      if (selectedPeriodId) {
-        params.set('period', selectedPeriodId);
-      } else {
-        params.delete('period');
-      }
+        if (selectedPeriodId) {
+          params.set('period', selectedPeriodId);
+        } else {
+          params.delete('period');
+        }
 
-      return params;
-    }, { replace: true });
+        return params;
+      }, { replace: true });
+    }, 300);
+
+    return () => clearTimeout(urlSyncTimerRef.current);
   }, [selectedParties, selectedStatuses, selectedGovStatus, selectedCategories, selectedStatusQuo, searchQuery, sortBy, selectedPeriodId, setSearchParams]);
 
+  const value = useMemo<FilterContextType>(
+    () => ({
+      selectedParties,
+      setSelectedParties,
+      selectedStatuses,
+      setSelectedStatuses,
+      selectedGovStatus,
+      setSelectedGovStatus,
+      selectedCategories,
+      setSelectedCategories,
+      selectedStatusQuo,
+      setSelectedStatusQuo,
+      searchQuery,
+      setSearchQuery,
+      sortBy,
+      setSortBy,
+      selectedPeriodId,
+      setSelectedPeriodId,
+      governmentPeriods,
+      setGovernmentPeriods,
+    }),
+    [
+      selectedParties,
+      selectedStatuses,
+      selectedGovStatus,
+      selectedCategories,
+      selectedStatusQuo,
+      searchQuery,
+      sortBy,
+      selectedPeriodId,
+      governmentPeriods,
+    ],
+  );
+
   return (
-    <FilterContext.Provider
-      value={{
-        selectedParties,
-        setSelectedParties,
-        selectedStatuses,
-        setSelectedStatuses,
-        selectedGovStatus,
-        setSelectedGovStatus,
-        selectedCategories,
-        setSelectedCategories,
-        selectedStatusQuo,
-        setSelectedStatusQuo,
-        searchQuery,
-        setSearchQuery,
-        sortBy,
-        setSortBy,
-        selectedPeriodId,
-        setSelectedPeriodId,
-        governmentPeriods,
-        setGovernmentPeriods,
-      }}
-    >
+    <FilterContext.Provider value={value}>
       {children}
     </FilterContext.Provider>
   );

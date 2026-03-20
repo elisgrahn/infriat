@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,7 +29,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/useAuth";
 import { usePromiseAdminActions } from "@/hooks/usePromiseAdminActions";
 import { useNavigate } from "react-router-dom";
 import { StatusBadge } from "@/components/badges/StatusBadge";
@@ -64,10 +63,11 @@ interface PromiseCardProps {
   measurabilityScore?: number;
   category?: Category | null;
   isStatusQuo?: boolean | null;
+  isAdmin?: boolean;
   onStatusUpdate?: () => void;
 }
 
-export const PromiseCard = ({
+export const PromiseCard = memo(function PromiseCard({
   promiseId,
   promise,
   party,
@@ -88,10 +88,10 @@ export const PromiseCard = ({
   measurabilityScore,
   category,
   isStatusQuo,
+  isAdmin = false,
   onStatusUpdate,
-}: PromiseCardProps) => {
+}: PromiseCardProps) {
   const config = STATUS_CONFIG[status];
-  const { isAdmin, loading } = useAuth();
   const navigate = useNavigate();
   const badgesContainerRef = useRef<HTMLDivElement>(null);
   const singleRowMeasureRef = useRef<HTMLDivElement>(null);
@@ -209,7 +209,7 @@ export const PromiseCard = ({
           >
             <ShareButton promiseId={promiseId} />
 
-            {isAdmin && !loading && (
+            {isAdmin && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -498,4 +498,4 @@ export const PromiseCard = ({
       </div>
     </Card>
   );
-};
+});

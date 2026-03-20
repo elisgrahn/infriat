@@ -36,7 +36,7 @@ export function InteractiveBadge({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <TooltipProvider delayDuration={300}>
+      <TooltipProvider delayDuration={150}>
         <Tooltip>
           <TooltipTrigger asChild>
             <PopoverTrigger asChild>

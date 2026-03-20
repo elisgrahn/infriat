@@ -25,6 +25,23 @@ export function MobileFilterBar({ filteredCount }: MobileFilterBarProps) {
   const { isMobileBarStuck, setMobileBarStuck } = useStickyBar();
   const { searchQuery, setSearchQuery, sortBy, setSortBy } = useFilters();
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const [localSearch, setLocalSearch] = useState(searchQuery);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // Keep local state in sync when context changes externally (e.g. clear button)
+  useEffect(() => {
+    setLocalSearch(searchQuery);
+  }, [searchQuery]);
+
+  const handleSearchChange = (value: string) => {
+    setLocalSearch(value);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setSearchQuery(value), 300);
+  };
+
+  useEffect(() => {
+    return () => clearTimeout(debounceRef.current);
+  }, []);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
@@ -54,8 +71,8 @@ export function MobileFilterBar({ filteredCount }: MobileFilterBarProps) {
             <div className="relative flex-1 min-w-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" />
               <Input
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
+                value={localSearch}
+                onChange={(event) => handleSearchChange(event.target.value)}
                 placeholder="Sök löften..."
                 className="pl-9 h-8 text-sm"
               />

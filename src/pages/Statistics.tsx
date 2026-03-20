@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { EnhancedStatisticsCharts } from "@/components/EnhancedStatisticsCharts";
 import { ExperimentalCharts } from "@/components/ExperimentalCharts";
 import { Separator } from "@/components/ui/separator";
+import { fetchPromises, promiseKeys } from "@/services/promises";
 import type { PromiseStatus } from "@/config/statusConfig";
 import type { PolicyCategory } from "@/lib/promiseMetrics";
 
@@ -24,29 +24,15 @@ interface AnalyticsPromise {
 }
 
 const Statistics = () => {
-  const [promises, setPromises] = useState<AnalyticsPromise[]>([]);
-  const [loading, setLoading] = useState(true);
   const { isAdmin } = useAuth();
 
-  useEffect(() => {
-    const fetchPromises = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("promises")
-          .select("id, party_id, election_year, promise_text, status, measurability_score, category, is_status_quo, created_at, parties(name, abbreviation)")
-          .order("created_at", { ascending: false });
-
-        if (error) throw error;
-        setPromises((data as AnalyticsPromise[]) || []);
-      } catch {
-        // Silently handle error
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPromises();
-  }, []);
+  const { data: promises = [], isLoading: loading } = useQuery({
+    queryKey: promiseKeys.all,
+    queryFn: fetchPromises,
+    staleTime: 2 * 60 * 1000,
+    // The shared fetchPromises returns PromiseData which is a superset — cast here
+    select: (data) => data as unknown as AnalyticsPromise[],
+  });
 
   // All charts only show analysed promises (never pending-analysis), unless admin
   const analysedPromises = promises.filter(

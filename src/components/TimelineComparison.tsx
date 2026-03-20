@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -107,7 +107,7 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
   };
   
   // Party comparison bar chart with status breakdown
-  const partyData = promises
+  const partyData = useMemo(() => promises
     .filter(p => isAdmin || p.status !== 'pending-analysis')
     .reduce((acc, promise) => {
       const abbr = promise.parties.abbreviation;
@@ -140,12 +140,13 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
       }
       
       return acc;
-    }, {} as Record<string, { name: string; total: number; fulfilled: number; partial: number; broken: number; investigating: number; notFulfilled: number; pendingAnalysis: number; measurabilitySum: number; measurabilityCount: number }>);
+    }, {} as Record<string, { name: string; total: number; fulfilled: number; partial: number; broken: number; investigating: number; notFulfilled: number; pendingAnalysis: number; measurabilitySum: number; measurabilityCount: number }>),
+  [promises, isAdmin]);
 
   // Political spectrum order from left to right
   const partyOrder = ['V', 'S', 'MP', 'C', 'L', 'KD', 'M', 'SD'];
   
-  const partyChartData = Object.values(partyData)
+  const partyChartData = useMemo(() => Object.values(partyData)
     .map(d => ({
       name: d.name,
       infriade: d.fulfilled,
@@ -166,10 +167,11 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
       if (indexA === -1) return 1;
       if (indexB === -1) return -1;
       return indexA - indexB;
-    });
+    }),
+  [partyData, isAdmin]);
 
   // Convert to percentage for area chart
-  const partyChartDataPercent = partyChartData.map(d => ({
+  const partyChartDataPercent = useMemo(() => partyChartData.map(d => ({
     name: d.name,
     infriade: d.total > 0 ? d.infriade / d.total : 0,
     delvisInfriade: d.total > 0 ? d.delvisInfriade / d.total : 0,
@@ -178,7 +180,8 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
     brutna: d.total > 0 ? d.brutna / d.total : 0,
     ...(isAdmin && { underAnalys: d.total > 0 ? (d.underAnalys ?? 0) / d.total : 0 }),
     avgMeasurability: d.avgMeasurability,
-  }));
+  })),
+  [partyChartData, isAdmin]);
 
   return (
     <Card className="p-6 rounded-2xl">

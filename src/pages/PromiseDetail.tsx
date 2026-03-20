@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
@@ -41,7 +42,7 @@ import { usePromiseAdminActions } from "@/hooks/usePromiseAdminActions";
 import { toast } from "sonner";
 import { getMandateType } from "@/lib/utils";
 import type { GovernmentPeriod } from "@/types/promise";
-import { fetchGovernmentPeriods } from "@/services/promises";
+import { fetchGovernmentPeriods, promiseKeys } from "@/services/promises";
 
 interface PromiseDetailData {
   id: string;
@@ -69,63 +70,58 @@ export default function PromiseDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
+  const queryClient = useQueryClient();
 
-  const [promise, setPromise] = useState<PromiseDetailData | null>(null);
-  const [governmentPeriods, setGovernmentPeriods] = useState<GovernmentPeriod[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [citationSources, setCitationSources] = useState<{ url: string; title: string | null }[]>([]);
 
-  const fetchPromise = async () => {
-    try {
+  // Fetch single promise via useQuery
+  const {
+    data: promise,
+    isLoading: promiseLoading,
+    isError: notFound,
+  } = useQuery({
+    queryKey: promiseKeys.detail(id!),
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("promises")
         .select("*, parties(*)")
         .eq("id", id!)
         .single();
+      if (error || !data) throw new Error("Not found");
+      return data as unknown as PromiseDetailData;
+    },
+    enabled: !!id,
+    staleTime: 60 * 1000,
+  });
 
-      if (error || !data) {
-        setNotFound(true);
-      } else {
-        setPromise(data as unknown as PromiseDetailData);
-      }
-    } catch {
-      setNotFound(true);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Government periods — shared cache with usePromises
+  const { data: governmentPeriods = [] } = useQuery({
+    queryKey: promiseKeys.governmentPeriods,
+    queryFn: fetchGovernmentPeriods,
+    staleTime: 5 * 60 * 1000,
+  });
 
-  const loadGovernmentPeriods = async () => {
-    try {
-      const data = await fetchGovernmentPeriods();
-      setGovernmentPeriods(data);
-    } catch {
-      // Silently ignore
-    }
-  };
-
-  const fetchCitationSources = async () => {
-    try {
+  // Citation sources
+  const { data: citationSources = [] } = useQuery({
+    queryKey: ["promise-sources", id],
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("promise_sources")
         .select("url, title")
         .eq("promise_id", id!)
         .order("created_at", { ascending: true });
-      if (!error && data) setCitationSources(data);
-    } catch {
-      // Silently ignore
-    }
-  };
+      if (error) throw error;
+      return (data ?? []) as { url: string; title: string | null }[];
+    },
+    enabled: !!id,
+    staleTime: 60 * 1000,
+  });
 
-  useEffect(() => {
-    if (!id) return;
-    fetchPromise();
-    loadGovernmentPeriods();
-    fetchCitationSources();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  const loading = promiseLoading;
+
+  const refetchPromise = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: promiseKeys.detail(id!) });
+  }, [queryClient, id]);
 
   const handleShare = async () => {
     const url = `${window.location.origin}/lofte/${id}`;
@@ -154,7 +150,7 @@ export default function PromiseDetail() {
     directQuote: promise?.direct_quote ?? undefined,
     manifestPdfUrl: promise?.manifest_pdf_url ?? undefined,
     measurabilityScore: promise?.measurability_score ?? undefined,
-    onStatusUpdate: fetchPromise,
+    onStatusUpdate: refetchPromise,
   });
 
   if (loading) {

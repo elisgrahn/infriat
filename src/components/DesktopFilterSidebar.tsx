@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from "react";
 import { Search, X } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { PromiseFilters } from "@/components/PromiseFilters";
@@ -16,6 +17,23 @@ interface DesktopFilterSidebarProps {
 
 export function DesktopFilterSidebar({ filteredCount }: DesktopFilterSidebarProps) {
   const { searchQuery, setSearchQuery } = useFilters();
+  const [localSearch, setLocalSearch] = useState(searchQuery);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // Keep local state in sync when context changes externally
+  useEffect(() => {
+    setLocalSearch(searchQuery);
+  }, [searchQuery]);
+
+  const handleSearchChange = (value: string) => {
+    setLocalSearch(value);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setSearchQuery(value), 300);
+  };
+
+  useEffect(() => {
+    return () => clearTimeout(debounceRef.current);
+  }, []);
 
   const filterLabel =
     filteredCount === 1 ? "1 löfte" : `${filteredCount} löften`;
@@ -30,21 +48,21 @@ export function DesktopFilterSidebar({ filteredCount }: DesktopFilterSidebarProp
           <InputGroup>
             <InputGroupInput
               placeholder="Sök efter löften..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={localSearch}
+              onChange={(e) => handleSearchChange(e.target.value)}
             />
             <InputGroupAddon>
               <Search />
             </InputGroupAddon>
             <InputGroupAddon
               align="inline-end"
-              className={cn(!searchQuery && "invisible")}
+              className={cn(!localSearch && "invisible")}
             >
               <InputGroupButton
                 aria-label="Rensa sökning"
                 title="Rensa sökning"
                 size="icon-xs"
-                onClick={() => setSearchQuery("")}
+                onClick={() => handleSearchChange("")}
               >
                 <X />
               </InputGroupButton>
