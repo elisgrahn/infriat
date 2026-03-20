@@ -1,6 +1,7 @@
 import { useRef, useState, useLayoutEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { Search, Minus, Check, MoveRight, Lock, Shuffle, Calendar, Users, Tags, ArrowUpDown } from "lucide-react";
+import { Search, Minus, Check, MoveRight, Lock, Shuffle, Calendar, Users, Tags, ArrowUpDown, HelpCircle } from "lucide-react";
+import { Link } from "react-router-dom";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { partyColors, statusColors } from "@/utils/partyColors";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
