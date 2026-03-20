@@ -260,7 +260,7 @@ export const PromiseFilters = ({
 
       {/* Status */}
       <div className="space-y-3">
-        <FilterSectionHeader icon={InfriatLogo} label="Status" />
+        <FilterSectionHeader icon={InfriatLogo} label="Status" helpAnchor="status" />
         <ToggleGroup
           type="multiple"
           value={selectedStatuses}
