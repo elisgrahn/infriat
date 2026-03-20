@@ -7,7 +7,7 @@ import { ExperimentalCharts } from "@/components/ExperimentalCharts";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import type { PromiseStatus } from "@/config/statusConfig";
+import type { PromiseStatus } from "@/config/badgeConfig";
 import type { PolicyCategory } from "@/lib/promiseMetrics";
 
 interface AnalyticsPromiseRow {

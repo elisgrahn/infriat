@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Handshake, ThumbsDown, ThumbsUp } from "lucide-react";
-import { GOVERNMENT_VARIANTS } from "@/config/badgeDescriptions";
+import { GOVERNMENT_VARIANTS } from "@/config/badgeConfig";
 import { InteractiveBadge } from "./InteractiveBadge";
 
 interface GovernmentBadgeProps {

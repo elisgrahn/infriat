@@ -1,3 +1,6 @@
+import { DisclaimerItem } from "@/components/DisclaimerItem";
+import { Disc } from "lucide-react";
+
 export function Footer() {
   return (
     <footer className="bg-muted mt-20 py-12 border-t">
@@ -10,10 +13,11 @@ export function Footer() {
               En plattform för att granska politiska löften och skapa
               transparens i svensk politik.
             </p>
-            <p className="text-xs">
+            <DisclaimerItem />
+            {/* <p className="text-xs">
               ⚠️ Statusbedömningar genereras med hjälp av AI och kan innehålla
               fel. Verifiera alltid med originalkällorna.
-            </p>
+            </p> */}
           </div>
 
           {/* Contact */}
@@ -45,8 +49,7 @@ export function Footer() {
         </div>
 
         <div className="mt-8 pt-6 border-t border-border/50 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} Elis Grahn. Byggt med öppenhet och
-          ansvarstagande som grund.
+          © {new Date().getFullYear()} Elis Grahn. Alla rättigheter förbehållna.
         </div>
       </div>
     </footer>

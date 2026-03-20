@@ -4,7 +4,7 @@ import {
   PARTY_ABBREVIATION_TO_NAME,
   getPartyAbbreviation,
 } from '@/utils/partyAbbreviations';
-import type { Category } from '@/config/categoryConfig';
+import type { Category } from '@/config/badgeConfig';
 import type { GovernmentPeriod } from '@/types/promise';
 
 // ---------------------------------------------------------------------------

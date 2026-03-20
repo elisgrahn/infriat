@@ -1,4 +1,4 @@
-import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
+import { STATUS_CONFIG, type PromiseStatus } from "@/config/badgeConfig";
 
 export type PolicyCategory =
   | "valfard"

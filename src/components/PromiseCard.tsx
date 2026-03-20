@@ -36,8 +36,8 @@ import { GovernmentBadge } from "@/components/badges/GovernmentBadge";
 import { MeasurabilityBadge } from "@/components/badges/MeasurabilityBadge";
 import { CategoryBadge } from "@/components/badges/CategoryBadge";
 import { StatusQuoBadge } from "@/components/badges/StatusQuoBadge";
-import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
-import type { Category } from "@/config/categoryConfig";
+import { STATUS_CONFIG, type PromiseStatus } from "@/config/badgeConfig";
+import type { Category } from "@/config/badgeConfig";
 import { ShareButton } from "./ShareButton";
 import { cn } from "@/lib/utils";
 

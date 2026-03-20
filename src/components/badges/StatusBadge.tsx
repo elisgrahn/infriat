@@ -1,6 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
-import { STATUS_VARIANTS } from "@/config/badgeDescriptions";
+import { STATUS_CONFIG, type PromiseStatus, STATUS_VARIANTS } from "@/config/badgeConfig";
 import { InteractiveBadge } from "./InteractiveBadge";
 import { cn } from "@/lib/utils";
 

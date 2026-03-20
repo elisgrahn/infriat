@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
+import { STATUS_CONFIG, type PromiseStatus } from "@/config/badgeConfig";
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/badges/StatusBadge";
 import { PartyBadge } from "@/components/badges/PartyBadge";

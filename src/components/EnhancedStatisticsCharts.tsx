@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
-import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
+import { STATUS_CONFIG, type PromiseStatus } from "@/config/badgeConfig";
 import { type AnalyticsPromise } from "@/lib/promiseMetrics";
 
 interface EnhancedStatisticsChartsProps {

@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { getMandateType } from "@/lib/utils";
 import { fetchPromises, fetchGovernmentPeriods, promiseKeys } from "@/services/promises";
 import type { PromiseData, GovernmentStatus } from "@/types/promise";
-import type { Category } from "@/config/categoryConfig";
+import type { Category } from "@/config/badgeConfig";
 
 export function usePromises() {
   const { isAdmin } = useAuth();

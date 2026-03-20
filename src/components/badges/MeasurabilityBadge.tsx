@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Ruler } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { MEASURABILITY_VARIANTS } from "@/config/badgeDescriptions";
+import { MEASURABILITY_VARIANTS } from "@/config/badgeConfig";
 import { InteractiveBadge } from "./InteractiveBadge";
 
 interface MeasurabilityBadgeProps {

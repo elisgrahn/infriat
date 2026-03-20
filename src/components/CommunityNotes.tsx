@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
+import { STATUS_CONFIG, type PromiseStatus } from "@/config/badgeConfig";
 
 interface Suggestion {
   id: string;

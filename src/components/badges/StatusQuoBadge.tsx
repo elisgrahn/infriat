@@ -1,7 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { STATUS_QUO_CONFIG } from "@/config/categoryConfig";
-import { STATUS_QUO_VARIANTS } from "@/config/badgeDescriptions";
+import { STATUS_QUO_CONFIG, STATUS_QUO_VARIANTS } from "@/config/badgeConfig";
 import { InteractiveBadge } from "./InteractiveBadge";
 
 interface StatusQuoBadgeProps {
@@ -28,7 +27,7 @@ export function StatusQuoBadge({
     >
       <Badge
         variant="outline"
-        className={cn("gap-1.5", config.colorClass, className)}
+        className={cn("gap-1.5", config.badgeClass, className)}
       >
         <Icon className="w-3 h-3 shrink-0" />
         {!compact && <span>{config.label}</span>}

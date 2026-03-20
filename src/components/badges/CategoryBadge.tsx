@@ -1,7 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { CATEGORY_CONFIG, type Category } from "@/config/categoryConfig";
-import { CATEGORY_VARIANTS } from "@/config/badgeDescriptions";
+import { CATEGORY_CONFIG, type Category, CATEGORY_VARIANTS } from "@/config/badgeConfig";
 import { InteractiveBadge } from "./InteractiveBadge";
 
 interface CategoryBadgeProps {
@@ -27,7 +26,7 @@ export function CategoryBadge({
     >
       <Badge
         variant="outline"
-        className={cn("gap-1.5 min-w-0 overflow-hidden", config.colorClass, className)}
+        className={cn("gap-1.5 min-w-0 overflow-hidden", config.badgeClass, className)}
       >
         <Icon className="w-3 h-3 shrink-0" />
         {!compact && <span className="truncate">{config.label}</span>}

@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer } from "recharts";
-import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
+import { STATUS_CONFIG, type PromiseStatus } from "@/config/badgeConfig";
 
 interface Promise {
   id: string;

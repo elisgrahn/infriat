@@ -11,7 +11,7 @@ import {
   PromiseDetailContent,
   type PromiseDetailHeaderData,
 } from "@/components/PromiseDetailContent";
-import { STATUS_CONFIG, type PromiseStatus } from "@/config/statusConfig";
+import { STATUS_CONFIG, type PromiseStatus } from "@/config/badgeConfig";
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/badges/StatusBadge";
 import { PartyBadge } from "@/components/badges/PartyBadge";

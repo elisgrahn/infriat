@@ -11,14 +11,29 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import type { LucideIcon } from "lucide-react";
+import { Maximize2, type LucideIcon } from "lucide-react";
+
+import { Button } from "@/components/ui/button"
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item"
+import { InfriatLogo } from "@/components/icons/InfriatLogo";
+import { useNavigate } from "react-router-dom";
+
 
 export interface BadgeVariant {
   key: string;
   label: string;
   description: string;
   icon: LucideIcon | ComponentType<{ className?: string }>;
-  colorClass?: string;
+  badgeClass?: string;
+  /** Tailwind border + background tint classes for the tooltip Item */
+  itemClass?: string;
 }
 
 interface InteractiveBadgeProps {
@@ -39,6 +54,10 @@ export function InteractiveBadge({
   className,
 }: InteractiveBadgeProps) {
   const current = variants.find((v) => v.key === currentKey);
+  const Icon = current?.icon;
+
+
+  const navigate = useNavigate();
 
   // Merge interactive props directly onto the child Badge element
   // so there's no extra wrapper element in the flex chain.
@@ -69,8 +88,27 @@ export function InteractiveBadge({
     <TooltipProvider delayDuration={150}>
       <Tooltip>
         <TooltipTrigger asChild>{interactiveChild}</TooltipTrigger>
-        <TooltipContent side="top" className="max-w-xs" onClick={(e) => e.stopPropagation()}>
-          <p className="text-xs">{current?.description}</p>
+        <TooltipContent className="max-w-xs p-0 border-none bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 transition-shadow" onClick={(e) => e.stopPropagation()}>
+          <Item variant="outline" size="xs">
+            <ItemMedia variant="icon">
+              <Icon />
+            </ItemMedia>
+            <ItemContent>
+              <ItemTitle>{current?.label}</ItemTitle>
+              <ItemDescription>
+                {current?.description}
+              </ItemDescription>
+            </ItemContent>
+            <ItemActions>
+              <Button 
+                size="icon" 
+                variant="ghost" className="size-8 rounded-full" 
+                onClick={() => navigate(`/om#${sectionAnchor}`)}
+              >
+                <Maximize2 />
+              </Button>
+            </ItemActions>
+          </Item>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

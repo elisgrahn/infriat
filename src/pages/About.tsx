@@ -1,9 +1,22 @@
 import { useEffect } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Info } from "lucide-react";
-import { ALL_BADGE_CATEGORIES } from "@/config/badgeDescriptions";
+import { ArrowLeft, CheckCircle, Info, Maximize2 } from "lucide-react";
+import { ALL_BADGE_CATEGORIES } from "@/config/badgeConfig";
 import { cn } from "@/lib/utils";
+
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertTriangleIcon } from "lucide-react"
+
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item"
 
 export default function About() {
   const { hash } = useLocation();
@@ -18,7 +31,7 @@ export default function About() {
   }, [hash]);
 
   return (
-    <main className="flex-1 w-full max-w-3xl mx-auto px-4 py-8 space-y-12">
+    <main className="flex-1 w-full max-w-3xl mx-auto px-4 py-8 space-y-6">
       <div className="space-y-4">
         <Link
           to="/"
@@ -28,20 +41,12 @@ export default function About() {
           Tillbaka
         </Link>
 
-        <h1 className="text-2xl font-bold tracking-tight">Om kategoriseringarna</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Om Infriat</h1>
         <p className="text-muted-foreground leading-relaxed">
-          Varje vallöfte på Infriat.se analyseras och kategoriseras med hjälp av AI (Gemini).
+          Varje vallöfte på Infriat.se analyseras och kategoriseras med hjälp av AI.
           Nedan beskrivs de olika klassificeringarna som används. All data är öppen för granskning
           och vi välkomnar förslag på förbättringar.
         </p>
-
-        <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-sm">
-          <Info className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-          <p className="text-muted-foreground">
-            Statusbedömningarna genereras av AI och kan innehålla felaktigheter.
-            Kontrollera alltid mot de angivna källorna.
-          </p>
-        </div>
       </div>
 
       {ALL_BADGE_CATEGORIES.map((category) => (
@@ -49,28 +54,25 @@ export default function About() {
           <h2 className="text-xl font-semibold tracking-tight">{category.title}</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">{category.intro}</p>
 
-          <div className="space-y-3">
+          <ItemGroup>
             {category.variants.map((v) => {
               const Icon = v.icon;
               return (
-                <div
-                  key={v.key}
-                  className="flex items-start gap-3 p-3 rounded-lg border bg-card"
-                >
-                  <Badge
-                    variant="outline"
-                    className={cn("shrink-0 gap-1.5 mt-0.5", v.colorClass)}
-                  >
-                    <Icon className="w-3 h-3" />
-                    {v.label}
-                  </Badge>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {v.description}
-                  </p>
-                </div>
+                // <Item variant="outline" size="xs" key={v.key} className="bg-card border-2">
+                <Item variant="outline" size="sm" className={cn("border bg-card", v.itemClass)}>
+                  <ItemMedia variant="icon">
+                    <Icon />
+                  </ItemMedia>
+                  <ItemContent>
+                    <ItemTitle>{v?.label}</ItemTitle>
+                    <ItemDescription>
+                      {v?.description}
+                    </ItemDescription>
+                  </ItemContent>
+                </Item>
               );
             })}
-          </div>
+          </ItemGroup>
         </section>
       ))}
     </main>

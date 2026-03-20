@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { type PromiseStatus } from "@/config/statusConfig";
+import { type PromiseStatus } from "@/config/badgeConfig";
 import { SourcesList } from "@/components/SourcesList";
 import { CommunityNotes } from "@/components/CommunityNotes";
 import { CitedText } from "@/components/CitedText";
@@ -37,7 +37,7 @@ import { toast } from "sonner";
 import { getMandateType, type GovernmentPeriod } from "@/lib/utils";
 import { CategoryBadge } from "@/components/badges/CategoryBadge";
 import { StatusQuoBadge } from "@/components/badges/StatusQuoBadge";
-import { type Category } from "@/config/categoryConfig";
+import { type Category } from "@/config/badgeConfig";
 
 interface PromiseDetailData {
   id: string;

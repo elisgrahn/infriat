@@ -6,8 +6,8 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { partyColors, statusColors } from "@/utils/partyColors";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFilterState, useFilterDispatch } from "@/store/FilterContext";
-import { CATEGORY_CONFIG, STATUS_QUO_CONFIG, type Category } from "@/config/categoryConfig";
-import { STATUS_CONFIG, VISIBLE_STATUSES } from "@/config/statusConfig";
+import { CATEGORY_CONFIG, STATUS_QUO_CONFIG, type Category } from "@/config/badgeConfig";
+import { STATUS_CONFIG, VISIBLE_STATUSES } from "@/config/badgeConfig";
 import { getPartyAbbreviation } from "@/utils/partyAbbreviations";
 import { cn } from "@/lib/utils";
 import { InfriatLogo } from "./icons/InfriatLogo";
@@ -367,12 +367,12 @@ export const PromiseFilters = memo(function PromiseFilters({
                 className={cn(
                   TOGGLE_BTN,
                   "data-[state=on]:text-background",
-                  // off state: muted bg, coloured icon via cfg.colorClass applied to the icon
+                  // off state: muted bg, coloured icon via cfg.badgeClass applied to the icon
                   "data-[state=off]:bg-muted data-[state=off]:text-foreground data-[state=off]:hover:bg-muted/80",
                   "data-[state=on]:bg-foreground data-[state=on]:border-foreground",
                 )}
               >
-                <Icon className={cn("w-3.5 h-3.5 shrink-0", cfg.colorClass)} />
+                <Icon className={cn("w-3.5 h-3.5 shrink-0", cfg.badgeClass)} />
                 {cfg.label}
               </ToggleGroupItem>
             );

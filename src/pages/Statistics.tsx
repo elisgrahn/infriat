@@ -4,7 +4,7 @@ import { EnhancedStatisticsCharts } from "@/components/EnhancedStatisticsCharts"
 import { ExperimentalCharts } from "@/components/ExperimentalCharts";
 import { Separator } from "@/components/ui/separator";
 import { fetchPromises, promiseKeys } from "@/services/promises";
-import type { PromiseStatus } from "@/config/statusConfig";
+import type { PromiseStatus } from "@/config/badgeConfig";
 import type { PolicyCategory } from "@/lib/promiseMetrics";
 
 interface AnalyticsPromise {
