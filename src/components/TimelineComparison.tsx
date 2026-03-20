@@ -167,6 +167,32 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
       return indexA - indexB;
     });
 
+  // Pad with zero-filled entries for missing parties so Recharts animates to/from zero
+  const existingParties = new Set(partyChartData.map(d => d.name));
+  for (const abbr of partyOrder) {
+    if (!existingParties.has(abbr)) {
+      partyChartData.push({
+        name: abbr,
+        infriade: 0,
+        delvisInfriade: 0,
+        utreds: 0,
+        ejInfriade: 0,
+        brutna: 0,
+        ...(isAdmin && { underAnalys: 0 }),
+        total: 0,
+        avgMeasurability: null,
+      });
+    }
+  }
+  // Re-sort after padding
+  partyChartData.sort((a, b) => {
+    const indexA = partyOrder.indexOf(a.name);
+    const indexB = partyOrder.indexOf(b.name);
+    if (indexA === -1) return 1;
+    if (indexB === -1) return -1;
+    return indexA - indexB;
+  });
+
   // Convert to percentage for area chart
   const partyChartDataPercent = partyChartData.map(d => ({
     name: d.name,
