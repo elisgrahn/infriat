@@ -167,32 +167,6 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
       return indexA - indexB;
     });
 
-  // Pad with zero-filled entries for missing parties so Recharts animates to/from zero
-  const existingParties = new Set(partyChartData.map(d => d.name));
-  for (const abbr of partyOrder) {
-    if (!existingParties.has(abbr)) {
-      partyChartData.push({
-        name: abbr,
-        infriade: 0,
-        delvisInfriade: 0,
-        utreds: 0,
-        ejInfriade: 0,
-        brutna: 0,
-        ...(isAdmin && { underAnalys: 0 }),
-        total: 0,
-        avgMeasurability: null,
-      });
-    }
-  }
-  // Re-sort after padding
-  partyChartData.sort((a, b) => {
-    const indexA = partyOrder.indexOf(a.name);
-    const indexB = partyOrder.indexOf(b.name);
-    if (indexA === -1) return 1;
-    if (indexB === -1) return -1;
-    return indexA - indexB;
-  });
-
   // Convert to percentage for area chart
   const partyChartDataPercent = partyChartData.map(d => ({
     name: d.name,
@@ -298,12 +272,12 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
                   return <ChartLegendContent payload={sorted} className="flex-wrap" />;
                 }}
               />
-              {isAdmin && <Bar yAxisId="left" dataKey="underAnalys" stackId="a" fill="var(--color-underAnalys)" fillOpacity={0.8} isAnimationActive animationDuration={600} animationEasing="ease-in-out" />}
-              <Bar yAxisId="left" dataKey="brutna" stackId="a" fill="var(--color-brutna)" fillOpacity={0.8} isAnimationActive animationDuration={600} animationEasing="ease-in-out" />
-              <Bar yAxisId="left" dataKey="ejInfriade" stackId="a" fill="var(--color-ejInfriade)" fillOpacity={0.8} isAnimationActive animationDuration={600} animationEasing="ease-in-out" />
-              <Bar yAxisId="left" dataKey="utreds" stackId="a" fill="var(--color-utreds)" fillOpacity={0.8} isAnimationActive animationDuration={600} animationEasing="ease-in-out" />
-              <Bar yAxisId="left" dataKey="delvisInfriade" stackId="a" fill="var(--color-delvisInfriade)" fillOpacity={0.8} isAnimationActive animationDuration={600} animationEasing="ease-in-out" />
-              <Bar yAxisId="left" dataKey="infriade" stackId="a" fill="var(--color-infriade)" fillOpacity={0.8} isAnimationActive animationDuration={600} animationEasing="ease-in-out" />
+              {isAdmin && <Bar yAxisId="left" dataKey="underAnalys" stackId="a" fill="var(--color-underAnalys)" fillOpacity={0.8} />}
+              <Bar yAxisId="left" dataKey="brutna" stackId="a" fill="var(--color-brutna)" fillOpacity={0.8} />
+              <Bar yAxisId="left" dataKey="ejInfriade" stackId="a" fill="var(--color-ejInfriade)" fillOpacity={0.8} />
+              <Bar yAxisId="left" dataKey="utreds" stackId="a" fill="var(--color-utreds)" fillOpacity={0.8} />
+              <Bar yAxisId="left" dataKey="delvisInfriade" stackId="a" fill="var(--color-delvisInfriade)" fillOpacity={0.8} />
+              <Bar yAxisId="left" dataKey="infriade" stackId="a" fill="var(--color-infriade)" fillOpacity={0.8} />
               <Line
                 yAxisId="right"
                 type="step"
@@ -314,9 +288,6 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
                 strokeDasharray="5 3"
                 dot={false}
                 connectNulls
-                isAnimationActive
-                animationDuration={800}
-                animationEasing="ease-in-out"
               />
             </ComposedChart>
           </ChartContainer>
@@ -400,12 +371,12 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
                   return <ChartLegendContent payload={sorted} className="flex-wrap" />;
                 }}
               />
-              {isAdmin && <Bar yAxisId="left" dataKey="underAnalys" stackId="a" fill="var(--color-underAnalys)" fillOpacity={0.8} isAnimationActive animationDuration={600} animationEasing="ease-in-out" />}
-              <Bar yAxisId="left" dataKey="brutna" stackId="a" fill="var(--color-brutna)" fillOpacity={0.8} isAnimationActive animationDuration={600} animationEasing="ease-in-out" />
-              <Bar yAxisId="left" dataKey="ejInfriade" stackId="a" fill="var(--color-ejInfriade)" fillOpacity={0.8} isAnimationActive animationDuration={600} animationEasing="ease-in-out" />
-              <Bar yAxisId="left" dataKey="utreds" stackId="a" fill="var(--color-utreds)" fillOpacity={0.8} isAnimationActive animationDuration={600} animationEasing="ease-in-out" />
-              <Bar yAxisId="left" dataKey="delvisInfriade" stackId="a" fill="var(--color-delvisInfriade)" fillOpacity={0.8} isAnimationActive animationDuration={600} animationEasing="ease-in-out" />
-              <Bar yAxisId="left" dataKey="infriade" stackId="a" fill="var(--color-infriade)" fillOpacity={0.8} isAnimationActive animationDuration={600} animationEasing="ease-in-out" />
+              {isAdmin && <Bar yAxisId="left" dataKey="underAnalys" stackId="a" fill="var(--color-underAnalys)" fillOpacity={0.8} />}
+              <Bar yAxisId="left" dataKey="brutna" stackId="a" fill="var(--color-brutna)" fillOpacity={0.8} />
+              <Bar yAxisId="left" dataKey="ejInfriade" stackId="a" fill="var(--color-ejInfriade)" fillOpacity={0.8} />
+              <Bar yAxisId="left" dataKey="utreds" stackId="a" fill="var(--color-utreds)" fillOpacity={0.8} />
+              <Bar yAxisId="left" dataKey="delvisInfriade" stackId="a" fill="var(--color-delvisInfriade)" fillOpacity={0.8} />
+              <Bar yAxisId="left" dataKey="infriade" stackId="a" fill="var(--color-infriade)" fillOpacity={0.8} />
               <Line
                 yAxisId="right"
                 type="step"
@@ -416,9 +387,6 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
                 strokeDasharray="5 3"
                 dot={false}
                 connectNulls
-                isAnimationActive
-                animationDuration={800}
-                animationEasing="ease-in-out"
               />
             </ComposedChart>
           </ChartContainer>
