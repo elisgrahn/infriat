@@ -1,6 +1,7 @@
 import { useRef, useState, useLayoutEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { Search, Minus, Check, MoveRight, Lock, Shuffle, Calendar, Users, Tags, ArrowUpDown } from "lucide-react";
+import { Search, Minus, Check, MoveRight, Lock, Shuffle, Calendar, Users, Tags, ArrowUpDown, HelpCircle } from "lucide-react";
+import { Link } from "react-router-dom";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { partyColors, statusColors } from "@/utils/partyColors";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -38,14 +39,25 @@ const TOGGLE_BTN =
 function FilterSectionHeader({
   icon: Icon,
   label,
+  helpAnchor,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
+  helpAnchor?: string;
 }) {
   return (
     <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
       <Icon className="w-4 h-4" />
       {label}
+      {helpAnchor && (
+        <Link
+          to={`/om#${helpAnchor}`}
+          className="ml-auto text-muted-foreground/60 hover:text-foreground transition-colors"
+          aria-label={`Läs mer om ${label}`}
+        >
+          <HelpCircle className="w-3.5 h-3.5" />
+        </Link>
+      )}
     </h3>
   );
 }
@@ -248,7 +260,7 @@ export const PromiseFilters = ({
 
       {/* Status */}
       <div className="space-y-3">
-        <FilterSectionHeader icon={InfriatLogo} label="Status" />
+        <FilterSectionHeader icon={InfriatLogo} label="Status" helpAnchor="status" />
         <ToggleGroup
           type="multiple"
           value={selectedStatuses}
@@ -306,7 +318,7 @@ export const PromiseFilters = ({
 
       {/* Bevara / Förändra */}
       <div className="space-y-3">
-        <FilterSectionHeader icon={Shuffle} label="Typ av löfte" />
+        <FilterSectionHeader icon={Shuffle} label="Typ av löfte" helpAnchor="typ" />
         <ToggleGroup
           type="multiple"
           value={selectedStatusQuo}
@@ -336,7 +348,7 @@ export const PromiseFilters = ({
 
       {/* Kategorier */}
       <div className="space-y-3">
-        <FilterSectionHeader icon={Tags} label="Politikområde" />
+        <FilterSectionHeader icon={Tags} label="Politikområde" helpAnchor="politikomrade" />
         <ToggleGroup
           type="multiple"
           value={selectedCategories}

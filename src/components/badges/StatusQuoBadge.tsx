@@ -1,16 +1,11 @@
 import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { STATUS_QUO_CONFIG } from "@/config/categoryConfig";
+import { STATUS_QUO_VARIANTS } from "@/config/badgeDescriptions";
+import { InteractiveBadge } from "./InteractiveBadge";
 
 interface StatusQuoBadgeProps {
   isStatusQuo: boolean;
-  /** When true, render only the icon (no text label) */
   compact?: boolean;
   className?: string;
 }
@@ -25,21 +20,19 @@ export function StatusQuoBadge({
   const Icon = config.icon;
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Badge
-            variant="outline"
-            className={cn("gap-1.5", config.colorClass, className)}
-          >
-            <Icon className="w-3 h-3 shrink-0" />
-            {!compact && <span>{config.label}</span>}
-          </Badge>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p className="text-xs max-w-[200px]">{config.description}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <InteractiveBadge
+      currentKey={key}
+      variants={STATUS_QUO_VARIANTS}
+      sectionAnchor="typ"
+      popoverTitle="Typ av löfte"
+    >
+      <Badge
+        variant="outline"
+        className={cn("gap-1.5", config.colorClass, className)}
+      >
+        <Icon className="w-3 h-3 shrink-0" />
+        {!compact && <span>{config.label}</span>}
+      </Badge>
+    </InteractiveBadge>
   );
 }
