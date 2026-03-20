@@ -1,6 +1,6 @@
 import { useRef, useState, useLayoutEffect } from "react";
 import { Input } from "@/components/ui/input";
-import { Search, Minus, Check, MoveRight, Lock, ArrowRightLeft } from "lucide-react";
+import { Search, Minus, Check, MoveRight, Lock, Shuffle, Calendar, Users, Tags, ArrowUpDown } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { partyColors, statusColors } from "@/utils/partyColors";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,6 +9,7 @@ import { CATEGORY_CONFIG, STATUS_QUO_CONFIG, type Category } from "@/config/cate
 import { STATUS_CONFIG, VISIBLE_STATUSES } from "@/config/statusConfig";
 import { getPartyAbbreviation } from "@/utils/partyAbbreviations";
 import { cn } from "@/lib/utils";
+import { InfriatLogo } from "./icons/InfriatLogo";
 
 const parties = [
   "Socialdemokraterna",
@@ -205,7 +206,7 @@ export const PromiseFilters = ({
 
       {/* Mandatperiod */}
       <div className="space-y-3">
-        <FilterSectionHeader icon={Search} label="Mandatperiod" />
+        <FilterSectionHeader icon={Calendar} label="Mandatperiod" />
         <Select
           value={selectedPeriodId || selectedPeriod?.id || "all"}
           onValueChange={(v) => setSelectedPeriodId(v === "all" ? null : v)}
@@ -226,7 +227,7 @@ export const PromiseFilters = ({
 
       {showSort && (
         <div className="space-y-3">
-          <FilterSectionHeader icon={Search} label="Sortera efter" />
+          <FilterSectionHeader icon={ArrowUpDown} label="Sortera efter" />
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Sortera efter..." />
@@ -247,7 +248,7 @@ export const PromiseFilters = ({
 
       {/* Status */}
       <div className="space-y-3">
-        <FilterSectionHeader icon={Search} label="Status" />
+        <FilterSectionHeader icon={InfriatLogo} label="Status" />
         <ToggleGroup
           type="multiple"
           value={selectedStatuses}
@@ -271,71 +272,9 @@ export const PromiseFilters = ({
         </ToggleGroup>
       </div>
 
-      {/* Kategorier */}
-      <div className="space-y-3">
-        <FilterSectionHeader icon={Search} label="Politikområde" />
-        <ToggleGroup
-          type="multiple"
-          value={selectedCategories}
-          onValueChange={(v) => setSelectedCategories(v as Category[])}
-          className="flex flex-wrap gap-1.5 justify-start"
-        >
-          {ALL_CATEGORIES.map((cat) => {
-            const cfg = CATEGORY_CONFIG[cat];
-            const Icon = cfg.icon;
-            return (
-              <ToggleGroupItem
-                key={cat}
-                value={cat}
-                className={cn(
-                  TOGGLE_BTN,
-                  "data-[state=on]:text-background",
-                  // off state: muted bg, coloured icon via cfg.colorClass applied to the icon
-                  "data-[state=off]:bg-muted data-[state=off]:text-foreground data-[state=off]:hover:bg-muted/80",
-                  "data-[state=on]:bg-foreground data-[state=on]:border-foreground",
-                )}
-              >
-                <Icon className={cn("w-3.5 h-3.5 shrink-0", cfg.colorClass)} />
-                {cfg.label}
-              </ToggleGroupItem>
-            );
-          })}
-        </ToggleGroup>
-      </div>
-
-      {/* Bevara / Förändra */}
-      <div className="space-y-3">
-        <FilterSectionHeader icon={ArrowRightLeft} label="Typ av löfte" />
-        <ToggleGroup
-          type="multiple"
-          value={selectedStatusQuo}
-          onValueChange={setSelectedStatusQuo}
-          className="flex flex-wrap gap-1.5 justify-start"
-        >
-          {(["true", "false"] as const).map((key) => {
-            const cfg = STATUS_QUO_CONFIG[key];
-            const Icon = cfg.icon;
-            return (
-              <ToggleGroupItem
-                key={key}
-                value={key}
-                className={cn(
-                  TOGGLE_BTN,
-                  "data-[state=off]:bg-muted data-[state=off]:text-foreground data-[state=off]:hover:bg-muted/80",
-                  "data-[state=on]:bg-foreground data-[state=on]:text-background data-[state=on]:border-foreground",
-                )}
-              >
-                <Icon className="w-3.5 h-3.5 shrink-0" />
-                {cfg.label}
-              </ToggleGroupItem>
-            );
-          })}
-        </ToggleGroup>
-      </div>
-
       {/* Parti */}
       <div className="space-y-3">
-        <FilterSectionHeader icon={Search} label="Parti" />
+        <FilterSectionHeader icon={Users} label="Parti" />
 
         {governingParties.length > 0 && (
           <div className="space-y-2">
@@ -363,6 +302,68 @@ export const PromiseFilters = ({
             </div>
           </div>
         )}
+      </div>
+
+      {/* Bevara / Förändra */}
+      <div className="space-y-3">
+        <FilterSectionHeader icon={Shuffle} label="Typ av löfte" />
+        <ToggleGroup
+          type="multiple"
+          value={selectedStatusQuo}
+          onValueChange={setSelectedStatusQuo}
+          className="flex flex-wrap gap-1.5 justify-start"
+        >
+          {(["true", "false"] as const).map((key) => {
+            const cfg = STATUS_QUO_CONFIG[key];
+            const Icon = cfg.icon;
+            return (
+              <ToggleGroupItem
+                key={key}
+                value={key}
+                className={cn(
+                  TOGGLE_BTN,
+                  "data-[state=off]:bg-muted data-[state=off]:text-foreground data-[state=off]:hover:bg-muted/80",
+                  "data-[state=on]:bg-foreground data-[state=on]:text-background data-[state=on]:border-foreground",
+                )}
+              >
+                <Icon className="w-3.5 h-3.5 shrink-0" />
+                {cfg.label}
+              </ToggleGroupItem>
+            );
+          })}
+        </ToggleGroup>
+      </div>
+
+      {/* Kategorier */}
+      <div className="space-y-3">
+        <FilterSectionHeader icon={Tags} label="Politikområde" />
+        <ToggleGroup
+          type="multiple"
+          value={selectedCategories}
+          onValueChange={(v) => setSelectedCategories(v as Category[])}
+          className="flex flex-wrap gap-1.5 justify-start"
+        >
+          {ALL_CATEGORIES.map((cat) => {
+            const cfg = CATEGORY_CONFIG[cat];
+            const Icon = cfg.icon;
+            return (
+              <ToggleGroupItem
+                key={cat}
+                value={cat}
+                className={cn(
+                  TOGGLE_BTN,
+                  "data-[state=on]:text-background",
+                  // off state: muted bg, coloured icon via cfg.colorClass applied to the icon
+                  "data-[state=off]:bg-muted data-[state=off]:text-foreground data-[state=off]:hover:bg-muted/80",
+                  "data-[state=on]:bg-foreground data-[state=on]:border-foreground",
+                )}
+              >
+                <Icon className={cn("w-3.5 h-3.5 shrink-0", cfg.colorClass)} />
+                {cfg.label}
+              </ToggleGroupItem>
+            );
+          })}
+        </ToggleGroup>
       </div>
     </div>
   );

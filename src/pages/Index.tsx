@@ -416,7 +416,7 @@ const Index = () => {
               <div className="sticky top-20 bg-card rounded-2xl border max-h-[calc(100vh-6rem)] flex flex-col">
                 <div className="p-6 pb-4 space-y-4 shrink-0">
                   <h2 className="text-xl font-bold text-foreground">
-                    Filtrera
+                    Filtrera ({filteredPromises.length} löften)
                   </h2>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -469,7 +469,7 @@ const Index = () => {
                       </DrawerTrigger>
                       <DrawerContent className="max-h-[85vh] rounded-t-2xl bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
                         <DrawerHeader>
-                          <DrawerTitle>Filtrera löften</DrawerTitle>
+                          <DrawerTitle>Filtrera ({filteredPromises.length} löften)</DrawerTitle>
                         </DrawerHeader>
                         <div className="px-4 pb-6 overflow-y-auto">
                           <PromiseFilters showSearch={false} showSort={false} />
