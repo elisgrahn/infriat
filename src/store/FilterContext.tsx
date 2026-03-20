@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, ReactNode } from 'react';
+import { createContext, useContext, useReducer, useEffect, useMemo, useRef, useCallback, ReactNode, Dispatch } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   PARTY_ABBREVIATION_TO_NAME,
@@ -7,67 +7,137 @@ import {
 import type { Category } from '@/config/categoryConfig';
 import type { GovernmentPeriod } from '@/types/promise';
 
-interface FilterContextType {
+// ---------------------------------------------------------------------------
+// State shape
+// ---------------------------------------------------------------------------
+
+interface FilterState {
   selectedParties: string[];
-  setSelectedParties: (parties: string[]) => void;
   selectedStatuses: string[];
-  setSelectedStatuses: (statuses: string[]) => void;
   selectedGovStatus: string[];
-  setSelectedGovStatus: (govStatus: string[]) => void;
   selectedCategories: Category[];
-  setSelectedCategories: (categories: Category[]) => void;
   selectedStatusQuo: string[];
-  setSelectedStatusQuo: (statusQuo: string[]) => void;
   searchQuery: string;
-  setSearchQuery: (query: string) => void;
   sortBy: string;
-  setSortBy: (sort: string) => void;
   selectedPeriodId: string | null;
-  setSelectedPeriodId: (periodId: string | null) => void;
   governmentPeriods: GovernmentPeriod[];
+}
+
+// ---------------------------------------------------------------------------
+// Actions
+// ---------------------------------------------------------------------------
+
+type FilterAction =
+  | { type: 'SET_PARTIES'; payload: string[] }
+  | { type: 'SET_STATUSES'; payload: string[] }
+  | { type: 'SET_GOV_STATUS'; payload: string[] }
+  | { type: 'SET_CATEGORIES'; payload: Category[] }
+  | { type: 'SET_STATUS_QUO'; payload: string[] }
+  | { type: 'SET_SEARCH'; payload: string }
+  | { type: 'SET_SORT'; payload: string }
+  | { type: 'SET_PERIOD'; payload: string | null }
+  | { type: 'SET_GOVERNMENT_PERIODS'; payload: GovernmentPeriod[] };
+
+function filterReducer(state: FilterState, action: FilterAction): FilterState {
+  switch (action.type) {
+    case 'SET_PARTIES':
+      return { ...state, selectedParties: action.payload };
+    case 'SET_STATUSES':
+      return { ...state, selectedStatuses: action.payload };
+    case 'SET_GOV_STATUS':
+      return { ...state, selectedGovStatus: action.payload };
+    case 'SET_CATEGORIES':
+      return { ...state, selectedCategories: action.payload };
+    case 'SET_STATUS_QUO':
+      return { ...state, selectedStatusQuo: action.payload };
+    case 'SET_SEARCH':
+      return { ...state, searchQuery: action.payload };
+    case 'SET_SORT':
+      return { ...state, sortBy: action.payload };
+    case 'SET_PERIOD':
+      return { ...state, selectedPeriodId: action.payload };
+    case 'SET_GOVERNMENT_PERIODS':
+      return { ...state, governmentPeriods: action.payload };
+    default:
+      return state;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Dispatch helpers — stable callbacks consumers can call without re-rendering
+// ---------------------------------------------------------------------------
+
+interface FilterDispatch {
+  setSelectedParties: (parties: string[]) => void;
+  setSelectedStatuses: (statuses: string[]) => void;
+  setSelectedGovStatus: (govStatus: string[]) => void;
+  setSelectedCategories: (categories: Category[]) => void;
+  setSelectedStatusQuo: (statusQuo: string[]) => void;
+  setSearchQuery: (query: string) => void;
+  setSortBy: (sort: string) => void;
+  setSelectedPeriodId: (periodId: string | null) => void;
   setGovernmentPeriods: (periods: GovernmentPeriod[]) => void;
 }
 
-const FilterContext = createContext<FilterContextType | undefined>(undefined);
+// ---------------------------------------------------------------------------
+// Contexts
+// ---------------------------------------------------------------------------
+
+const FilterStateContext = createContext<FilterState | undefined>(undefined);
+const FilterDispatchContext = createContext<FilterDispatch | undefined>(undefined);
+
+// ---------------------------------------------------------------------------
+// Provider
+// ---------------------------------------------------------------------------
 
 export const FilterProvider = ({ children }: { children: ReactNode }) => {
   const [searchParams, setSearchParams] = useSearchParams();
-  
-  const [selectedParties, setSelectedParties] = useState<string[]>(() => {
-    const parties = searchParams.get('parties');
-    if (!parties) return [];
-    return parties.split(',').map(abbr => PARTY_ABBREVIATION_TO_NAME[abbr] || abbr).filter(Boolean);
-  });
-  
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(() => {
-    const statuses = searchParams.get('statuses');
-    return statuses ? statuses.split(',') : [];
-  });
-  
-  const [selectedGovStatus, setSelectedGovStatus] = useState<string[]>(() => {
-    const govStatus = searchParams.get('govStatus');
-    return govStatus ? govStatus.split(',') : [];
-  });
 
-  const [selectedCategories, setSelectedCategories] = useState<Category[]>(() => {
-    const cats = searchParams.get('categories');
-    return cats ? (cats.split(',') as Category[]) : [];
-  });
+  const initialState: FilterState = useMemo(() => ({
+    selectedParties: (() => {
+      const parties = searchParams.get('parties');
+      if (!parties) return [];
+      return parties.split(',').map(abbr => PARTY_ABBREVIATION_TO_NAME[abbr] || abbr).filter(Boolean);
+    })(),
+    selectedStatuses: (() => {
+      const statuses = searchParams.get('statuses');
+      return statuses ? statuses.split(',') : [];
+    })(),
+    selectedGovStatus: (() => {
+      const govStatus = searchParams.get('govStatus');
+      return govStatus ? govStatus.split(',') : [];
+    })(),
+    selectedCategories: (() => {
+      const cats = searchParams.get('categories');
+      return cats ? (cats.split(',') as Category[]) : [];
+    })(),
+    selectedStatusQuo: (() => {
+      const sq = searchParams.get('statusQuo');
+      return sq ? sq.split(',') : [];
+    })(),
+    searchQuery: searchParams.get('search') || '',
+    sortBy: searchParams.get('sort') || 'created-desc',
+    selectedPeriodId: searchParams.get('period') || null,
+    governmentPeriods: [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), []);  // Only read URL on mount
 
-  const [selectedStatusQuo, setSelectedStatusQuo] = useState<string[]>(() => {
-    const sq = searchParams.get('statusQuo');
-    return sq ? sq.split(',') : [];
-  });
-  
-  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || "");
-  const [sortBy, setSortBy] = useState(() => searchParams.get('sort') || "created-desc");
-  const [selectedPeriodId, setSelectedPeriodId] = useState<string | null>(() => searchParams.get('period') || null);
-  const [governmentPeriods, setGovernmentPeriods] = useState<GovernmentPeriod[]>([]);
+  const [state, dispatch] = useReducer(filterReducer, initialState);
 
-  // Update URL when filters change – use the callback form of setSearchParams
-  // so we always read the *latest* params and never accidentally strip unrelated
-  // query params (e.g. ?promise=).
-  // Debounced to avoid per-keystroke URL thrashing.
+  // Stable dispatch helpers — these never change identity
+  const dispatchers = useMemo<FilterDispatch>(() => ({
+    setSelectedParties: (v) => dispatch({ type: 'SET_PARTIES', payload: v }),
+    setSelectedStatuses: (v) => dispatch({ type: 'SET_STATUSES', payload: v }),
+    setSelectedGovStatus: (v) => dispatch({ type: 'SET_GOV_STATUS', payload: v }),
+    setSelectedCategories: (v) => dispatch({ type: 'SET_CATEGORIES', payload: v }),
+    setSelectedStatusQuo: (v) => dispatch({ type: 'SET_STATUS_QUO', payload: v }),
+    setSearchQuery: (v) => dispatch({ type: 'SET_SEARCH', payload: v }),
+    setSortBy: (v) => dispatch({ type: 'SET_SORT', payload: v }),
+    setSelectedPeriodId: (v) => dispatch({ type: 'SET_PERIOD', payload: v }),
+    setGovernmentPeriods: (v) => dispatch({ type: 'SET_GOVERNMENT_PERIODS', payload: v }),
+  }), []);
+
+  // Debounced URL sync
   const urlSyncTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
@@ -76,107 +146,110 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
       setSearchParams((prev) => {
         const params = new URLSearchParams(prev);
 
-        if (selectedParties.length > 0) {
-          const abbreviations = selectedParties.map(name => getPartyAbbreviation(name) || name).filter(Boolean);
+        if (state.selectedParties.length > 0) {
+          const abbreviations = state.selectedParties.map(name => getPartyAbbreviation(name) || name).filter(Boolean);
           params.set('parties', abbreviations.join(','));
         } else {
           params.delete('parties');
         }
 
-        if (selectedStatuses.length > 0) {
-          params.set('statuses', selectedStatuses.join(','));
+        if (state.selectedStatuses.length > 0) {
+          params.set('statuses', state.selectedStatuses.join(','));
         } else {
           params.delete('statuses');
         }
 
-        if (selectedGovStatus.length > 0) {
-          params.set('govStatus', selectedGovStatus.join(','));
+        if (state.selectedGovStatus.length > 0) {
+          params.set('govStatus', state.selectedGovStatus.join(','));
         } else {
           params.delete('govStatus');
         }
 
-        if (selectedCategories.length > 0) {
-          params.set('categories', selectedCategories.join(','));
+        if (state.selectedCategories.length > 0) {
+          params.set('categories', state.selectedCategories.join(','));
         } else {
           params.delete('categories');
         }
 
-        if (selectedStatusQuo.length > 0) {
-          params.set('statusQuo', selectedStatusQuo.join(','));
+        if (state.selectedStatusQuo.length > 0) {
+          params.set('statusQuo', state.selectedStatusQuo.join(','));
         } else {
           params.delete('statusQuo');
         }
 
-        if (searchQuery) {
-          params.set('search', searchQuery);
+        if (state.searchQuery) {
+          params.set('search', state.searchQuery);
         } else {
           params.delete('search');
         }
 
-        if (sortBy !== 'created-desc') {
-          params.set('sort', sortBy);
+        if (state.sortBy !== 'created-desc') {
+          params.set('sort', state.sortBy);
         } else {
           params.delete('sort');
         }
 
-        if (selectedPeriodId) {
-          params.set('period', selectedPeriodId);
+        if (state.selectedPeriodId) {
+          params.set('period', state.selectedPeriodId);
         } else {
           params.delete('period');
         }
 
         return params;
       }, { replace: true });
-    }, 300);
+    }, 150);
 
     return () => clearTimeout(urlSyncTimerRef.current);
-  }, [selectedParties, selectedStatuses, selectedGovStatus, selectedCategories, selectedStatusQuo, searchQuery, sortBy, selectedPeriodId, setSearchParams]);
-
-  const value = useMemo<FilterContextType>(
-    () => ({
-      selectedParties,
-      setSelectedParties,
-      selectedStatuses,
-      setSelectedStatuses,
-      selectedGovStatus,
-      setSelectedGovStatus,
-      selectedCategories,
-      setSelectedCategories,
-      selectedStatusQuo,
-      setSelectedStatusQuo,
-      searchQuery,
-      setSearchQuery,
-      sortBy,
-      setSortBy,
-      selectedPeriodId,
-      setSelectedPeriodId,
-      governmentPeriods,
-      setGovernmentPeriods,
-    }),
-    [
-      selectedParties,
-      selectedStatuses,
-      selectedGovStatus,
-      selectedCategories,
-      selectedStatusQuo,
-      searchQuery,
-      sortBy,
-      selectedPeriodId,
-      governmentPeriods,
-    ],
-  );
+  }, [
+    state.selectedParties,
+    state.selectedStatuses,
+    state.selectedGovStatus,
+    state.selectedCategories,
+    state.selectedStatusQuo,
+    state.searchQuery,
+    state.sortBy,
+    state.selectedPeriodId,
+    setSearchParams,
+  ]);
 
   return (
-    <FilterContext.Provider value={value}>
-      {children}
-    </FilterContext.Provider>
+    <FilterStateContext.Provider value={state}>
+      <FilterDispatchContext.Provider value={dispatchers}>
+        {children}
+      </FilterDispatchContext.Provider>
+    </FilterStateContext.Provider>
   );
 };
 
-export const useFilters = () => {
-  const context = useContext(FilterContext);
+// ---------------------------------------------------------------------------
+// Hooks
+// ---------------------------------------------------------------------------
+
+/** Read-only filter state — re-renders when any filter value changes */
+export const useFilterState = () => {
+  const context = useContext(FilterStateContext);
   if (context === undefined) {
-    throw new Error('useFilters must be used within a FilterProvider');
+    throw new Error('useFilterState must be used within a FilterProvider');
   }
   return context;
+};
+
+/** Stable dispatch setters — never causes re-renders on its own */
+export const useFilterDispatch = () => {
+  const context = useContext(FilterDispatchContext);
+  if (context === undefined) {
+    throw new Error('useFilterDispatch must be used within a FilterProvider');
+  }
+  return context;
+};
+
+/**
+ * Combined hook — returns both state + dispatch.
+ * Prefer useFilterState / useFilterDispatch individually to avoid unnecessary re-renders.
+ * @deprecated Use useFilterState and useFilterDispatch separately for better performance.
+ */
+export const useFilters = () => {
+  const state = useFilterState();
+  const dispatch = useFilterDispatch();
+  return { ...state, ...dispatch };
 };

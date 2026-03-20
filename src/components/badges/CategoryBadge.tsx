@@ -27,7 +27,7 @@ export function CategoryBadge({
     >
       <Badge
         variant="outline"
-        className={cn("gap-1.5 overflow-hidden", config.colorClass, className)}
+        className={cn("gap-1.5 min-w-0 overflow-hidden", config.colorClass, className)}
       >
         <Icon className="w-3 h-3 shrink-0" />
         {!compact && <span className="truncate">{config.label}</span>}

@@ -1,7 +1,6 @@
 import { useEffect, useCallback } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { usePromises } from "@/hooks/usePromises";
-import { useFilters } from "@/store/FilterContext";
 import { HeroSection } from "@/components/HeroSection";
 import { MobileFilterBar } from "@/components/MobileFilterBar";
 import { DesktopFilterSidebar } from "@/components/DesktopFilterSidebar";

@@ -1,6 +1,6 @@
 import { useMemo, useCallback, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useFilters } from "@/store/FilterContext";
+import { useFilterState, useFilterDispatch } from "@/store/FilterContext";
 import { useAuth } from "@/hooks/useAuth";
 import { getMandateType } from "@/lib/utils";
 import { fetchPromises, fetchGovernmentPeriods, promiseKeys } from "@/services/promises";
@@ -20,8 +20,8 @@ export function usePromises() {
     sortBy,
     selectedPeriodId,
     governmentPeriods,
-    setGovernmentPeriods,
-  } = useFilters();
+  } = useFilterState();
+  const { setGovernmentPeriods } = useFilterDispatch();
 
   const {
     data: promises = [],

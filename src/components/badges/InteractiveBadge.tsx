@@ -1,9 +1,15 @@
-import { type ReactNode, type ComponentType, useState } from "react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Badge } from "@/components/ui/badge";
-import { Maximize2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import {
+  type ReactElement,
+  type ComponentType,
+  cloneElement,
+  isValidElement,
+} from "react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 
@@ -16,11 +22,12 @@ export interface BadgeVariant {
 }
 
 interface InteractiveBadgeProps {
-  children: ReactNode;
+  children: ReactElement;
   currentKey: string;
   variants: BadgeVariant[];
   sectionAnchor: string;
   popoverTitle: string;
+  className?: string;
 }
 
 export function InteractiveBadge({
@@ -29,90 +36,43 @@ export function InteractiveBadge({
   variants,
   sectionAnchor,
   popoverTitle,
+  className,
 }: InteractiveBadgeProps) {
-  const [open, setOpen] = useState(false);
-  const navigate = useNavigate();
   const current = variants.find((v) => v.key === currentKey);
 
+  // Merge interactive props directly onto the child Badge element
+  // so there's no extra wrapper element in the flex chain.
+  const interactiveChild = isValidElement(children)
+    ? cloneElement(children as ReactElement<Record<string, unknown>>, {
+        role: "button",
+        tabIndex: 0,
+        className: cn(
+          (children.props as Record<string, unknown>).className as
+            | string
+            | undefined,
+          "cursor-pointer focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        ),
+        onClick: (e: React.MouseEvent) => {
+          e.stopPropagation();
+          e.preventDefault();
+        },
+        onKeyDown: (e: React.KeyboardEvent) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.stopPropagation();
+            e.preventDefault();
+          }
+        }
+      })
+    : children;
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <TooltipProvider delayDuration={150}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                className="inline-flex cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                }}
-              >
-                {children}
-              </button>
-            </PopoverTrigger>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-xs">
-            <p className="text-xs">{current?.description}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-
-      <PopoverContent
-        className="w-80 p-0"
-        align="start"
-        side="bottom"
-        sideOffset={6}
-        onClick={(e) => e.stopPropagation()}
-        onOpenAutoFocus={(e) => e.preventDefault()}
-      >
-        <div className="flex items-center justify-between px-3 pt-3 pb-2">
-          <h4 className="text-sm font-semibold">{popoverTitle}</h4>
-          <button
-            type="button"
-            className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-            onClick={() => {
-              setOpen(false);
-              navigate(`/om#${sectionAnchor}`);
-            }}
-            aria-label="Visa alla på metodsidan"
-          >
-            <Maximize2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        <div className="px-3 pb-3 space-y-1.5">
-          {variants.map((v) => {
-            const Icon = v.icon;
-            const isCurrent = v.key === currentKey;
-            return (
-              <div
-                key={v.key}
-                className={cn(
-                  "flex items-start gap-2.5 rounded-md p-2 text-xs transition-colors",
-                  isCurrent
-                    ? "bg-accent/60 ring-1 ring-border"
-                    : "opacity-70",
-                )}
-              >
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "shrink-0 gap-1 text-[10px] px-1.5 py-0.5",
-                    v.colorClass,
-                  )}
-                >
-                  <Icon className="w-2.5 h-2.5" />
-                  {v.label}
-                </Badge>
-                <p className="leading-relaxed text-muted-foreground">
-                  {v.description}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      </PopoverContent>
-    </Popover>
+    <TooltipProvider delayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger asChild>{interactiveChild}</TooltipTrigger>
+        <TooltipContent side="top" className="max-w-xs" onClick={(e) => e.stopPropagation()}>
+          <p className="text-xs">{current?.description}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }

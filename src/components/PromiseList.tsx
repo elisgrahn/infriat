@@ -1,9 +1,15 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { PromiseCard } from "@/components/PromiseCard";
 import { PromiseCardSkeleton } from "@/components/PromiseCardSkeleton";
 import { PromisePagination } from "@/components/PromisePagination";
 import { useAuth } from "@/hooks/useAuth";
+import { StatusBadge } from "@/components/badges/StatusBadge";
+import { PartyBadge } from "@/components/badges/PartyBadge";
+import { GovernmentBadge } from "@/components/badges/GovernmentBadge";
+import { MeasurabilityBadge } from "@/components/badges/MeasurabilityBadge";
+import { StatusQuoBadge } from "@/components/badges/StatusQuoBadge";
+import { CategoryBadge } from "@/components/badges/CategoryBadge";
 import type { PromiseData, GovernmentStatus } from "@/types/promise";
 
 interface PromiseListProps {
@@ -26,9 +32,13 @@ export function PromiseList({
 }: PromiseListProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const { isAdmin } = useAuth();
-  const [cardCompactNeeds, setCardCompactNeeds] = useState<
-    Record<string, boolean>
-  >({});
+
+  // -- List-level badge compact measurement --
+  // A single hidden measurement row with the longest party name from the
+  // current page. If it overflows the container, all cards switch to compact.
+  const [compactBadges, setCompactBadges] = useState(false);
+  const measureContainerRef = useRef<HTMLDivElement>(null);
+  const measureRowRef = useRef<HTMLDivElement>(null);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -41,17 +51,35 @@ export function PromiseList({
     currentPage * ITEMS_PER_PAGE,
   );
 
-  const handleCardCompactNeedChange = useCallback(
-    (promiseId: string, needsCompact: boolean) => {
-      setCardCompactNeeds((previous) => {
-        if (previous[promiseId] === needsCompact) return previous;
-        return { ...previous, [promiseId]: needsCompact };
-      });
-    },
-    [],
-  );
+  // Find the longest party name on the current page for measurement
+  const longestParty = useMemo(() => {
+    if (paginatedPromises.length === 0) return { name: "", abbreviation: "" };
+    return paginatedPromises.reduce(
+      (longest, p) =>
+        p.parties.name.length > longest.name.length
+          ? { name: p.parties.name, abbreviation: p.parties.abbreviation }
+          : longest,
+      { name: "", abbreviation: "" },
+    );
+  }, [paginatedPromises]);
 
-  const sharedCompactBadges = Object.values(cardCompactNeeds).some(Boolean);
+  // Single ResizeObserver for the entire list — measures whether the
+  // "worst case" badge row fits the card width
+  useEffect(() => {
+    const measure = () => {
+      if (!measureContainerRef.current || !measureRowRef.current) return;
+      const available = measureContainerRef.current.clientWidth;
+      const needed = measureRowRef.current.scrollWidth;
+      setCompactBadges(needed > available + 1);
+    };
+
+    measure();
+
+    const ro = new ResizeObserver(measure);
+    if (measureContainerRef.current) ro.observe(measureContainerRef.current);
+
+    return () => ro.disconnect();
+  }, [longestParty.name]);
 
   if (loading) {
     return (
@@ -75,16 +103,34 @@ export function PromiseList({
 
   return (
     <>
+      {/* Hidden measurement container — single instance for the entire list */}
+      <div
+        ref={measureContainerRef}
+        aria-hidden="true"
+        className="relative overflow-hidden pointer-events-none h-0"
+      >
+        <div
+          ref={measureRowRef}
+          className="absolute left-0 top-0 flex w-max items-center gap-2 whitespace-nowrap"
+        >
+          <StatusBadge status="infriat" />
+          <PartyBadge party={longestParty.name} abbreviation={longestParty.abbreviation} compact={false} />
+          <GovernmentBadge governmentStatus="governing" compact={false} />
+          <MeasurabilityBadge score={5} compact={false} />
+          <StatusQuoBadge isStatusQuo={true} compact={false} />
+          <CategoryBadge category="arbetsmarknad" compact={false} />
+        </div>
+      </div>
+
       <div className="grid gap-4">
         {paginatedPromises.map((promise) => (
-          <div key={promise.id}>
+          <div key={promise.id} className="min-w-0">
             <PromiseCard
               promiseId={promise.id}
               promise={promise.promise_text}
               party={promise.parties.name}
               partyAbbreviation={promise.parties.abbreviation}
-              sharedCompactBadges={sharedCompactBadges}
-              onCompactNeedChange={handleCardCompactNeedChange}
+              compactBadges={compactBadges}
               electionYear={promise.election_year}
               governmentStatus={getGovernmentStatus(
                 promise.parties.name,

@@ -23,8 +23,8 @@ export function StatusQuoBadge({
     <InteractiveBadge
       currentKey={key}
       variants={STATUS_QUO_VARIANTS}
-      sectionAnchor="typ"
-      popoverTitle="Typ av löfte"
+      sectionAnchor="status-quo"
+      popoverTitle="Status Quo"
     >
       <Badge
         variant="outline"

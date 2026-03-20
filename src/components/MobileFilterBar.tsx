@@ -12,7 +12,7 @@ import {
 import { PromiseFilters } from "@/components/PromiseFilters";
 import { cn } from "@/lib/utils";
 import { useStickyBar } from "@/store/StickyBarContext";
-import { useFilters } from "@/store/FilterContext";
+import { useFilterState, useFilterDispatch } from "@/store/FilterContext";
 import { SORT_OPTIONS } from "@/types/promise";
 
 interface MobileFilterBarProps {
@@ -23,7 +23,8 @@ export function MobileFilterBar({ filteredCount }: MobileFilterBarProps) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
   const { isMobileBarStuck, setMobileBarStuck } = useStickyBar();
-  const { searchQuery, setSearchQuery, sortBy, setSortBy } = useFilters();
+  const { searchQuery, sortBy } = useFilterState();
+  const { setSearchQuery, setSortBy } = useFilterDispatch();
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [localSearch, setLocalSearch] = useState(searchQuery);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
@@ -36,7 +37,7 @@ export function MobileFilterBar({ filteredCount }: MobileFilterBarProps) {
   const handleSearchChange = (value: string) => {
     setLocalSearch(value);
     clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => setSearchQuery(value), 300);
+    debounceRef.current = setTimeout(() => setSearchQuery(value), 150);
   };
 
   useEffect(() => {

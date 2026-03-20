@@ -3,7 +3,7 @@ import { Search, X } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { PromiseFilters } from "@/components/PromiseFilters";
 import { cn } from "@/lib/utils";
-import { useFilters } from "@/store/FilterContext";
+import { useFilterState, useFilterDispatch } from "@/store/FilterContext";
 import {
   InputGroup,
   InputGroupAddon,
@@ -16,7 +16,8 @@ interface DesktopFilterSidebarProps {
 }
 
 export function DesktopFilterSidebar({ filteredCount }: DesktopFilterSidebarProps) {
-  const { searchQuery, setSearchQuery } = useFilters();
+  const { searchQuery } = useFilterState();
+  const { setSearchQuery } = useFilterDispatch();
   const [localSearch, setLocalSearch] = useState(searchQuery);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
@@ -28,7 +29,7 @@ export function DesktopFilterSidebar({ filteredCount }: DesktopFilterSidebarProp
   const handleSearchChange = (value: string) => {
     setLocalSearch(value);
     clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => setSearchQuery(value), 300);
+    debounceRef.current = setTimeout(() => setSearchQuery(value), 150);
   };
 
   useEffect(() => {

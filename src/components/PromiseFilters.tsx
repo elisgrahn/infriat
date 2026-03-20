@@ -1,11 +1,11 @@
-import { useRef, useState, useLayoutEffect } from "react";
+import { useRef, useState, useLayoutEffect, memo } from "react";
 import { Input } from "@/components/ui/input";
 import { Search, Minus, Check, MoveRight, Lock, Shuffle, Calendar, Users, Tags, ArrowUpDown, HelpCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { partyColors, statusColors } from "@/utils/partyColors";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useFilters } from "@/store/FilterContext";
+import { useFilterState, useFilterDispatch } from "@/store/FilterContext";
 import { CATEGORY_CONFIG, STATUS_QUO_CONFIG, type Category } from "@/config/categoryConfig";
 import { STATUS_CONFIG, VISIBLE_STATUSES } from "@/config/statusConfig";
 import { getPartyAbbreviation } from "@/utils/partyAbbreviations";
@@ -62,10 +62,10 @@ function FilterSectionHeader({
   );
 }
 
-export const PromiseFilters = ({
+export const PromiseFilters = memo(function PromiseFilters({
   showSearch = true,
   showSort = true,
-}: PromiseFiltersProps = {}) => {
+}: PromiseFiltersProps = {}) {
   const {
     selectedParties,
     selectedStatuses,
@@ -75,6 +75,8 @@ export const PromiseFilters = ({
     sortBy,
     governmentPeriods,
     selectedPeriodId,
+  } = useFilterState();
+  const {
     setSelectedParties,
     setSelectedStatuses,
     setSelectedCategories,
@@ -82,7 +84,7 @@ export const PromiseFilters = ({
     setSearchQuery,
     setSortBy,
     setSelectedPeriodId,
-  } = useFilters();
+  } = useFilterDispatch();
 
   // Compact party names when the buttons don't fit in one row
   const partyRowRef = useRef<HTMLDivElement>(null);
@@ -379,4 +381,4 @@ export const PromiseFilters = ({
       </div>
     </div>
   );
-};
+});
