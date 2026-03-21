@@ -326,17 +326,6 @@ export function PromiseDetailContent({
         <SourcesList promiseId={promise.id} isAdmin={isAdmin} />
       </section> */}
 
-      {isAdmin && (
-        <>
-          <Separator />
-          <section className="space-y-2">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Medborgarförslag
-            </h2>
-            <CommunityNotes promiseId={promise.id} />
-          </section>
-        </>
-      )}
 
       {isAdmin && (
         <>

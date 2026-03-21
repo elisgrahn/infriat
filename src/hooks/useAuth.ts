@@ -95,7 +95,6 @@ export function useAuth() {
     isAdmin,
     loading,
     signIn,
-    signUp,
     signOut,
   };
 }
