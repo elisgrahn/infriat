@@ -277,7 +277,9 @@ const Admin = () => {
                         </p>
                         {s.sources && s.sources.length > 0 && (
                           <div className="flex flex-wrap gap-2">
-                            {s.sources.map((src, i) => (
+                            {s.sources.filter(src => {
+                              try { const u = new URL(src); return u.protocol === 'http:' || u.protocol === 'https:'; } catch { return false; }
+                            }).map((src, i) => (
                               <a
                                 key={i}
                                 href={src}
@@ -285,13 +287,7 @@ const Admin = () => {
                                 rel="noopener noreferrer"
                                 className="text-xs text-primary hover:underline"
                               >
-                                {(() => {
-                                  try {
-                                    return new URL(src).hostname;
-                                  } catch {
-                                    return src;
-                                  }
-                                })()}
+                                {new URL(src).hostname}
                               </a>
                             ))}
                           </div>

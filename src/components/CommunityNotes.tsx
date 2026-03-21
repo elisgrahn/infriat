@@ -217,7 +217,7 @@ export const CommunityNotes = ({ promiseId }: CommunityNotesProps) => {
                 </p>
                 {suggestion.sources && suggestion.sources.length > 0 && (
                   <div className="flex flex-wrap gap-1">
-                    {suggestion.sources.map((src, i) => (
+                    {suggestion.sources.filter(src => isValidUrl(src)).map((src, i) => (
                       <a
                         key={i}
                         href={src}
@@ -225,13 +225,7 @@ export const CommunityNotes = ({ promiseId }: CommunityNotesProps) => {
                         rel="noopener noreferrer"
                         className="text-[10px] text-primary hover:underline"
                       >
-                        {(() => {
-                          try {
-                            return new URL(src).hostname;
-                          } catch {
-                            return src;
-                          }
-                        })()}
+                        {new URL(src).hostname}
                       </a>
                     ))}
                   </div>
