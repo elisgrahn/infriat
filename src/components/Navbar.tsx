@@ -13,6 +13,7 @@ export function Navbar() {
   const { isMobileBarStuck } = useStickyBar();
   const { user, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
