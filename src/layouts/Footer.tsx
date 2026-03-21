@@ -1,5 +1,5 @@
 import { DisclaimerItem } from "@/components/DisclaimerItem";
-import { Disc } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export function Footer() {
   return (
@@ -14,10 +14,10 @@ export function Footer() {
               transparens i svensk politik.
             </p>
             <DisclaimerItem />
-            {/* <p className="text-xs">
-              ⚠️ Statusbedömningar genereras med hjälp av AI och kan innehålla
-              fel. Verifiera alltid med originalkällorna.
-            </p> */}
+            <div className="flex gap-4 pt-1">
+              <Link to="/statistik" className="text-primary hover:underline">Statistik</Link>
+              <Link to="/om" className="text-primary hover:underline">Metod & förklaringar</Link>
+            </div>
           </div>
 
           {/* Contact */}

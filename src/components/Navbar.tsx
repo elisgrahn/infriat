@@ -1,17 +1,19 @@
-import { Settings, LogOut } from "lucide-react";
+import { Settings, LogOut, BarChart3, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { InfriatLogo } from "@/components/icons/InfriatLogo";
 import { useStickyBar } from "@/store/StickyBarContext";
+import { cn } from "@/lib/utils";
 
 export function Navbar() {
   const { isMobileBarStuck } = useStickyBar();
   const { user, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
@@ -50,8 +52,26 @@ export function Navbar() {
           Infriat.se
         </button>
 
-        {/* Actions (always visible, including mobile) */}
-        <div className="flex items-center">
+        {/* Nav links + actions */}
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/statistik")}
+            className={cn("text-xs px-2", location.pathname === "/statistik" && "text-primary")}
+          >
+            <BarChart3 data-icon="inline-start" />
+            <span className="hidden sm:inline">Statistik</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/om")}
+            className={cn("text-xs px-2", location.pathname === "/om" && "text-primary")}
+          >
+            <BookOpen data-icon="inline-start" />
+            <span className="hidden sm:inline">Metod</span>
+          </Button>
           <ThemeToggle />
           {isAdmin && (
             <Button
