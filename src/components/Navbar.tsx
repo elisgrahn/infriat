@@ -52,8 +52,26 @@ export function Navbar() {
           Infriat.se
         </button>
 
-        {/* Actions (always visible, including mobile) */}
-        <div className="flex items-center">
+        {/* Nav links + actions */}
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/statistik")}
+            className={cn("text-xs px-2", location.pathname === "/statistik" && "text-primary")}
+          >
+            <BarChart3 data-icon="inline-start" />
+            <span className="hidden sm:inline">Statistik</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/om")}
+            className={cn("text-xs px-2", location.pathname === "/om" && "text-primary")}
+          >
+            <BookOpen data-icon="inline-start" />
+            <span className="hidden sm:inline">Metod</span>
+          </Button>
           <ThemeToggle />
           {isAdmin && (
             <Button
