@@ -381,7 +381,7 @@ export const ManifestUpload = () => {
             <div className="flex items-center justify-between text-sm">
               <span className="font-medium flex items-center gap-2">
                 {jobStatus === 'completed' ? (
-                  <><CheckCircle2 className="w-4 h-4 text-green-500" /> Analys klar</>
+                  <><CheckCircle2 className="w-4 h-4 text-primary" /> Analys klar</>
                 ) : jobStatus === 'failed' ? (
                   <><XCircle className="w-4 h-4 text-destructive" /> Analys misslyckades</>
                 ) : (
