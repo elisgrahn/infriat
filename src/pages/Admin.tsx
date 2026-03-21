@@ -319,7 +319,10 @@ const Admin = () => {
                 ))}
               </div>
             )}
-          </div>
+        </div>
+
+          <AiPromptLogs />
+        </div>
         </div>
       </div>
     </div>
