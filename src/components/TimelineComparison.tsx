@@ -196,7 +196,7 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
           <Tabs value={chartType} onValueChange={(value) => setChartType(value as "bar" | "area")}>
             <TabsList>
               <TabsTrigger value="bar">Antal</TabsTrigger>
-              <TabsTrigger value="area">Procent</TabsTrigger>
+              <TabsTrigger value="area">Andel</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>

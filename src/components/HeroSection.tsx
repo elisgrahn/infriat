@@ -3,8 +3,10 @@ import {
   Scale,
   TrendingUp,
   Sparkles,
+  TriangleAlert,
 } from "lucide-react";
 import { HeroStatCard } from "@/components/HeroStatCard";
+import { DisclaimerItem } from "./DisclaimerItem";
 
 interface HeroStats {
   total: number;
@@ -31,7 +33,7 @@ export function HeroSection({ stats }: HeroSectionProps) {
       </div>
 
       <div className="container relative mx-auto px-4 py-20 md:py-32">
-        <div className="max-w-5xl mx-auto text-center space-y-8">
+        <div className="max-w-5xl mx-auto text-center space-y-6 sm:space-y-8">
           <div className="inline-flex items-center gap-2 bg-primary-foreground/10 backdrop-blur-md px-5 py-2.5 rounded-full border border-primary-foreground/20 shadow-lg">
             <Sparkles className="w-4 h-4 animate-pulse" />
             <span className="text-sm font-medium">Politisk transparens</span>
@@ -47,12 +49,7 @@ export function HeroSection({ stats }: HeroSectionProps) {
             samhälle.
           </p>
 
-          <p className="text-sm text-primary-foreground/60 max-w-2xl mx-auto">
-            ⚠️ Statusbedömningar genereras med hjälp av AI och kan innehålla
-            fel.
-          </p>
-
-          <div className="grid grid-cols-3 gap-2 sm:gap-6 pt-12 max-w-4xl mx-auto">
+          <div className="grid grid-cols-3 gap-2 sm:gap-6 max-w-4xl mx-auto">
             <HeroStatCard
               icon={Scale}
               value={stats.total}
@@ -66,9 +63,13 @@ export function HeroSection({ stats }: HeroSectionProps) {
             <HeroStatCard
               icon={TrendingUp}
               value={`${fulfillmentRate}%`}
-              label="Uppfyllelsegrad"
+              label="Andel infriade"
             />
           </div>
+          <DisclaimerItem 
+            className="max-w-md mx-auto border border-warning/60 bg-warning/30 backdrop-blur-md rounded-2xl p-3 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 text-card-foreground" 
+            textClass="text-primary-foreground/90"
+          />
         </div>
       </div>
     </header>
