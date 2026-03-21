@@ -2,7 +2,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { corsResponse, jsonResponse, errorResponse } from '../_shared/cors.ts';
 import { requireAdmin } from '../_shared/auth.ts';
-import { requireGoogleApiKey, geminiUrl } from '../_shared/gemini.ts';
+import { requireGoogleApiKey, geminiUrl, GEMINI_MODEL } from '../_shared/gemini.ts';
+import { logPrompt } from '../_shared/prompt-logger.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return corsResponse();
@@ -11,7 +12,6 @@ serve(async (req) => {
     const { userClient, adminClient } = await requireAdmin(req);
     const apiKey = requireGoogleApiKey();
 
-    // Validate request body
     const requestSchema = z.object({
       reanalyze: z.boolean().optional(),
     });
@@ -24,7 +24,6 @@ serve(async (req) => {
 
     const { reanalyze } = validation.data;
 
-    // Fetch promises (RLS-scoped read via userClient)
     let query = userClient
       .from('promises')
       .select('id, promise_text, direct_quote');
@@ -51,13 +50,7 @@ serve(async (req) => {
 
     for (const promise of promises) {
       try {
-        const response = await fetch(geminiUrl(apiKey), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: `Du bedömer mätbarheten av ett svenskt politiskt vallöfte.
+        const prompt = `Du bedömer mätbarheten av ett svenskt politiskt vallöfte.
 
 ## Skala
 - 5: Specifika numeriska mål OCH tidsram (t.ex. "1 000 nya poliser till 2026")
@@ -71,17 +64,24 @@ ${promise.promise_text}
 ${promise.direct_quote ? `\nDirektcitat: "${promise.direct_quote}"` : ''}
 
 Svara ENDAST med ett JSON-objekt utan markdown-formatering:
-{"score": <1-5>, "reason": "<en mening som motiverar poängen med direkt hänvisning till vad som finns eller saknas i löftet>"}`
-              }]
-            }],
+{"score": <1-5>, "reason": "<en mening som motiverar poängen med direkt hänvisning till vad som finns eller saknas i löftet>"}`;
+
+        const startTime = Date.now();
+        const response = await fetch(geminiUrl(apiKey), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
             generationConfig: { temperature: 0.2, topP: 0.8 },
           }),
         });
+        const durationMs = Date.now() - startTime;
 
         if (!response.ok) {
           const errorText = await response.text();
           console.error(`AI error for promise ${promise.id}:`, response.status, errorText);
           errors.push(`${promise.id}: API ${response.status}`);
+          logPrompt({ edgeFunction: 'analyze-measurability', promiseId: promise.id, model: GEMINI_MODEL, prompt, responseRaw: errorText, groundingSearch: false, durationMs, success: false, errorMessage: `API ${response.status}` });
           continue;
         }
 
@@ -91,10 +91,10 @@ Svara ENDAST med ett JSON-objekt utan markdown-formatering:
         if (!textContent) {
           console.error(`Empty AI response for promise ${promise.id}`);
           errors.push(`${promise.id}: empty response`);
+          logPrompt({ edgeFunction: 'analyze-measurability', promiseId: promise.id, model: GEMINI_MODEL, prompt, responseRaw: JSON.stringify(aiData).slice(0, 500), groundingSearch: false, durationMs, success: false, errorMessage: 'Empty AI response' });
           continue;
         }
 
-        // Extract JSON — handle markdown-fenced code blocks
         let jsonStr = textContent.trim();
         if (jsonStr.startsWith('```json')) {
           jsonStr = jsonStr.replace(/^```json\s*/, '').replace(/\s*```$/, '');
@@ -105,7 +105,6 @@ Svara ENDAST med ett JSON-objekt utan markdown-formatering:
         const result = JSON.parse(jsonStr);
         const score = Math.min(Math.max(result.score, 1), 5);
 
-        // Write via admin client (bypasses RLS)
         const { error: updateError } = await adminClient
           .from('promises')
           .update({
@@ -119,6 +118,8 @@ Svara ENDAST med ett JSON-objekt utan markdown-formatering:
           errors.push(`${promise.id}: DB update failed`);
           continue;
         }
+
+        logPrompt({ edgeFunction: 'analyze-measurability', promiseId: promise.id, model: GEMINI_MODEL, prompt, responseRaw: textContent, groundingSearch: false, durationMs, success: true });
 
         analyzed++;
         console.log(`Analyzed promise ${promise.id}: score ${score}`);

@@ -2,10 +2,10 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { corsResponse, jsonResponse, errorResponse } from '../_shared/cors.ts';
 import { requireAdmin } from '../_shared/auth.ts';
-import { requireGoogleApiKey, geminiUrl } from '../_shared/gemini.ts';
+import { requireGoogleApiKey, geminiUrl, GEMINI_MODEL } from '../_shared/gemini.ts';
+import { logPrompt } from '../_shared/prompt-logger.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-// Policy categories constant — shared between tool schema and system prompt
 const POLICY_CATEGORIES = `
 - valfard        (äldreomsorg, socialtjänst, funktionsstöd, barnfamiljer)
 - halsa          (sjukvård, tandvård, folkhälsa, psykiatri)
@@ -20,7 +20,6 @@ const POLICY_CATEGORIES = `
 - ovrigt         (passar ej in i ovan)
 `.trim();
 
-// Tool schema shared between single-request and chunked paths
 const extractPromisesTool = {
   functionDeclarations: [{
     name: "extract_promises",
@@ -33,44 +32,15 @@ const extractPromisesTool = {
           items: {
             type: "OBJECT",
             properties: {
-              promise_text: {
-                type: "STRING",
-                description: "Kort rubrik för löftet (max 10-15 ord)"
-              },
-              summary: {
-                type: "STRING",
-                description: "Sammanfattning (max 2 meningar)"
-              },
-              direct_quote: {
-                type: "STRING",
-                description: "Exakt ordagrann citat från manifestet, 1-3 meningar"
-              },
-              category: {
-                type: "STRING",
-                description: `Politikområde. Välj ETT av: valfard, halsa, utbildning, arbetsmarknad, migration, rattssakerhet, forsvar, klimat-miljo, bostad, demokrati, ovrigt`
-              },
-              is_status_quo: {
-                type: "BOOLEAN",
-                description: "true om löftet handlar om att BEVARA något befintligt, false om det handlar om FÖRÄNDRING"
-              },
-              measurability_score: {
-                type: "INTEGER",
-                description: "Score 1-5. 5 = specifika siffror OCH tidsram, 4 = siffror ELLER tidsram, 3 = tydlig verifierbar åtgärd, 2 = relativ förändring, 1 = vagt"
-              },
-              measurability_reason: {
-                type: "STRING",
-                description: "En mening som motiverar mätbarhetspoängen"
-              }
+              promise_text: { type: "STRING", description: "Kort rubrik för löftet (max 10-15 ord)" },
+              summary: { type: "STRING", description: "Sammanfattning (max 2 meningar)" },
+              direct_quote: { type: "STRING", description: "Exakt ordagrann citat från manifestet, 1-3 meningar" },
+              category: { type: "STRING", description: `Politikområde. Välj ETT av: valfard, halsa, utbildning, arbetsmarknad, migration, rattssakerhet, forsvar, klimat-miljo, bostad, demokrati, ovrigt` },
+              is_status_quo: { type: "BOOLEAN", description: "true om löftet handlar om att BEVARA något befintligt, false om det handlar om FÖRÄNDRING" },
+              measurability_score: { type: "INTEGER", description: "Score 1-5. 5 = specifika siffror OCH tidsram, 4 = siffror ELLER tidsram, 3 = tydlig verifierbar åtgärd, 2 = relativ förändring, 1 = vagt" },
+              measurability_reason: { type: "STRING", description: "En mening som motiverar mätbarhetspoängen" }
             },
-            required: [
-              "promise_text",
-              "summary",
-              "direct_quote",
-              "category",
-              "is_status_quo",
-              "measurability_score",
-              "measurability_reason"
-            ]
+            required: ["promise_text", "summary", "direct_quote", "category", "is_status_quo", "measurability_score", "measurability_reason"]
           }
         }
       },
@@ -123,7 +93,6 @@ Markera is_status_quo: true om löftet handlar om att BEVARA något (t.ex. "vi s
 Anropa funktionen extract_promises med de löften du hittar.${chunkNote}`;
 }
 
-// Validate URLs to prevent SSRF attacks
 function validateExternalUrl(url: string): void {
   const parsed = new URL(url);
   if (parsed.protocol !== 'https:') {
@@ -131,22 +100,14 @@ function validateExternalUrl(url: string): void {
   }
   const hostname = parsed.hostname.toLowerCase();
   const blockedPatterns = [
-    /^localhost$/,
-    /^127\./,
-    /^10\./,
-    /^172\.(1[6-9]|2\d|3[01])\./,
-    /^192\.168\./,
-    /^169\.254\./,
-    /^0\./,
-    /^\[/,
-    /^metadata\.google\.internal$/,
+    /^localhost$/, /^127\./, /^10\./, /^172\.(1[6-9]|2\d|3[01])\./,
+    /^192\.168\./, /^169\.254\./, /^0\./, /^\[/, /^metadata\.google\.internal$/,
   ];
   if (blockedPatterns.some(p => p.test(hostname))) {
     throw new Error('URL:en pekar mot en otillåten adress.');
   }
 }
 
-/** Create an admin Supabase client (service role, bypasses RLS) */
 function getAdminClient() {
   return createClient(
     Deno.env.get('SUPABASE_URL')!,
@@ -154,13 +115,15 @@ function getAdminClient() {
   );
 }
 
-/** Helper to call Google Gemini for a single chunk */
 async function analyzeChunk(
   apiKey: string,
   chunkText: string,
   chunkNum: number,
   totalChunks: number
-): Promise<any[]> {
+): Promise<{ promises: any[]; durationMs: number; prompt: string; responseRaw: string; success: boolean; errorMessage?: string }> {
+  const prompt = buildSystemPrompt({ num: chunkNum, total: totalChunks }) + '\n\n' + chunkText;
+
+  const startTime = Date.now();
   const response = await fetch(geminiUrl(apiKey), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -176,16 +139,18 @@ async function analyzeChunk(
       generationConfig: { temperature: 0.2, topP: 0.8 },
     }),
   });
+  const durationMs = Date.now() - startTime;
 
   if (!response.ok) {
     const errorText = await response.text();
     console.error(`AI error for chunk ${chunkNum}:`, response.status, errorText);
-    throw new Error(`AI-analysen misslyckades (${response.status})`);
+    return { promises: [], durationMs, prompt, responseRaw: errorText, success: false, errorMessage: `API ${response.status}` };
   }
 
   const aiData = await response.json();
   const parts = aiData.candidates?.[0]?.content?.parts || [];
   const functionCall = parts.find((p: any) => p.functionCall)?.functionCall;
+  const responseRaw = JSON.stringify(parts).slice(0, 10000);
 
   if (!functionCall || functionCall.name !== 'extract_promises') {
     const textPart = parts.find((p: any) => p.text)?.text;
@@ -198,18 +163,17 @@ async function analyzeChunk(
         jsonStr = jsonStr.replace(/^```\s*/, '').replace(/\s*```$/, '');
       }
       const parsed = JSON.parse(jsonStr);
-      return parsed.promises || [];
+      return { promises: parsed.promises || [], durationMs, prompt, responseRaw: textPart, success: true };
     }
     console.error(`Chunk ${chunkNum}: no function call in response`);
-    throw new Error('AI returnerade ogiltigt svar');
+    return { promises: [], durationMs, prompt, responseRaw, success: false, errorMessage: 'No function call in response' };
   }
 
   const args = functionCall.args;
   console.log(`Chunk ${chunkNum}: extracted ${args?.promises?.length || 0} promises`);
-  return args?.promises || [];
+  return { promises: args?.promises || [], durationMs, prompt, responseRaw, success: true };
 }
 
-/** Split text into chunks at natural boundaries */
 function splitIntoChunks(text: string, chunkSize: number): string[] {
   const chunks: string[] = [];
   let currentPos = 0;
@@ -232,9 +196,6 @@ function splitIntoChunks(text: string, chunkSize: number): string[] {
   return chunks;
 }
 
-/**
- * Background job: analyze manifest chunks, update progress in analysis_jobs table.
- */
 async function runAnalysisJob(
   jobId: string,
   finalManifestText: string,
@@ -246,7 +207,6 @@ async function runAnalysisJob(
   const adminClient = getAdminClient();
 
   try {
-    // Update job to processing
     await adminClient.from('analysis_jobs').update({ status: 'processing', updated_at: new Date().toISOString() }).eq('id', jobId);
 
     const CHUNK_SIZE = 18000;
@@ -261,13 +221,15 @@ async function runAnalysisJob(
     for (let i = 0; i < chunks.length; i++) {
       console.log(`Job ${jobId}: chunk ${i + 1}/${totalChunks} (${chunks[i].length} chars)...`);
 
-      let chunkPromises: any[] = [];
+      let chunkResult: { promises: any[]; durationMs: number; prompt: string; responseRaw: string; success: boolean; errorMessage?: string } | null = null;
       const MAX_RETRIES = 2;
 
       for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         try {
-          chunkPromises = await analyzeChunk(apiKey, chunks[i], i + 1, totalChunks);
-          break;
+          chunkResult = await analyzeChunk(apiKey, chunks[i], i + 1, totalChunks);
+          if (chunkResult.success) break;
+          if (attempt >= MAX_RETRIES) break;
+          await new Promise(r => setTimeout(r, 2000 * Math.pow(2, attempt)));
         } catch (err) {
           console.error(`Job ${jobId}: chunk ${i + 1} attempt ${attempt + 1} failed:`, err);
           if (attempt >= MAX_RETRIES) {
@@ -278,9 +240,22 @@ async function runAnalysisJob(
         }
       }
 
-      allPromises.push(...chunkPromises);
+      if (chunkResult) {
+        logPrompt({
+          edgeFunction: 'analyze-manifest',
+          model: GEMINI_MODEL,
+          prompt: chunkResult.prompt,
+          responseRaw: chunkResult.responseRaw,
+          groundingSearch: false,
+          durationMs: chunkResult.durationMs,
+          success: chunkResult.success,
+          errorMessage: chunkResult.errorMessage,
+        });
+        allPromises.push(...chunkResult.promises);
+      }
+
       const completedChunks = i + 1;
-      const progressPct = Math.round((completedChunks / totalChunks) * 90); // 90% for AI, 10% for DB
+      const progressPct = Math.round((completedChunks / totalChunks) * 90);
 
       await adminClient.from('analysis_jobs').update({
         completed_chunks: completedChunks,
@@ -288,14 +263,13 @@ async function runAnalysisJob(
         updated_at: new Date().toISOString(),
       }).eq('id', jobId);
 
-      console.log(`Job ${jobId}: chunk ${completedChunks} complete, ${chunkPromises.length} promises, ${progressPct}%`);
+      console.log(`Job ${jobId}: chunk ${completedChunks} complete, ${chunkResult?.promises.length || 0} promises, ${progressPct}%`);
     }
 
     if (allPromises.length === 0) {
       throw new Error('Inga löften kunde extraheras från manifestet.');
     }
 
-    // Deduplicate
     const seen = new Set<string>();
     const uniquePromises = allPromises.filter(p => {
       const key = p.promise_text.toLowerCase().trim();
@@ -306,7 +280,6 @@ async function runAnalysisJob(
 
     console.log(`Job ${jobId}: dedup ${allPromises.length} -> ${uniquePromises.length}`);
 
-    // Delete existing promises
     const { data: deletedPromises } = await adminClient
       .from('promises')
       .delete()
@@ -319,7 +292,6 @@ async function runAnalysisJob(
       console.log(`Job ${jobId}: deleted ${deletedCount} existing promises`);
     }
 
-    // Insert new promises
     const promisesToInsert = uniquePromises.map((p: any) => ({
       party_id: partyId,
       election_year: electionYear,
@@ -348,7 +320,6 @@ async function runAnalysisJob(
     const resultCount = insertedPromises?.length || 0;
     console.log(`Job ${jobId}: inserted ${resultCount} promises`);
 
-    // Mark completed
     await adminClient.from('analysis_jobs').update({
       status: 'completed',
       progress_pct: 100,
@@ -373,7 +344,6 @@ serve(async (req) => {
     const { userClient, adminClient } = await requireAdmin(req);
     const apiKey = requireGoogleApiKey();
 
-    // Validate request body
     const requestSchema = z.object({
       manifestText: z.string().max(1000000).optional(),
       txtUrl: z.string().url().max(2000).optional(),
@@ -398,7 +368,6 @@ serve(async (req) => {
 
     console.log(`Analyzing manifest for ${partyAbbreviation} ${electionYear}`);
 
-    // Get manifest text (either from input or download from URL)
     let finalManifestText = manifestText;
     if (!finalManifestText && txtUrl) {
       validateExternalUrl(txtUrl);
@@ -415,10 +384,8 @@ serve(async (req) => {
       }
     }
 
-    // Check if this is PDF-only mode
     const pdfOnlyMode = !finalManifestText && (pdfBase64 || pdfUrl);
 
-    // Handle PDF upload
     let manifestPdfUrl: string | null = null;
     if (pdfBase64) {
       console.log('Uploading PDF from base64');
@@ -473,7 +440,6 @@ serve(async (req) => {
       }
     }
 
-    // Get party ID
     const { data: party, error: partyError } = await userClient
       .from('parties')
       .select('id')
@@ -485,7 +451,6 @@ serve(async (req) => {
       throw new Error('Partiet hittades inte i databasen.');
     }
 
-    // Handle PDF-only mode: just update manifest_pdf_url for existing promises
     if (pdfOnlyMode) {
       if (!manifestPdfUrl) {
         return errorResponse('PDF krävs för att uppdatera sidnummer', 400);
@@ -517,14 +482,12 @@ serve(async (req) => {
       });
     }
 
-    // Normal mode: analyze manifest text
     if (!finalManifestText) {
       return errorResponse('Ingen manifesttext angiven', 400);
     }
 
     console.log(`Starting AI analysis, manifest length: ${finalManifestText.length} chars`);
 
-    // Create an analysis job in the database
     const { data: job, error: jobError } = await adminClient
       .from('analysis_jobs')
       .insert({
@@ -544,7 +507,6 @@ serve(async (req) => {
     const jobId = job.id;
     console.log(`Created analysis job: ${jobId}`);
 
-    // Use EdgeRuntime.waitUntil to run the analysis in the background
     // @ts-ignore - EdgeRuntime is available in Supabase Edge Functions
     if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime.waitUntil) {
       // @ts-ignore
@@ -552,14 +514,11 @@ serve(async (req) => {
         runAnalysisJob(jobId, finalManifestText, party.id, electionYear, manifestPdfUrl, apiKey)
       );
     } else {
-      // Fallback: run inline (will likely timeout for large manifests, but works for small ones)
       console.log('EdgeRuntime.waitUntil not available, running inline');
-      // Don't await - fire and forget so we can return the jobId
       runAnalysisJob(jobId, finalManifestText, party.id, electionYear, manifestPdfUrl, apiKey)
         .catch(err => console.error('Background job error:', err));
     }
 
-    // Return immediately with the job ID
     return jsonResponse({
       success: true,
       jobId: jobId,
