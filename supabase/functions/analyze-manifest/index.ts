@@ -3,6 +3,7 @@ import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { corsResponse, jsonResponse, errorResponse } from '../_shared/cors.ts';
 import { requireAdmin } from '../_shared/auth.ts';
 import { requireGoogleApiKey, geminiUrl } from '../_shared/gemini.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 // Policy categories constant — shared between tool schema and system prompt
 const POLICY_CATEGORIES = `
@@ -122,6 +123,249 @@ Markera is_status_quo: true om löftet handlar om att BEVARA något (t.ex. "vi s
 Anropa funktionen extract_promises med de löften du hittar.${chunkNote}`;
 }
 
+// Validate URLs to prevent SSRF attacks
+function validateExternalUrl(url: string): void {
+  const parsed = new URL(url);
+  if (parsed.protocol !== 'https:') {
+    throw new Error('Endast HTTPS-URL:er är tillåtna.');
+  }
+  const hostname = parsed.hostname.toLowerCase();
+  const blockedPatterns = [
+    /^localhost$/,
+    /^127\./,
+    /^10\./,
+    /^172\.(1[6-9]|2\d|3[01])\./,
+    /^192\.168\./,
+    /^169\.254\./,
+    /^0\./,
+    /^\[/,
+    /^metadata\.google\.internal$/,
+  ];
+  if (blockedPatterns.some(p => p.test(hostname))) {
+    throw new Error('URL:en pekar mot en otillåten adress.');
+  }
+}
+
+/** Create an admin Supabase client (service role, bypasses RLS) */
+function getAdminClient() {
+  return createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  );
+}
+
+/** Helper to call Google Gemini for a single chunk */
+async function analyzeChunk(
+  apiKey: string,
+  chunkText: string,
+  chunkNum: number,
+  totalChunks: number
+): Promise<any[]> {
+  const response = await fetch(geminiUrl(apiKey), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{
+        parts: [
+          { text: buildSystemPrompt({ num: chunkNum, total: totalChunks }) },
+          { text: chunkText }
+        ]
+      }],
+      tools: [extractPromisesTool],
+      toolConfig: { functionCallingConfig: { mode: "ANY", allowedFunctionNames: ["extract_promises"] } },
+      generationConfig: { temperature: 0.2, topP: 0.8 },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error(`AI error for chunk ${chunkNum}:`, response.status, errorText);
+    throw new Error(`AI-analysen misslyckades (${response.status})`);
+  }
+
+  const aiData = await response.json();
+  const parts = aiData.candidates?.[0]?.content?.parts || [];
+  const functionCall = parts.find((p: any) => p.functionCall)?.functionCall;
+
+  if (!functionCall || functionCall.name !== 'extract_promises') {
+    const textPart = parts.find((p: any) => p.text)?.text;
+    if (textPart) {
+      console.log(`Chunk ${chunkNum}: no function call, trying text parse`);
+      let jsonStr = textPart.trim();
+      if (jsonStr.startsWith('```json')) {
+        jsonStr = jsonStr.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      } else if (jsonStr.startsWith('```')) {
+        jsonStr = jsonStr.replace(/^```\s*/, '').replace(/\s*```$/, '');
+      }
+      const parsed = JSON.parse(jsonStr);
+      return parsed.promises || [];
+    }
+    console.error(`Chunk ${chunkNum}: no function call in response`);
+    throw new Error('AI returnerade ogiltigt svar');
+  }
+
+  const args = functionCall.args;
+  console.log(`Chunk ${chunkNum}: extracted ${args?.promises?.length || 0} promises`);
+  return args?.promises || [];
+}
+
+/** Split text into chunks at natural boundaries */
+function splitIntoChunks(text: string, chunkSize: number): string[] {
+  const chunks: string[] = [];
+  let currentPos = 0;
+
+  while (currentPos < text.length) {
+    let chunkEnd = Math.min(currentPos + chunkSize, text.length);
+
+    if (chunkEnd < text.length) {
+      const searchStart = Math.max(chunkEnd - 500, currentPos);
+      const lastNewline = text.lastIndexOf('\n', chunkEnd);
+      if (lastNewline > searchStart) {
+        chunkEnd = lastNewline + 1;
+      }
+    }
+
+    chunks.push(text.slice(currentPos, chunkEnd));
+    currentPos = chunkEnd;
+  }
+
+  return chunks;
+}
+
+/**
+ * Background job: analyze manifest chunks, update progress in analysis_jobs table.
+ */
+async function runAnalysisJob(
+  jobId: string,
+  finalManifestText: string,
+  partyId: string,
+  electionYear: number,
+  manifestPdfUrl: string | null,
+  apiKey: string,
+) {
+  const adminClient = getAdminClient();
+
+  try {
+    // Update job to processing
+    await adminClient.from('analysis_jobs').update({ status: 'processing', updated_at: new Date().toISOString() }).eq('id', jobId);
+
+    const CHUNK_SIZE = 18000;
+    const chunks = splitIntoChunks(finalManifestText, CHUNK_SIZE);
+    const totalChunks = chunks.length;
+
+    console.log(`Job ${jobId}: ${totalChunks} chunks from ${finalManifestText.length} chars`);
+
+    await adminClient.from('analysis_jobs').update({ total_chunks: totalChunks, updated_at: new Date().toISOString() }).eq('id', jobId);
+
+    const allPromises: any[] = [];
+    for (let i = 0; i < chunks.length; i++) {
+      console.log(`Job ${jobId}: chunk ${i + 1}/${totalChunks} (${chunks[i].length} chars)...`);
+
+      let chunkPromises: any[] = [];
+      const MAX_RETRIES = 2;
+
+      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        try {
+          chunkPromises = await analyzeChunk(apiKey, chunks[i], i + 1, totalChunks);
+          break;
+        } catch (err) {
+          console.error(`Job ${jobId}: chunk ${i + 1} attempt ${attempt + 1} failed:`, err);
+          if (attempt >= MAX_RETRIES) {
+            console.error(`Job ${jobId}: chunk ${i + 1} failed after ${MAX_RETRIES + 1} attempts, skipping`);
+            break;
+          }
+          await new Promise(r => setTimeout(r, 2000 * Math.pow(2, attempt)));
+        }
+      }
+
+      allPromises.push(...chunkPromises);
+      const completedChunks = i + 1;
+      const progressPct = Math.round((completedChunks / totalChunks) * 90); // 90% for AI, 10% for DB
+
+      await adminClient.from('analysis_jobs').update({
+        completed_chunks: completedChunks,
+        progress_pct: progressPct,
+        updated_at: new Date().toISOString(),
+      }).eq('id', jobId);
+
+      console.log(`Job ${jobId}: chunk ${completedChunks} complete, ${chunkPromises.length} promises, ${progressPct}%`);
+    }
+
+    if (allPromises.length === 0) {
+      throw new Error('Inga löften kunde extraheras från manifestet.');
+    }
+
+    // Deduplicate
+    const seen = new Set<string>();
+    const uniquePromises = allPromises.filter(p => {
+      const key = p.promise_text.toLowerCase().trim();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    console.log(`Job ${jobId}: dedup ${allPromises.length} -> ${uniquePromises.length}`);
+
+    // Delete existing promises
+    const { data: deletedPromises } = await adminClient
+      .from('promises')
+      .delete()
+      .eq('party_id', partyId)
+      .eq('election_year', electionYear)
+      .select('id');
+
+    const deletedCount = deletedPromises?.length || 0;
+    if (deletedCount > 0) {
+      console.log(`Job ${jobId}: deleted ${deletedCount} existing promises`);
+    }
+
+    // Insert new promises
+    const promisesToInsert = uniquePromises.map((p: any) => ({
+      party_id: partyId,
+      election_year: electionYear,
+      promise_text: p.promise_text,
+      summary: p.summary,
+      direct_quote: p.direct_quote,
+      page_number: null,
+      manifest_pdf_url: manifestPdfUrl || null,
+      category: VALID_CATEGORIES.includes(p.category) ? p.category : 'ovrigt',
+      is_status_quo: typeof p.is_status_quo === 'boolean' ? p.is_status_quo : false,
+      measurability_reason: p.measurability_reason || null,
+      measurability_score: p.measurability_score || null,
+      status: 'pending-analysis'
+    }));
+
+    const { data: insertedPromises, error: insertError } = await adminClient
+      .from('promises')
+      .insert(promisesToInsert)
+      .select();
+
+    if (insertError) {
+      console.error(`Job ${jobId}: insert error:`, insertError);
+      throw new Error('Kunde inte spara löften i databasen.');
+    }
+
+    const resultCount = insertedPromises?.length || 0;
+    console.log(`Job ${jobId}: inserted ${resultCount} promises`);
+
+    // Mark completed
+    await adminClient.from('analysis_jobs').update({
+      status: 'completed',
+      progress_pct: 100,
+      result_count: resultCount,
+      updated_at: new Date().toISOString(),
+    }).eq('id', jobId);
+
+  } catch (error: any) {
+    console.error(`Job ${jobId} failed:`, error);
+    await adminClient.from('analysis_jobs').update({
+      status: 'failed',
+      error_message: error instanceof Error ? error.message : 'Ett okänt fel uppstod',
+      updated_at: new Date().toISOString(),
+    }).eq('id', jobId);
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return corsResponse();
 
@@ -154,29 +398,6 @@ serve(async (req) => {
 
     console.log(`Analyzing manifest for ${partyAbbreviation} ${electionYear}`);
 
-    // Validate URLs to prevent SSRF attacks
-    function validateExternalUrl(url: string): void {
-      const parsed = new URL(url);
-      if (parsed.protocol !== 'https:') {
-        throw new Error('Endast HTTPS-URL:er är tillåtna.');
-      }
-      const hostname = parsed.hostname.toLowerCase();
-      const blockedPatterns = [
-        /^localhost$/,
-        /^127\./,
-        /^10\./,
-        /^172\.(1[6-9]|2\d|3[01])\./,
-        /^192\.168\./,
-        /^169\.254\./,
-        /^0\./,
-        /^\[/,
-        /^metadata\.google\.internal$/,
-      ];
-      if (blockedPatterns.some(p => p.test(hostname))) {
-        throw new Error('URL:en pekar mot en otillåten adress.');
-      }
-    }
-
     // Get manifest text (either from input or download from URL)
     let finalManifestText = manifestText;
     if (!finalManifestText && txtUrl) {
@@ -194,7 +415,7 @@ serve(async (req) => {
       }
     }
 
-    // Check if this is PDF-only mode (adding page numbers to existing promises)
+    // Check if this is PDF-only mode
     const pdfOnlyMode = !finalManifestText && (pdfBase64 || pdfUrl);
 
     // Handle PDF upload
@@ -252,7 +473,7 @@ serve(async (req) => {
       }
     }
 
-    // Get party ID early
+    // Get party ID
     const { data: party, error: partyError } = await userClient
       .from('parties')
       .select('id')
@@ -303,263 +524,46 @@ serve(async (req) => {
 
     console.log(`Starting AI analysis, manifest length: ${finalManifestText.length} chars`);
 
-    // Helper function to call Google Gemini for a single chunk
-    async function analyzeChunk(
-      chunkText: string,
-      chunkNum: number,
-      totalChunks: number
-    ): Promise<any[]> {
-      const response = await fetch(geminiUrl(apiKey), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: buildSystemPrompt({ num: chunkNum, total: totalChunks }) },
-              { text: chunkText }
-            ]
-          }],
-          tools: [extractPromisesTool],
-          toolConfig: { functionCallingConfig: { mode: "ANY", allowedFunctionNames: ["extract_promises"] } },
-          generationConfig: { temperature: 0.2, topP: 0.8 },
-        }),
-      });
+    // Create an analysis job in the database
+    const { data: job, error: jobError } = await adminClient
+      .from('analysis_jobs')
+      .insert({
+        party_id: party.id,
+        election_year: electionYear,
+        status: 'pending',
+        progress_pct: 0,
+      })
+      .select()
+      .single();
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`AI error for chunk ${chunkNum}:`, response.status, errorText);
-        throw new Error(`AI-analysen misslyckades (${response.status})`);
-      }
-
-      const aiData = await response.json();
-
-      // Extract function call response from Gemini
-      const parts = aiData.candidates?.[0]?.content?.parts || [];
-      const functionCall = parts.find((p: any) => p.functionCall)?.functionCall;
-
-      if (!functionCall || functionCall.name !== 'extract_promises') {
-        // Fallback: try to parse text response as JSON
-        const textPart = parts.find((p: any) => p.text)?.text;
-        if (textPart) {
-          console.log(`Chunk ${chunkNum}: no function call, trying text parse`);
-          let jsonStr = textPart.trim();
-          if (jsonStr.startsWith('```json')) {
-            jsonStr = jsonStr.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-          } else if (jsonStr.startsWith('```')) {
-            jsonStr = jsonStr.replace(/^```\s*/, '').replace(/\s*```$/, '');
-          }
-          const parsed = JSON.parse(jsonStr);
-          return parsed.promises || [];
-        }
-        console.error(`Chunk ${chunkNum}: no function call in response`);
-        throw new Error('AI returnerade ogiltigt svar');
-      }
-
-      const args = functionCall.args;
-      console.log(`Chunk ${chunkNum}: extracted ${args?.promises?.length || 0} promises`);
-      return args?.promises || [];
+    if (jobError || !job) {
+      console.error('Job creation error:', jobError);
+      throw new Error('Kunde inte skapa analysjobb.');
     }
 
-    // Determine if we need to chunk
-    const CHUNK_SIZE = 40000;
-    const shouldChunk = finalManifestText.length > CHUNK_SIZE;
-    let uniquePromises: any[];
+    const jobId = job.id;
+    console.log(`Created analysis job: ${jobId}`);
 
-    if (shouldChunk) {
-      console.log(`Large manifest (${finalManifestText.length} chars), splitting into chunks...`);
-
-      const chunks: string[] = [];
-      let currentPos = 0;
-
-      while (currentPos < finalManifestText.length) {
-        let chunkEnd = Math.min(currentPos + CHUNK_SIZE, finalManifestText.length);
-
-        // Try to find a natural breakpoint (newline) near the chunk boundary
-        if (chunkEnd < finalManifestText.length) {
-          const searchStart = Math.max(chunkEnd - 500, currentPos);
-          const lastNewline = finalManifestText.lastIndexOf('\n', chunkEnd);
-          if (lastNewline > searchStart) {
-            chunkEnd = lastNewline + 1;
-          }
-        }
-
-        chunks.push(finalManifestText.slice(currentPos, chunkEnd));
-        currentPos = chunkEnd;
-      }
-
-      console.log(`Split into ${chunks.length} chunks`);
-
-      const allPromises: any[] = [];
-      for (let i = 0; i < chunks.length; i++) {
-        console.log(`Analyzing chunk ${i + 1}/${chunks.length} (${chunks[i].length} chars)...`);
-
-        let chunkPromises: any[] = [];
-        const MAX_RETRIES = 2;
-
-        for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-          try {
-            chunkPromises = await analyzeChunk(chunks[i], i + 1, chunks.length);
-            break;
-          } catch (err) {
-            console.error(`Chunk ${i + 1} attempt ${attempt + 1} failed:`, err);
-            if (attempt >= MAX_RETRIES) {
-              console.error(`Chunk ${i + 1} failed after ${MAX_RETRIES + 1} attempts, skipping`);
-              break;
-            }
-            const wait = 2000 * Math.pow(2, attempt);
-            console.log(`Waiting ${wait}ms before retry...`);
-            await new Promise(r => setTimeout(r, wait));
-          }
-        }
-
-        allPromises.push(...chunkPromises);
-        console.log(`Chunk ${i + 1} complete: ${chunkPromises.length} promises`);
-      }
-
-      if (allPromises.length === 0) {
-        throw new Error('Inga löften kunde extraheras från manifestet.');
-      }
-
-      // Deduplicate
-      const seen = new Set<string>();
-      uniquePromises = allPromises.filter(p => {
-        const key = p.promise_text.toLowerCase().trim();
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-
-      console.log(`Deduplication: ${allPromises.length} -> ${uniquePromises.length}`);
+    // Use EdgeRuntime.waitUntil to run the analysis in the background
+    // @ts-ignore - EdgeRuntime is available in Supabase Edge Functions
+    if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime.waitUntil) {
+      // @ts-ignore
+      EdgeRuntime.waitUntil(
+        runAnalysisJob(jobId, finalManifestText, party.id, electionYear, manifestPdfUrl, apiKey)
+      );
     } else {
-      // Small manifest — single request
-      console.log('Analyzing small manifest in single request...');
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 280000);
-
-      let response: Response;
-      try {
-        response = await fetch(geminiUrl(apiKey), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{
-              parts: [
-                { text: buildSystemPrompt() },
-                { text: finalManifestText }
-              ]
-            }],
-            tools: [extractPromisesTool],
-            toolConfig: { functionCallingConfig: { mode: "ANY", allowedFunctionNames: ["extract_promises"] } },
-            generationConfig: { temperature: 0.2, topP: 0.8 },
-          }),
-          signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
-      } catch (fetchError) {
-        clearTimeout(timeoutId);
-        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-          throw new Error('AI-analysen tog för lång tid. Försök med ett kortare manifest.');
-        }
-        throw new Error('Nätverksfel vid AI-anrop. Försök igen.');
-      }
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('AI API error:', response.status, errorText);
-        if (response.status === 429) throw new Error('AI rate limit. Försök igen om några minuter.');
-        throw new Error(`AI-analysen misslyckades (${response.status}). Försök igen.`);
-      }
-
-      const aiData = await response.json();
-
-      // Extract function call
-      const parts = aiData.candidates?.[0]?.content?.parts || [];
-      const functionCall = parts.find((p: any) => p.functionCall)?.functionCall;
-
-      if (!functionCall || functionCall.name !== 'extract_promises') {
-        // Fallback: try text
-        const textPart = parts.find((p: any) => p.text)?.text;
-        if (textPart) {
-          let jsonStr = textPart.trim();
-          if (jsonStr.startsWith('```json')) jsonStr = jsonStr.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-          else if (jsonStr.startsWith('```')) jsonStr = jsonStr.replace(/^```\s*/, '').replace(/\s*```$/, '');
-          const parsed = JSON.parse(jsonStr);
-          uniquePromises = parsed.promises || [];
-        } else {
-          throw new Error('AI returnerade ogiltigt svar. Försök igen.');
-        }
-      } else {
-        uniquePromises = functionCall.args?.promises || [];
-      }
+      // Fallback: run inline (will likely timeout for large manifests, but works for small ones)
+      console.log('EdgeRuntime.waitUntil not available, running inline');
+      // Don't await - fire and forget so we can return the jobId
+      runAnalysisJob(jobId, finalManifestText, party.id, electionYear, manifestPdfUrl, apiKey)
+        .catch(err => console.error('Background job error:', err));
     }
 
-    if (!uniquePromises || uniquePromises.length === 0) {
-      throw new Error('Inga löften kunde extraheras från manifestet.');
-    }
-
-    console.log(`Preparing to insert ${uniquePromises.length} promises`);
-
-    // NOW delete existing promises (after successful AI extraction)
-    const { data: deletedPromises, error: deleteError } = await adminClient
-      .from('promises')
-      .delete()
-      .eq('party_id', party.id)
-      .eq('election_year', electionYear)
-      .select('id');
-
-    if (deleteError) {
-      console.error('Delete error:', deleteError);
-      // Don't throw — we still want to insert the new promises
-    }
-
-    const deletedCount = deletedPromises?.length || 0;
-    if (deletedCount > 0) {
-      console.log(`Deleted ${deletedCount} existing promises for ${partyAbbreviation} ${electionYear}`);
-    }
-
-    // Validate and insert
-    const promisesToInsert = uniquePromises.map((p: any) => ({
-      party_id: party.id,
-      election_year: electionYear,
-      promise_text: p.promise_text,
-      summary: p.summary,
-      direct_quote: p.direct_quote,
-      page_number: null,
-      manifest_pdf_url: manifestPdfUrl || null,
-      category: VALID_CATEGORIES.includes(p.category) ? p.category : 'ovrigt',
-      is_status_quo: typeof p.is_status_quo === 'boolean' ? p.is_status_quo : false,
-      measurability_reason: p.measurability_reason || null,
-      measurability_score: p.measurability_score || null,
-      status: 'pending-analysis'
-    }));
-
-    const { data: insertedPromises, error: insertError } = await adminClient
-      .from('promises')
-      .insert(promisesToInsert)
-      .select();
-
-    if (insertError) {
-      console.error('Insert error:', {
-        code: insertError.code,
-        message: insertError.message,
-        details: insertError.details,
-      });
-      throw new Error('Kunde inte spara löften i databasen. Försök igen.');
-    }
-
-    if (!insertedPromises || insertedPromises.length === 0) {
-      throw new Error('Inga löften kunde sparas i databasen.');
-    }
-
-    console.log(`Successfully inserted ${insertedPromises.length} promises`);
-
+    // Return immediately with the job ID
     return jsonResponse({
       success: true,
-      count: insertedPromises.length,
-      duplicatesRemoved: deletedCount,
-      promises: insertedPromises,
-      pdfUrl: manifestPdfUrl
+      jobId: jobId,
+      message: 'Analysjobb skapat. Följ progress via analysis_jobs-tabellen.',
     });
 
   } catch (error: any) {
