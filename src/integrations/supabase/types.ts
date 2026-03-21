@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      analysis_jobs: {
+        Row: {
+          completed_chunks: number | null
+          created_at: string | null
+          election_year: number
+          error_message: string | null
+          id: string
+          party_id: string
+          progress_pct: number | null
+          result_count: number | null
+          status: string
+          total_chunks: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          completed_chunks?: number | null
+          created_at?: string | null
+          election_year: number
+          error_message?: string | null
+          id?: string
+          party_id: string
+          progress_pct?: number | null
+          result_count?: number | null
+          status?: string
+          total_chunks?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          completed_chunks?: number | null
+          created_at?: string | null
+          election_year?: number
+          error_message?: string | null
+          id?: string
+          party_id?: string
+          progress_pct?: number | null
+          result_count?: number | null
+          status?: string
+          total_chunks?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analysis_jobs_party_id_fkey"
+            columns: ["party_id"]
+            isOneToOne: false
+            referencedRelation: "parties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       government_periods: {
         Row: {
           created_at: string
