@@ -15,83 +15,12 @@ const Admin = () => {
   const [isAnalyzingMeasurability, setIsAnalyzingMeasurability] = useState(false);
   const [isBatchAnalyzing, setIsBatchAnalyzing] = useState(false);
   const [batchProgress, setBatchProgress] = useState<string | null>(null);
-  const [suggestions, setSuggestions] = useState<SuggestionWithPromise[]>([]);
-  const [loadingSuggestions, setLoadingSuggestions] = useState(true);
 
   useEffect(() => {
     if (!loading && (!user || !isAdmin)) {
       navigate("/auth");
     }
   }, [user, isAdmin, loading, navigate]);
-
-  useEffect(() => {
-    if (isAdmin) fetchSuggestions();
-  }, [isAdmin]);
-
-  const fetchSuggestions = async () => {
-    setLoadingSuggestions(true);
-    try {
-      const { data, error } = await supabase
-        .from('status_suggestions')
-        .select('*, promises!inner(promise_text, status, parties(name))')
-        .gte('upvotes', 2)
-        .order('upvotes', { ascending: false });
-
-      if (error) throw error;
-
-      const mapped = (data || []).map((s: any) => ({
-        id: s.id,
-        promise_id: s.promise_id,
-        suggested_status: s.suggested_status,
-        explanation: s.explanation,
-        sources: s.sources,
-        upvotes: s.upvotes,
-        downvotes: s.downvotes,
-        created_at: s.created_at,
-        promise_text: s.promises?.promise_text || '',
-        current_status: s.promises?.status || '',
-        party_name: s.promises?.parties?.name || '',
-      }));
-      setSuggestions(mapped);
-    } catch {
-      // silently handle
-    } finally {
-      setLoadingSuggestions(false);
-    }
-  };
-
-  const handleApply = async (suggestion: SuggestionWithPromise) => {
-    try {
-      const { error } = await supabase
-        .from('promises')
-        .update({
-          status: suggestion.suggested_status as any,
-          status_explanation: suggestion.explanation,
-          status_sources: suggestion.sources || [],
-        })
-        .eq('id', suggestion.promise_id);
-
-      if (error) throw error;
-
-      // Remove applied suggestion
-      await supabase.from('status_suggestions').delete().eq('id', suggestion.id);
-
-      toast.success('Status uppdaterad', { description: 'Förslaget har tillämpats' });
-      fetchSuggestions();
-    } catch {
-      toast.error('Fel', { description: 'Kunde inte tillämpa förslaget' });
-    }
-  };
-
-  const handleDismiss = async (suggestionId: string) => {
-    try {
-      await supabase.from('status_suggestions').delete().eq('id', suggestionId);
-      toast.success('Förslag avfärdat');
-      fetchSuggestions();
-    } catch {
-      toast.error('Fel', { description: 'Kunde inte avfärda förslaget' });
-    }
-  };
 
   const handleBatchReanalyze = async () => {
     setIsBatchAnalyzing(true);
