@@ -87,54 +87,36 @@ export const CommunityNotes = ({ promiseId }: CommunityNotesProps) => {
 
     if (existingVote) {
       if (existingVote.vote_type === voteType) {
-        // Remove vote
+        // Remove vote — trigger recomputes counts
         await supabase.from('suggestion_votes').delete()
           .eq('suggestion_id', suggestionId)
           .eq('user_id', user.id);
-
-        // Update count
-        const field = voteType === 'up' ? 'upvotes' : 'downvotes';
-        const suggestion = suggestions.find(s => s.id === suggestionId);
-        if (suggestion) {
-          await supabase.from('status_suggestions').update({
-            [field]: Math.max(0, suggestion[field] - 1)
-          } as any).eq('id', suggestionId);
-        }
       } else {
-        // Change vote
+        // Change vote — trigger recomputes counts
         await supabase.from('suggestion_votes').update({ vote_type: voteType })
           .eq('suggestion_id', suggestionId)
           .eq('user_id', user.id);
-
-        const suggestion = suggestions.find(s => s.id === suggestionId);
-        if (suggestion) {
-          const inc = voteType === 'up' ? 'upvotes' : 'downvotes';
-          const dec = voteType === 'up' ? 'downvotes' : 'upvotes';
-          await supabase.from('status_suggestions').update({
-            [inc]: suggestion[inc] + 1,
-            [dec]: Math.max(0, suggestion[dec] - 1)
-          } as any).eq('id', suggestionId);
-        }
       }
     } else {
-      // New vote
+      // New vote — trigger recomputes counts
       await supabase.from('suggestion_votes').insert({
         suggestion_id: suggestionId,
         user_id: user.id,
         vote_type: voteType,
       });
-
-      const field = voteType === 'up' ? 'upvotes' : 'downvotes';
-      const suggestion = suggestions.find(s => s.id === suggestionId);
-      if (suggestion) {
-        await supabase.from('status_suggestions').update({
-          [field]: suggestion[field] + 1
-        } as any).eq('id', suggestionId);
-      }
     }
 
     fetchSuggestions();
     fetchUserVotes();
+  };
+
+  const isValidUrl = (url: string): boolean => {
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+      return false;
+    }
   };
 
   const handleSubmit = async () => {
@@ -142,7 +124,7 @@ export const CommunityNotes = ({ promiseId }: CommunityNotesProps) => {
     setSubmitting(true);
 
     try {
-      const cleanSources = formSources.filter(s => s.trim());
+      const cleanSources = formSources.filter(s => s.trim()).filter(s => isValidUrl(s));
       const { error } = await supabase.from('status_suggestions').insert({
         promise_id: promiseId,
         user_id: user.id,
@@ -208,7 +190,7 @@ export const CommunityNotes = ({ promiseId }: CommunityNotesProps) => {
                 </p>
                 {suggestion.sources && suggestion.sources.length > 0 && (
                   <div className="flex flex-wrap gap-1">
-                    {suggestion.sources.map((src, i) => (
+                    {suggestion.sources.filter(src => isValidUrl(src)).map((src, i) => (
                       <a
                         key={i}
                         href={src}
@@ -216,13 +198,7 @@ export const CommunityNotes = ({ promiseId }: CommunityNotesProps) => {
                         rel="noopener noreferrer"
                         className="text-[10px] text-primary hover:underline"
                       >
-                        {(() => {
-                          try {
-                            return new URL(src).hostname;
-                          } catch {
-                            return src;
-                          }
-                        })()}
+                        {new URL(src).hostname}
                       </a>
                     ))}
                   </div>
