@@ -39,15 +39,17 @@ export function Navbar() {
 
         {/* Nav links + actions */}
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/statistik")}
-            className={cn("text-xs px-2", location.pathname === "/statistik" && "text-primary")}
-          >
-            <BarChart3 data-icon="inline-start" />
-            <span className="hidden sm:inline">Statistik</span>
-          </Button>
+          {isAdmin && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/statistik")}
+              className={cn("text-xs px-2", location.pathname === "/statistik" && "text-primary")}
+            >
+              <BarChart3 data-icon="inline-start" />
+              <span className="hidden sm:inline">Statistik</span>
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
