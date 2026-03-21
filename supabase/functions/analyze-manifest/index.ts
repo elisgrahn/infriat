@@ -361,7 +361,7 @@ serve(async (req) => {
     }
 
     // Determine if we need to chunk
-    const CHUNK_SIZE = 100000;
+    const CHUNK_SIZE = 40000;
     const shouldChunk = finalManifestText.length > CHUNK_SIZE;
     let uniquePromises: any[];
 
