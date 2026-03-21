@@ -87,50 +87,23 @@ export const CommunityNotes = ({ promiseId }: CommunityNotesProps) => {
 
     if (existingVote) {
       if (existingVote.vote_type === voteType) {
-        // Remove vote
+        // Remove vote — trigger recomputes counts
         await supabase.from('suggestion_votes').delete()
           .eq('suggestion_id', suggestionId)
           .eq('user_id', user.id);
-
-        // Update count
-        const field = voteType === 'up' ? 'upvotes' : 'downvotes';
-        const suggestion = suggestions.find(s => s.id === suggestionId);
-        if (suggestion) {
-          await supabase.from('status_suggestions').update({
-            [field]: Math.max(0, suggestion[field] - 1)
-          } as any).eq('id', suggestionId);
-        }
       } else {
-        // Change vote
+        // Change vote — trigger recomputes counts
         await supabase.from('suggestion_votes').update({ vote_type: voteType })
           .eq('suggestion_id', suggestionId)
           .eq('user_id', user.id);
-
-        const suggestion = suggestions.find(s => s.id === suggestionId);
-        if (suggestion) {
-          const inc = voteType === 'up' ? 'upvotes' : 'downvotes';
-          const dec = voteType === 'up' ? 'downvotes' : 'upvotes';
-          await supabase.from('status_suggestions').update({
-            [inc]: suggestion[inc] + 1,
-            [dec]: Math.max(0, suggestion[dec] - 1)
-          } as any).eq('id', suggestionId);
-        }
       }
     } else {
-      // New vote
+      // New vote — trigger recomputes counts
       await supabase.from('suggestion_votes').insert({
         suggestion_id: suggestionId,
         user_id: user.id,
         vote_type: voteType,
       });
-
-      const field = voteType === 'up' ? 'upvotes' : 'downvotes';
-      const suggestion = suggestions.find(s => s.id === suggestionId);
-      if (suggestion) {
-        await supabase.from('status_suggestions').update({
-          [field]: suggestion[field] + 1
-        } as any).eq('id', suggestionId);
-      }
     }
 
     fetchSuggestions();
