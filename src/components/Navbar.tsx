@@ -3,8 +3,6 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { InfriatLogo } from "@/components/icons/InfriatLogo";
 import { useStickyBar } from "@/store/StickyBarContext";
 import { cn } from "@/lib/utils";
@@ -14,19 +12,6 @@ export function Navbar() {
   const { user, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [pendingCount, setPendingCount] = useState(0);
-
-  useEffect(() => {
-    if (!isAdmin) return;
-    const fetchCount = async () => {
-      const { count } = await supabase
-        .from("status_suggestions")
-        .select("*", { count: "exact", head: true })
-        .gte("upvotes", 2);
-      setPendingCount(count ?? 0);
-    };
-    fetchCount();
-  }, [isAdmin]);
 
   const handleAuthClick = async () => {
     if (user) {
@@ -82,11 +67,6 @@ export function Navbar() {
               className="relative"
             >
               <Settings className="w-5 h-5" />
-              {pendingCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-                  {pendingCount}
-                </span>
-              )}
             </Button>
           )}
           {user && (

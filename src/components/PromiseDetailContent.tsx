@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { type PromiseStatus } from "@/config/badgeConfig";
 import { SourcesList } from "@/components/SourcesList";
-import { CommunityNotes } from "@/components/CommunityNotes";
+
 import { CitedText } from "@/components/CitedText";
 import { CitationFootnotes } from "@/components/CitationFootnotes";
 import { PromiseDetailSkeleton } from "@/components/PromiseDetailSkeleton";
@@ -326,17 +326,6 @@ export function PromiseDetailContent({
         <SourcesList promiseId={promise.id} isAdmin={isAdmin} />
       </section> */}
 
-      {isAdmin && (
-        <>
-          <Separator />
-          <section className="space-y-2">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Medborgarförslag
-            </h2>
-            <CommunityNotes promiseId={promise.id} />
-          </section>
-        </>
-      )}
 
       {isAdmin && (
         <>

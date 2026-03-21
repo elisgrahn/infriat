@@ -10,7 +10,7 @@ import { PartyBadge } from "@/components/badges/PartyBadge";
 import { GovernmentBadge } from "@/components/badges/GovernmentBadge";
 import { MeasurabilityBadge } from "@/components/badges/MeasurabilityBadge";
 import { SourcesList } from "@/components/SourcesList";
-import { CommunityNotes } from "@/components/CommunityNotes";
+
 import { CitedText } from "@/components/CitedText";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -308,14 +308,6 @@ export default function PromiseDetail() {
         <SourcesList promiseId={promise.id} isAdmin={isAdmin} />
       </section>
 
-      {/* Community notes */}
-      <Separator />
-      <section className="space-y-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Medborgarförslag
-        </h2>
-        <CommunityNotes promiseId={promise.id} />
-      </section>
 
       {/* Admin actions */}
       {isAdmin && (
