@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_prompt_logs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          edge_function: string
+          error_message: string | null
+          grounding_search: boolean
+          id: string
+          model: string
+          promise_id: string | null
+          prompt: string
+          response_raw: string | null
+          success: boolean
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          edge_function: string
+          error_message?: string | null
+          grounding_search?: boolean
+          id?: string
+          model: string
+          promise_id?: string | null
+          prompt: string
+          response_raw?: string | null
+          success: boolean
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          edge_function?: string
+          error_message?: string | null
+          grounding_search?: boolean
+          id?: string
+          model?: string
+          promise_id?: string | null
+          prompt?: string
+          response_raw?: string | null
+          success?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_prompt_logs_promise_id_fkey"
+            columns: ["promise_id"]
+            isOneToOne: false
+            referencedRelation: "promises"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       analysis_jobs: {
         Row: {
           completed_chunks: number | null
