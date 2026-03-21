@@ -14,6 +14,12 @@ import { cn } from "@/lib/utils";
 import { useStickyBar } from "@/store/StickyBarContext";
 import { useFilterState, useFilterDispatch } from "@/store/FilterContext";
 import { SORT_OPTIONS } from "@/types/promise";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 
 interface MobileFilterBarProps {
   filteredCount: number;
@@ -69,7 +75,7 @@ export function MobileFilterBar({ filteredCount }: MobileFilterBarProps) {
       <div className="lg:hidden sticky top-[56px] z-30 -mx-4 mb-2">
         <div className="px-4 text-muted-foreground bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="flex items-center gap-2 py-2">
-            <div className="relative flex-1 min-w-0">
+            {/* <div className="relative flex-1 min-w-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" />
               <Input
                 value={localSearch}
@@ -77,14 +83,39 @@ export function MobileFilterBar({ filteredCount }: MobileFilterBarProps) {
                 placeholder="Sök löften..."
                 className="pl-9 h-8 text-sm"
               />
-            </div>
+            </div> */}
+
+            <InputGroup className="h-8">
+              <InputGroupInput
+                placeholder="Sök efter löften..."
+                value={localSearch}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="text-sm"
+              />
+              <InputGroupAddon>
+                <Search />
+              </InputGroupAddon>
+              <InputGroupAddon
+                align="inline-end"
+                className={cn(!localSearch && "invisible")}
+              >
+                <InputGroupButton
+                  aria-label="Rensa sökning"
+                  title="Rensa sökning"
+                  size="icon-xs"
+                  onClick={() => handleSearchChange("")}
+                >
+                  <X />
+                </InputGroupButton>
+              </InputGroupAddon>
+            </InputGroup>
 
             <Drawer open={filtersOpen} onOpenChange={setFiltersOpen}>
               <DrawerTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="shrink-0 h-8"
+                  className="shrink-0 h-8 group/input-group border-input dark:bg-input/30 shadow-xs rounded-md border outline-none hover:text-foreground"
                   aria-label="Filtrera"
                 >
                   <SlidersHorizontal className="w-4 h-4" />
@@ -108,7 +139,7 @@ export function MobileFilterBar({ filteredCount }: MobileFilterBarProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="shrink-0 h-8"
+                  className="shrink-0 h-8 group/input-group border-input dark:bg-input/30 shadow-xs rounded-md border outline-none hover:text-foreground"
                   aria-label="Sortera"
                 >
                   <ArrowUpDown className="w-4 h-4" />

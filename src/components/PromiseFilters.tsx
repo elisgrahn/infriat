@@ -208,7 +208,7 @@ export const PromiseFilters = memo(function PromiseFilters({
     <div className="space-y-6">
       {showSearch && (
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute first-line:left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Sök efter löften..."
             value={searchQuery}
@@ -218,32 +218,11 @@ export const PromiseFilters = memo(function PromiseFilters({
         </div>
       )}
 
-      {/* Mandatperiod */}
-      <div className="space-y-3">
-        <FilterSectionHeader icon={Calendar} label="Mandatperiod" />
-        <Select
-          value={selectedPeriodId || selectedPeriod?.id || "all"}
-          onValueChange={(v) => setSelectedPeriodId(v === "all" ? null : v)}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Välj mandatperiod..." />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Alla mandatperioder</SelectItem>
-            {governmentPeriods.map((period) => (
-              <SelectItem key={period.id} value={period.id}>
-                {period.name} ({period.start_year}–{period.end_year || "nu"})
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
       {showSort && (
         <div className="space-y-3">
           <FilterSectionHeader icon={ArrowUpDown} label="Sortera efter" />
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="group/input-group border-input dark:bg-input/30 shadow-xs relative flex w-full items-center rounded-md border outline-none">
               <SelectValue placeholder="Sortera efter..." />
             </SelectTrigger>
             <SelectContent>
