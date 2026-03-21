@@ -124,7 +124,7 @@ function ItemTitle({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="item-title"
       className={cn(
-        "gap-2 text-sm leading-snug font-medium underline-offset-4 cn-font-heading flex w-fit items-center",
+        "gap-2 text-sm leading-snug font-medium underline-offset-4 cn-font-heading line-clamp-1 flex w-fit items-center",
         className
       )}
       {...props}
@@ -138,7 +138,7 @@ function ItemDescription({ className, ...props }: React.ComponentProps<"p">) {
       data-slot="item-description"
       className={cn(
         "text-muted-foreground text-left text-sm leading-normal group-data-[size=xs]/item:text-xs font-normal [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary",
-        className
+        className,
       )}
       {...props}
     />

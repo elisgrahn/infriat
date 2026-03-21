@@ -31,8 +31,8 @@ export default function About() {
   }, [hash]);
 
   return (
-    <main className="flex-1 w-full max-w-3xl mx-auto px-4 py-8 space-y-6">
-      <div className="space-y-4">
+    <main className="flex-1 w-full max-w-3xl mx-auto px-4 py-8 space-y-8">
+      <div className="space-y-2">
         <Link
           to="/"
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -50,11 +50,11 @@ export default function About() {
       </div>
 
       {ALL_BADGE_CATEGORIES.map((category) => (
-        <section key={category.anchor} id={category.anchor} className="scroll-mt-24 space-y-4">
+        <section key={category.anchor} id={category.anchor} className="scroll-mt-24">
           <h2 className="text-xl font-semibold tracking-tight">{category.title}</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">{category.intro}</p>
 
-          <ItemGroup>
+          <ItemGroup className="mt-4">
             {category.variants.map((v) => {
               const Icon = v.icon;
               return (

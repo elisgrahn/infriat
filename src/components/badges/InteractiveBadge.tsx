@@ -95,7 +95,7 @@ export function InteractiveBadge({
             </ItemMedia>
             <ItemContent>
               <ItemTitle>{current?.label}</ItemTitle>
-              <ItemDescription>
+              <ItemDescription className="line-clamp-2">
                 {current?.description}
               </ItemDescription>
             </ItemContent>

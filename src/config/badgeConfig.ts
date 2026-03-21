@@ -13,13 +13,12 @@ import {
   HeartHandshake,
   Stethoscope,
   GraduationCap,
-  Globe,
   Scale,
   Shield,
   Leaf,
   House,
   Landmark,
-  Circle,
+  Ellipsis,
   BriefcaseBusiness,
   Footprints,
   type LucideIcon,
@@ -78,7 +77,7 @@ export const STATUS_CONFIG: Record<PromiseStatus, StatusConfigEntry> = {
   infriat: {
     label: "Infriat",
     icon: CircleCheckBig,
-    tooltip: "Löftet är helt genomfört – beslut fattat och målet uppnått",
+    tooltip: "Löftet är helt genomfört, beslut har fattats och det utlovade målet har uppnåtts. Ex. har en lag trätt i kraft eller en reform genomförts fullt ut.",
     badgeClassName: "bg-emerald-700 text-white hover:bg-emerald-800",
     borderColor: "border-l-emerald-700",
     topBorderColor: "border-t-emerald-700",
@@ -236,7 +235,7 @@ export const CATEGORY_CONFIG: Record<Category, CategoryConfigEntry> = {
   },
   ovrigt: {
     label: "Övrigt",
-    icon: Circle,
+    icon: Ellipsis,
     badgeClass: "text-muted-foreground",
   },
 };
@@ -273,7 +272,7 @@ export const STATUS_VARIANTS: BadgeVariant[] = [
     key: "infriat",
     label: "Infriat",
     description:
-      "Löftet är helt genomfört – beslut har fattats och det utlovade målet har uppnåtts. Exempelvis har en lag trätt i kraft eller en reform genomförts fullt ut.",
+      "Partiet har helt infriat löftet, beslut har fattats och det utlovade målet har uppnåtts. T.ex. har en lag trätt i kraft eller en reform genomförts fullt ut.",
     icon: CircleCheckBig,
     badgeClass: "bg-emerald-700 text-white",
     itemClass: "border-emerald-700 bg-emerald-700/10",
@@ -282,7 +281,7 @@ export const STATUS_VARIANTS: BadgeVariant[] = [
     key: "delvis-infriat",
     label: "Delvis infriat",
     description:
-      "Regeringen har vidtagit konkreta åtgärder – t.ex. lagt en proposition, ökat utbildningsplatser eller påbörjat reformen – men målet är inte helt nått ännu.",
+      "Partiet har vidtagit konkreta åtgärder för att infria löftet, men målet är inte helt uppnått ännu. T.ex. har en lag trätt i kraft eller en reform påbörjats.",
     icon: SearchCheck,
     badgeClass: "bg-emerald-400 text-white",
     itemClass: "border-emerald-400 bg-emerald-400/10",
@@ -291,7 +290,7 @@ export const STATUS_VARIANTS: BadgeVariant[] = [
     key: "utreds",
     label: "Utreds",
     description:
-      "En utredning, departementspromemoria eller liknande arbete pågår för att möjliggöra reformen, men inga politiska beslut har fattats.",
+      "Partiet har initierat en utredning, departementspromemoria eller liknande arbete för att infria löftet, men inga politiska beslut har fattats än.",
     icon: Search,
     badgeClass: "bg-amber-500 text-white",
     itemClass: "border-amber-500 bg-amber-500/10",
@@ -300,7 +299,7 @@ export const STATUS_VARIANTS: BadgeVariant[] = [
     key: "ej-infriat",
     label: "Ej infriat",
     description:
-      "Inga tydliga steg mot genomförande har tagits, men regeringen sitter fortfarande kvar och kan agera. Löftet kan fortfarande infrias.",
+      "Partiet har inte tagit några tydliga steg mot att infria löftet, men regeringen sitter fortfarande kvar och kan agera. Löftet kan fortfarande infrias.",
     icon: SearchX,
     badgeClass: "bg-gray-400 text-white",
     itemClass: "border-gray-400 bg-gray-400/10",
@@ -321,7 +320,7 @@ export const GOVERNMENT_VARIANTS: BadgeVariant[] = [
     key: "governing",
     label: "Regering",
     description:
-      "Partiet ingår i den regering som bildades efter valet. Regeringspartier har direkt möjlighet att genomdriva sina vallöften genom propositioner och budgetförslag.",
+      "Partiet ingick i regeringen efter valet som löftet gavs inför. Regeringspartier har direkt möjlighet att genomdriva sina vallöften genom propositioner och budgetförslag.",
     icon: ThumbsUp,
     badgeClass: "bg-blue-600 text-white",
     itemClass: "border-blue-600 bg-blue-600/10",
@@ -330,7 +329,7 @@ export const GOVERNMENT_VARIANTS: BadgeVariant[] = [
     key: "support",
     label: "Stödparti",
     description:
-      "Partiet stödjer regeringen utan att sitta i den. Stödpartier kan påverka politiken genom förhandlingar och avtal, men har inte samma direkta makt som regeringspartier.",
+      "Partiet stöttade regeringen, utan att ingå i den, efter valet som löftet gavs inför. Stödpartier kan påverka politiken genom förhandlingar och avtal, men har inte samma direkta makt som regeringspartier.",
     icon: Handshake,
     badgeClass: "bg-blue-400 text-white",
     itemClass: "border-blue-400 bg-blue-400/10",
@@ -339,7 +338,7 @@ export const GOVERNMENT_VARIANTS: BadgeVariant[] = [
     key: "opposition",
     label: "Opposition",
     description:
-      "Partiet tillhör oppositionen och har begränsade möjligheter att genomdriva sina vallöften. Oppositionspartier kan påverka genom motioner och debatt.",
+      "Partiet tillhörde oppositionen efter valet som löftet gavs inför. Oppositionspartier har begränsade möjligheter att driva igenom sina vallöften, men kan påverka politiken genom motioner och debatt.",
     icon: ThumbsDown,
     badgeClass: "bg-slate-600 text-white",
     itemClass: "border-slate-600 bg-slate-600/10",
@@ -351,7 +350,7 @@ export const MEASURABILITY_VARIANTS: BadgeVariant[] = [
     key: "5",
     label: "Extremt mätbart: 5/5",
     description:
-      "Löftet innehåller specifika siffror och en tidsram, t.ex. 'Öka antalet poliser med 10 000 till 2025'. Enklast att verifiera objektivt.",
+      "Löftet innehåller både ett konkret mål och en tidsram, t.ex. 'Anställa 10 000 fler poliser före 2026'.",
     icon: Ruler,
     badgeClass: "text-emerald-600",
     itemClass: "border-emerald-600 bg-emerald-600/10",
@@ -360,7 +359,7 @@ export const MEASURABILITY_VARIANTS: BadgeVariant[] = [
     key: "4",
     label: "Mycket mätbart: 4/5",
     description:
-      "Konkreta mål eller tidsram finns, t.ex. 'Bygga nya kärnkraftverk'. Saknar exakt siffra men åtgärden är verifierbar.",
+      "Löftet innehåller antingen ett konkret mål eller en tidsram, men inte båda, t.ex. 'Bygga 50 000 nya bostäder', 'Halvera sjukvårdsköerna före 2027'.",
     icon: Ruler,
     badgeClass: "text-emerald-500",
     itemClass: "border-emerald-500 bg-emerald-500/10",
@@ -369,7 +368,7 @@ export const MEASURABILITY_VARIANTS: BadgeVariant[] = [
     key: "3",
     label: "Måttligt mätbart: 3/5",
     description:
-      "En tydlig, verifierbar åtgärd beskrivs men utan specifika mätetal, t.ex. 'Införa språkkrav för medborgarskap'.",
+      "Löftet beskriver en tydligt verifierbar åtgärd utan specifika mätetal, t.ex. 'Avskaffa värnskatten', 'Införa obligatorisk läsning i lågstadiet'.",
     icon: Ruler,
     badgeClass: "text-amber-500",
     itemClass: "border-amber-500 bg-amber-500/10",
@@ -378,7 +377,7 @@ export const MEASURABILITY_VARIANTS: BadgeVariant[] = [
     key: "2",
     label: "Svagt mätbart: 2/5",
     description:
-      "Löftet talar om relativa förändringar utan tydliga mått, t.ex. 'Stärka försvaret'. Svårare att avgöra om det uppfyllts.",
+      "Löftet innehåller enbart relativa förändringar utan specifika mätetal, t.ex. 'Sänka skatten för pensionärer', 'Öka anslagen till försvaret'.",
     icon: Ruler,
     badgeClass: "text-orange-500",
     itemClass: "border-orange-500 bg-orange-500/10",
@@ -387,7 +386,7 @@ export const MEASURABILITY_VARIANTS: BadgeVariant[] = [
     key: "1",
     label: "Nästan omätbart: 1/5",
     description:
-      "Vaga formuleringar utan konkreta mål, t.ex. 'Verka för ett tryggare Sverige'. Mycket svårt att objektivt verifiera.",
+      "Vaga formuleringar utan konkreta mål eller åtgärder, t.ex. 'Värna om välfärden', 'Skapa ett bättre Sverige'.",
     icon: Ruler,
     badgeClass: "text-rose-500",
     itemClass: "border-rose-500 bg-rose-500/10",
@@ -399,7 +398,7 @@ export const STATUS_QUO_VARIANTS: BadgeVariant[] = [
     key: "false",
     label: "Förändra",
     description:
-      "Löftet handlar om att genomföra en förändring jämfört med nuläget. Partiet vill införa något nytt eller avskaffa något befintligt.",
+      "Löftet kräver en förändring jämfört med nuläget, t.ex. 'Införa X', 'Minska Y'.",
     icon: LaneChange as ComponentType<{ className?: string }>,
     itemClass: "border-foreground bg-foreground/10",
   },
@@ -407,7 +406,7 @@ export const STATUS_QUO_VARIANTS: BadgeVariant[] = [
     key: "true",
     label: "Bevara",
     description:
-      "Löftet handlar om att bibehålla nuvarande politik eller system. Partiet lovar att inte ändra på något, t.ex. 'Behålla RUT-avdraget'.",
+      "Löftet bevarar nuvarande politik eller system, t.ex. 'Behålla X', 'Värna Y'.",
     icon: MoveRight,
     itemClass: "border-muted-foreground bg-muted-foreground/10",
   },
@@ -417,7 +416,7 @@ export const CATEGORY_VARIANTS: BadgeVariant[] = [
   {
     key: "valfard",
     label: "Välfärd & omsorg",
-    description: "Övergripande välfärdspolitik – socialförsäkringar, pensioner, äldreomsorg och ekonomisk trygghet.",
+    description: "Ex. socialförsäkringar, pensioner, äldreomsorg och ekonomisk trygghet.",
     icon: HeartHandshake,
     badgeClass: "text-pink-500",
     itemClass: "border-pink-500 bg-pink-500/10",
@@ -425,7 +424,7 @@ export const CATEGORY_VARIANTS: BadgeVariant[] = [
   {
     key: "halsa",
     label: "Hälso- & sjukvård",
-    description: "Sjukvårdspolitik – vårdköer, primärvård, psykisk hälsa och folkhälsa.",
+    description: "Ex. sjukvårdspolitik, vårdköer, primärvård, psykisk hälsa och folkhälsa.",
     icon: Stethoscope,
     badgeClass: "text-red-500",
     itemClass: "border-red-500 bg-red-500/10",
@@ -433,7 +432,7 @@ export const CATEGORY_VARIANTS: BadgeVariant[] = [
   {
     key: "utbildning",
     label: "Utbildning & forskning",
-    description: "Skola, högskola och forskning – lärarlöner, betygssystem, universitetsplatser.",
+    description: "Ex. skolpolitik, högre utbildning, forskning och innovation.",
     icon: GraduationCap,
     badgeClass: "text-sky-500",
     itemClass: "border-sky-500 bg-sky-500/10",
@@ -441,7 +440,7 @@ export const CATEGORY_VARIANTS: BadgeVariant[] = [
   {
     key: "arbetsmarknad",
     label: "Arbetsmarknad & ekonomi",
-    description: "Sysselsättning, arbetsrätt, integration på arbetsmarknaden och a-kassa.",
+    description: "Ex. sysselsättning, arbetsrätt, integration på arbetsmarknaden och a-kassa.",
     icon: BriefcaseBusiness,
     badgeClass: "text-amber-600",
     itemClass: "border-amber-600 bg-amber-600/10",
@@ -449,7 +448,7 @@ export const CATEGORY_VARIANTS: BadgeVariant[] = [
   {
     key: "migration",
     label: "Migration & integration",
-    description: "Invandring, asylpolitik, uppehållstillstånd och integration.",
+    description: "Ex. invandring, integration, asylpolitik och uppehållstillstånd.",
     icon: Footprints,
     badgeClass: "text-teal-500",
     itemClass: "border-teal-500 bg-teal-500/10",
@@ -457,7 +456,7 @@ export const CATEGORY_VARIANTS: BadgeVariant[] = [
   {
     key: "rattssakerhet",
     label: "Rättsväsende & säkerhet",
-    description: "Polis, domstolar, kriminalvård, straff och brottsbekämpning.",
+    description: "Ex. polis, domstolar, kriminalvård, straff och brottsbekämpning.",
     icon: Scale,
     badgeClass: "text-indigo-500",
     itemClass: "border-indigo-500 bg-indigo-500/10",
@@ -465,7 +464,7 @@ export const CATEGORY_VARIANTS: BadgeVariant[] = [
   {
     key: "forsvar",
     label: "Försvar & utrikes",
-    description: "Militärt försvar, NATO, totalförsvar och civilförsvar.",
+    description: "Ex. militärt försvar, NATO, totalförsvar och civilförsvar.",
     icon: Shield,
     badgeClass: "text-slate-600",
     itemClass: "border-slate-600 bg-slate-600/10",
@@ -473,7 +472,7 @@ export const CATEGORY_VARIANTS: BadgeVariant[] = [
   {
     key: "klimat-miljo",
     label: "Klimat & miljö",
-    description: "Klimatpolitik, energiomställning, naturskydd och hållbar utveckling.",
+    description: "Ex. klimatpolitik, energiomställning, naturskydd och hållbar utveckling.",
     icon: Leaf,
     badgeClass: "text-green-600",
     itemClass: "border-green-600 bg-green-600/10",
@@ -481,7 +480,7 @@ export const CATEGORY_VARIANTS: BadgeVariant[] = [
   {
     key: "bostad",
     label: "Bostad & samhällsbyggnad",
-    description: "Bostadsbyggande, hyresmarknad, bostadsbidrag och stadsplanering.",
+    description: "Ex. bostadsbyggande, hyresmarknad, bostadsbidrag och stadsplanering.",
     icon: House,
     badgeClass: "text-orange-500",
     itemClass: "border-orange-500 bg-orange-500/10",
@@ -489,7 +488,7 @@ export const CATEGORY_VARIANTS: BadgeVariant[] = [
   {
     key: "demokrati",
     label: "Demokrati & konstitution",
-    description: "Grundlagsfrågor, yttrandefrihet, kommunalt självstyre och mediepolitik.",
+    description: "Ex. grundlagsfrågor, yttrandefrihet, kommunalt självstyre och mediepolitik.",
     icon: Landmark,
     badgeClass: "text-violet-500",
     itemClass: "border-violet-500 bg-violet-500/10",
@@ -498,7 +497,7 @@ export const CATEGORY_VARIANTS: BadgeVariant[] = [
     key: "ovrigt",
     label: "Övrigt",
     description: "Löften som inte faller inom någon av de andra kategorierna.",
-    icon: Circle,
+    icon: Ellipsis,
     badgeClass: "text-muted-foreground",
     itemClass: "border-muted-foreground bg-muted-foreground/10",
   },
