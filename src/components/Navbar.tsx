@@ -3,8 +3,6 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { InfriatLogo } from "@/components/icons/InfriatLogo";
 import { useStickyBar } from "@/store/StickyBarContext";
 import { cn } from "@/lib/utils";
