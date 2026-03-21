@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { Loader2, Upload, Link as LinkIcon } from "lucide-react";
+import { Loader2, Upload, Link as LinkIcon, CheckCircle2, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 import * as pdfjsLib from "pdfjs-dist";
@@ -36,6 +36,12 @@ export const ManifestUpload = () => {
   const [selectedParty, setSelectedParty] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  
+  // Job polling state
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [jobProgress, setJobProgress] = useState(0);
+  const [jobStatus, setJobStatus] = useState<string | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Helper to ensure URL has protocol
   const ensureProtocol = (url: string) => {
@@ -47,10 +53,81 @@ export const ManifestUpload = () => {
     return trimmed;
   };
 
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    };
+  }, []);
+
+  // Start polling for job progress
+  const startPolling = (jobId: string) => {
+    setActiveJobId(jobId);
+    setJobProgress(0);
+    setJobStatus('pending');
+
+    pollIntervalRef.current = setInterval(async () => {
+      try {
+        const { data: job, error } = await supabase
+          .from('analysis_jobs')
+          .select('*')
+          .eq('id', jobId)
+          .single();
+
+        if (error || !job) {
+          console.error('Poll error:', error);
+          return;
+        }
+
+        setJobProgress(job.progress_pct ?? 0);
+        setJobStatus(job.status);
+
+        if (job.status === 'completed') {
+          stopPolling();
+          setIsAnalyzing(false);
+          toast.success('Analys klar!', {
+            description: `${job.result_count} vallöften extraherade och sparade.`,
+          });
+
+          // Run PDF page number search if we have a PDF URL
+          await handlePostAnalysisPdfSearch();
+
+          resetForm();
+        } else if (job.status === 'failed') {
+          stopPolling();
+          setIsAnalyzing(false);
+          toast.error('❌ Analys misslyckades', {
+            description: job.error_message || 'Ett okänt fel uppstod',
+          });
+        }
+      } catch (err) {
+        console.error('Polling error:', err);
+      }
+    }, 4000);
+  };
+
+  const stopPolling = () => {
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+  };
+
+  const resetForm = () => {
+    setTxtUrl("");
+    setPdfUrl("");
+    setTxtFile(null);
+    setPdfFile(null);
+    setSelectedParty("");
+    setSelectedYear("");
+    setActiveJobId(null);
+    setJobProgress(0);
+    setJobStatus(null);
+  };
+
   // Function to search PDF and update page numbers
-  const searchPdfForPageNumbers = async (pdfUrl: string, partyId: string, electionYear: number) => {
+  const searchPdfForPageNumbers = async (pdfSearchUrl: string, partyId: string, electionYear: number) => {
     try {
-      // Fetch promises without page numbers
       const { data: promises, error: fetchError } = await supabase
         .from('promises')
         .select('id, direct_quote')
@@ -62,134 +139,84 @@ export const ManifestUpload = () => {
         return { updated: 0, total: 0 };
       }
 
-      // Configure PDF.js worker
       pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
         'pdfjs-dist/build/pdf.worker.min.mjs',
         import.meta.url
       ).toString();
 
-      // Load PDF
-      const loadingTask = pdfjsLib.getDocument(pdfUrl);
+      const loadingTask = pdfjsLib.getDocument(pdfSearchUrl);
       const pdf = await loadingTask.promise;
 
-      // Enhanced normalize text function with aggressive normalization
       const normalizeText = (text: string) => {
         return text
           .toLowerCase()
-          // CRITICAL: More aggressive handling of hyphenated line breaks
-          // Remove hyphen + any whitespace/newline + continue word
           .replace(/(\w+)-[\r\n\s]+(\w+)/g, '$1$2')
-          // CRITICAL: Handle line breaks MID-WORD without hyphen (PDF artifact)
-          // If lowercase letter, newline, then lowercase letter -> join them
           .replace(/([a-zåäö])[\r\n]+([a-zåäö])/g, '$1$2')
-          // Now replace all remaining line breaks with space
           .replace(/[\r\n]+/g, ' ')
-          // Normalize all types of quotes
           .replace(/[""]/g, '"')
           .replace(/['']/g, "'")
-          // Normalize all types of dashes
           .replace(/[–—―]/g, '-')
-          // Remove [...] markers and ellipsis
           .replace(/\[\.\.\.]/g, '')
           .replace(/…/g, '')
-          // Normalize multiple spaces to single space
           .replace(/\s+/g, ' ')
-          // Remove punctuation at start/end
           .trim()
           .replace(/^[.,!?;:]+|[.,!?;:]+$/g, '');
       };
 
-      // Extract all page texts
       const pageTexts: Array<{pageNum: number, normalized: string}> = [];
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
-        const pageText = textContent.items
-          .map((item: any) => item.str)
-          .join(' ');
-        pageTexts.push({ 
-          pageNum: i, 
-          normalized: normalizeText(pageText) 
-        });
+        const pageText = textContent.items.map((item: any) => item.str).join(' ');
+        pageTexts.push({ pageNum: i, normalized: normalizeText(pageText) });
       }
 
-      // Enhanced fuzzy match function
       const fuzzyMatch = (quote: string, pageText: string): boolean => {
         const normalizedQuote = normalizeText(quote);
         const normalizedPage = normalizeText(pageText);
         
-        // For short quotes (< 50 chars), require exact match
-        if (normalizedQuote.length < 50) {
-          return normalizedPage.includes(normalizedQuote);
-        }
+        if (normalizedQuote.length < 50) return normalizedPage.includes(normalizedQuote);
+        if (normalizedPage.includes(normalizedQuote)) return true;
         
-        // Strategy 1: Exact match
-        if (normalizedPage.includes(normalizedQuote)) {
-          return true;
-        }
-        
-        // Strategy 2: First and last sentence (handles truncated quotes)
         const sentences = normalizedQuote.split(/[.!?]+/).filter(s => s.trim().length > 10);
         if (sentences.length >= 2) {
-          const firstSentence = sentences[0].trim();
-          const lastSentence = sentences[sentences.length - 1].trim();
-          
-          if (normalizedPage.includes(firstSentence) && normalizedPage.includes(lastSentence)) {
-            return true;
-          }
+          const first = sentences[0].trim();
+          const last = sentences[sentences.length - 1].trim();
+          if (normalizedPage.includes(first) && normalizedPage.includes(last)) return true;
         }
         
-        // Strategy 3: First 20 words (for long quotes)
         const words = normalizedQuote.split(/\s+/);
         if (words.length > 20) {
           const firstWords = words.slice(0, 20).join(' ');
-          if (normalizedPage.includes(firstWords)) {
-            return true;
-          }
+          if (normalizedPage.includes(firstWords)) return true;
         }
-        
-        // Strategy 4: Unique phrase (at least 8 words in a row)
         if (words.length >= 8) {
           const uniquePhrase = words.slice(0, 8).join(' ');
-          if (normalizedPage.includes(uniquePhrase)) {
-            return true;
-          }
+          if (normalizedPage.includes(uniquePhrase)) return true;
         }
         
         return false;
       };
 
-      // Search for each promise
       let updatedCount = 0;
-      console.log(`Searching for ${promises.length} promises in ${pdf.numPages} pages`);
-      
       for (const promise of promises) {
         const quote = promise.direct_quote;
         let foundPage = null;
 
-        // Search through all pages using enhanced fuzzy matching
         for (const { pageNum, normalized } of pageTexts) {
           if (fuzzyMatch(quote, normalized)) {
             foundPage = pageNum;
-            console.log(`✓ Found on page ${foundPage}: "${quote.substring(0, 50)}..."`);
             break;
           }
         }
-        
-        if (!foundPage) {
-          console.log(`✗ Not found: "${quote.substring(0, 50)}..."`);
-        }
 
-        // Update promise with page number if found
         if (foundPage) {
           const { error: updateError } = await supabase
             .from('promises')
             .update({ page_number: foundPage })
             .eq('id', promise.id);
 
-          if (!updateError) {
-            updatedCount++;
-          }
+          if (!updateError) updatedCount++;
         }
       }
 
@@ -200,12 +227,46 @@ export const ManifestUpload = () => {
     }
   };
 
+  const handlePostAnalysisPdfSearch = async () => {
+    const finalPdfUrl = pdfUrl ? ensureProtocol(pdfUrl) : undefined;
+    if (!finalPdfUrl) return;
+
+    try {
+      const { data: party } = await supabase
+        .from('parties')
+        .select('id')
+        .eq('abbreviation', selectedParty)
+        .single();
+
+      if (!party) return;
+
+      toast.info('Söker efter sidnummer i PDF...', {
+        description: 'Detta kan ta 1-3 minuter beroende på PDF-storlek',
+      });
+
+      const result = await searchPdfForPageNumbers(finalPdfUrl, party.id, parseInt(selectedYear));
+
+      if (result.updated > 0) {
+        toast.success('Sidnummer hittade!', {
+          description: `${result.updated} av ${result.total} löften fick sidnummer från PDF:en`,
+        });
+      } else if (result.total > 0) {
+        toast.info('Inga sidnummer hittade', {
+          description: `Kunde inte matcha citat i PDF:en (${result.total} löften).`,
+        });
+      }
+    } catch (pdfError) {
+      console.error('PDF search error:', pdfError);
+      toast.error('Kunde inte söka i PDF', {
+        description: pdfError instanceof Error ? pdfError.message : 'Okänt fel vid PDF-sökning',
+      });
+    }
+  };
+
   const handleAnalyze = async () => {
-    // Validate that we have either URLs or files
     const hasTxt = txtUrl || txtFile;
     const hasPdf = pdfUrl || pdfFile;
     
-    // Either TXT or PDF is required, not both mandatory
     if (!selectedParty || !selectedYear || (!hasTxt && !hasPdf)) {
       toast.error('Saknade uppgifter', {
         description: 'Ange TXT (för fullständig analys) eller PDF (för att lägga till sidnummer) samt parti och år',
@@ -215,262 +276,77 @@ export const ManifestUpload = () => {
 
     setIsAnalyzing(true);
     
-    // Show initial progress toast
-    toast.info('Startar analys...', {
-      description: 'Förbereder filer för uppladdning',
-    });
-    
     try {
-      // Validate party and year
       manifestSchema.parse({
         partyAbbreviation: selectedParty,
         electionYear: parseInt(selectedYear)
       });
 
-      // Prepare data for edge function
       let manifestText = "";
       let pdfBase64 = "";
 
-      // Get TXT content
       if (txtFile) {
         manifestText = await txtFile.text();
-      } else if (txtUrl) {
-        // Let edge function download it to avoid CORS issues
-        manifestText = "";
       }
 
-      // Get PDF as base64
       if (pdfFile) {
         const buffer = await pdfFile.arrayBuffer();
         pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
       }
 
-      // Show upload progress
-      toast.info('Laddar upp filer...', {
-        description: hasPdf ? 'Laddar upp manifest till servern' : 'Förbereder textfil',
-      });
-
-      // Send to edge function for analysis (it will handle URL downloads and PDF upload)
-      // Ensure URLs have protocol
       const finalTxtUrl = txtUrl ? ensureProtocol(txtUrl) : undefined;
       const finalPdfUrl = pdfUrl ? ensureProtocol(pdfUrl) : undefined;
 
-      // Show AI analysis toast after a delay
-      const analysisToastTimer = setTimeout(() => {
-        toast.info('Analyserar manifest med AI...', {
-          description: 'Detta kan ta 1-2 minuter för stora manifest',
-        });
-      }, 3000);
-
-      // Show warning if it takes too long
-      const warningToastTimer = setTimeout(() => {
-        toast.warning('Analysen tar längre tid än förväntat...', {
-          description: 'Stora manifest kan ta upp till 5 minuter. Vänligen ha tålamod.',
-        });
-      }, 30000);
-
-      // Create abort controller with 5 minute timeout
-      const abortController = new AbortController();
-      const timeoutId = setTimeout(() => abortController.abort(), 5 * 60 * 1000);
-
-      let data, error;
-      let timedOut = false;
-      try {
-        const result = await supabase.functions.invoke('analyze-manifest', {
-          body: {
-            manifestText: manifestText || undefined,
-            txtUrl: finalTxtUrl,
-            pdfBase64: pdfBase64 || undefined,
-            pdfUrl: finalPdfUrl,
-            partyAbbreviation: selectedParty,
-            electionYear: parseInt(selectedYear)
-          },
-          signal: abortController.signal
-        });
-        data = result.data;
-        error = result.error;
-      } catch (invokeError: any) {
-        if (invokeError.name === 'AbortError') {
-          timedOut = true;
-          console.log('Request timed out after 5 minutes, checking database...');
-        } else {
-          throw invokeError;
-        }
-      } finally {
-        clearTimeout(timeoutId);
-        clearTimeout(analysisToastTimer);
-        clearTimeout(warningToastTimer);
-      }
-
-      // If we got a timeout or error, check database for newly created promises
-      if (timedOut || error || !data) {
-        toast.info('Verifierar resultat...', {
-          description: 'Kontrollerar om löften skapades i databasen',
-        });
-
-        try {
-          // Get party ID
-          const { data: party } = await supabase
-            .from('parties')
-            .select('id')
-            .eq('abbreviation', selectedParty)
-            .single();
-
-          if (party) {
-            // Check for promises created in the last 10 minutes
-            const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-            const { data: recentPromises, error: checkError } = await supabase
-              .from('promises')
-              .select('id')
-              .eq('party_id', party.id)
-              .eq('election_year', parseInt(selectedYear))
-              .gte('created_at', tenMinutesAgo);
-
-            if (!checkError && recentPromises && recentPromises.length > 0) {
-              // Success! Promises were created despite timeout
-              toast.success('Analys lyckades!', {
-                description: `${recentPromises.length} vallöften hittades i databasen. Analysen slutfördes trots timeout.`,
-              });
-
-              // Continue with PDF search if available
-              const pdfUrlToSearch = finalPdfUrl || (pdfBase64 ? 'uploaded' : null);
-              if (pdfUrlToSearch && pdfUrlToSearch !== 'uploaded') {
-                // Run PDF search...
-                toast.info('Söker efter sidnummer i PDF...', {
-                  description: 'Detta kan ta 1-3 minuter beroende på PDF-storlek',
-                });
-
-                try {
-                  const result = await searchPdfForPageNumbers(
-                    pdfUrlToSearch, 
-                    party.id, 
-                    parseInt(selectedYear)
-                  );
-
-                  toast.success('Sidnummer uppdaterade!', {
-                    description: `${result.updated} av ${result.total} löften fick sidnummer`,
-                  });
-                } catch (pdfError) {
-                  console.error('PDF search error:', pdfError);
-                  toast.error('Kunde inte söka i PDF', {
-                    description: pdfError instanceof Error ? pdfError.message : 'Okänt fel vid PDF-sökning',
-                  });
-                }
-              }
-
-              // Reset form
-              setTxtUrl("");
-              setPdfUrl("");
-              setTxtFile(null);
-              setPdfFile(null);
-              setSelectedParty("");
-              setSelectedYear("");
-              
-              return; // Exit early, we're done!
-            }
-          }
-        } catch (checkError) {
-          console.error('Database check error:', checkError);
-        }
-
-        // If we get here, no promises were found
-        if (timedOut) {
-          throw new Error('Analysen tog för lång tid (>5 minuter) och inga löften hittades i databasen. Försök med ett kortare manifest.');
-        }
-        
-        if (error) {
-          console.error('Edge function error:', error);
-          console.error('Error details:', JSON.stringify(error, null, 2));
-          
-          let errorMessage = 'Kunde inte analysera manifestet';
-          
-          if (error.message) {
-            errorMessage = error.message;
-          } else if (typeof error === 'string') {
-            errorMessage = error;
-          }
-          
-          if (errorMessage.includes('NetworkError') || errorMessage.includes('Failed to fetch')) {
-            errorMessage = 'Nätverksfel: Edge-funktionen svarade inte. Detta kan bero på timeout eller nätverksproblem.';
-          }
-          
-          throw new Error(errorMessage);
-        }
-
-        throw new Error('Ingen data returnerades från analysen');
-      }
-
-      console.log('Analysis response:', data);
-
-      let toastMessage = data.message || `${data.count} vallöften ${data.pdfOnly ? 'uppdaterade' : 'extraherade och sparade'}.`;
-      
-      if (data.warnings?.unverifiedQuotes?.length > 0) {
-        toastMessage += `\n\n⚠️ Varning: ${data.warnings.unverifiedQuotes.length} citat kunde inte verifieras i PDF:en.`;
-      }
-
-      if (data.duplicatesRemoved) {
-        toastMessage += `\n\n${data.duplicatesRemoved} befintliga löften raderades.`;
-      }
-
-      toast.success('Analys klar!', {
-        description: toastMessage,
+      toast.info('Skickar manifest för analys...', {
+        description: 'Skapar analysjobb',
       });
 
-      // For PDF-only mode, run page number search locally
-      if (data.pdfOnly && data.pdfUrl) {
-        toast.info('Söker efter sidnummer i PDF...', {
-          description: 'Detta kan ta 1-3 minuter beroende på PDF-storlek',
-        });
+      const { data, error } = await supabase.functions.invoke('analyze-manifest', {
+        body: {
+          manifestText: manifestText || undefined,
+          txtUrl: finalTxtUrl,
+          pdfBase64: pdfBase64 || undefined,
+          pdfUrl: finalPdfUrl,
+          partyAbbreviation: selectedParty,
+          electionYear: parseInt(selectedYear)
+        },
+      });
 
-        try {
-          // Get party ID
-          const { data: party } = await supabase
-            .from('parties')
-            .select('id')
-            .eq('abbreviation', selectedParty)
-            .single();
-
-          if (!party) {
-            throw new Error('Kunde inte hitta parti');
-          }
-
-          const result = await searchPdfForPageNumbers(
-            data.pdfUrl,
-            party.id,
-            parseInt(selectedYear)
-          );
-
-          if (result.updated > 0) {
-            toast.success('Sidnummer hittade!', {
-              description: `${result.updated} av ${result.total} löften fick sidnummer från PDF:en`,
-            });
-          } else if (result.total > 0) {
-            toast.error('Inga sidnummer hittade', {
-              description: `Kunde inte matcha några citat i PDF:en (${result.total} löften hade citat). Detta kan bero på att citaten är annorlunda formaterade i PDF:en.`,
-            });
-          } else {
-            toast.info('Inga citat att söka', {
-              description: 'Inga löften med direktcitat hittades',
-            });
-          }
-        } catch (pdfError) {
-          console.error('PDF search error:', pdfError);
-          toast.error('Kunde inte söka i PDF', {
-            description: pdfError instanceof Error ? pdfError.message : 'Okänt fel vid PDF-sökning',
-          });
-        }
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Kunde inte starta analysen');
       }
 
-      // Reset form
-      setTxtUrl("");
-      setPdfUrl("");
-      setTxtFile(null);
-      setPdfFile(null);
-      setSelectedParty("");
-      setSelectedYear("");
+      // PDF-only mode returns directly
+      if (data?.pdfOnly) {
+        toast.success('Analys klar!', {
+          description: data.message,
+        });
+
+        if (data.pdfUrl) {
+          await handlePostAnalysisPdfSearch();
+        }
+
+        resetForm();
+        setIsAnalyzing(false);
+        return;
+      }
+
+      // Async job mode: start polling
+      if (data?.jobId) {
+        toast.success('Analysjobb startat!', {
+          description: 'AI-analysen körs i bakgrunden. Du kan följa progressen nedan.',
+        });
+        startPolling(data.jobId);
+        return; // Keep isAnalyzing true, polling will reset it
+      }
+
+      // Unexpected response
+      throw new Error('Oväntat svar från servern');
+
     } catch (error: any) {
       console.error('Analysis error:', error);
-      console.error('Error stack:', error?.stack);
+      setIsAnalyzing(false);
       
       let errorMessage = "Kunde inte analysera manifestet";
       let errorTitle = "❌ Fel vid analys";
@@ -479,25 +355,13 @@ export const ManifestUpload = () => {
         errorMessage = error.errors[0].message;
       } else if (error?.message) {
         errorMessage = error.message;
-        
-        // Specific error messages
-        if (error.message.includes('timeout') || error.message.includes('Timeout')) {
-          errorTitle = "⏱️ Timeout";
-          errorMessage = `AI-analysen tog för lång tid. Försök med: 1) Ett kortare manifest, 2) Dela upp i flera delar, 3) Vänta en stund och försök igen.`;
-        } else if (error.message.includes('rate limit') || error.message.includes('429')) {
-          errorTitle = "⚠️ Rate limit";
-          errorMessage = "För många förfrågningar. Vänta några minuter och försök igen.";
-        } else if (error.message.includes('credits') || error.message.includes('402')) {
-          errorTitle = "💰 Slut på AI-krediter";
-          errorMessage = "Lägg till mer credits i din Lovable workspace för att fortsätta använda AI-analysen.";
-        }
       }
       
       toast.error(errorTitle, { description: errorMessage });
-    } finally {
-      setIsAnalyzing(false);
     }
   };
+
+  const isJobActive = activeJobId && (jobStatus === 'pending' || jobStatus === 'processing');
 
   return (
     <Card>
@@ -511,10 +375,34 @@ export const ManifestUpload = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Job progress indicator */}
+        {activeJobId && (
+          <div className="space-y-3 p-4 rounded-lg border bg-muted/30">
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-medium flex items-center gap-2">
+                {jobStatus === 'completed' ? (
+                  <><CheckCircle2 className="w-4 h-4 text-green-500" /> Analys klar</>
+                ) : jobStatus === 'failed' ? (
+                  <><XCircle className="w-4 h-4 text-destructive" /> Analys misslyckades</>
+                ) : (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Analyserar manifest...</>
+                )}
+              </span>
+              <span className="text-muted-foreground">{jobProgress}%</span>
+            </div>
+            <Progress value={jobProgress} className="h-2" />
+            {jobStatus === 'processing' && (
+              <p className="text-xs text-muted-foreground">
+                AI-analysen körs i bakgrunden. Du kan stänga sidan — jobbet fortsätter.
+              </p>
+            )}
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Parti</label>
-            <Select value={selectedParty} onValueChange={setSelectedParty}>
+            <Select value={selectedParty} onValueChange={setSelectedParty} disabled={!!isJobActive}>
               <SelectTrigger>
                 <SelectValue placeholder="Välj parti" />
               </SelectTrigger>
@@ -530,7 +418,7 @@ export const ManifestUpload = () => {
 
           <div className="space-y-2">
             <label className="text-sm font-medium">Valår</label>
-            <Select value={selectedYear} onValueChange={setSelectedYear}>
+            <Select value={selectedYear} onValueChange={setSelectedYear} disabled={!!isJobActive}>
               <SelectTrigger>
                 <SelectValue placeholder="Välj år" />
               </SelectTrigger>
@@ -560,6 +448,7 @@ export const ManifestUpload = () => {
                 setTxtUrl(e.target.value);
                 if (e.target.value) setTxtFile(null);
               }}
+              disabled={!!isJobActive}
             />
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -570,6 +459,7 @@ export const ManifestUpload = () => {
             <Input
               type="file"
               accept=".txt"
+              disabled={!!isJobActive}
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) {
@@ -599,6 +489,7 @@ export const ManifestUpload = () => {
                 setPdfUrl(e.target.value);
                 if (e.target.value) setPdfFile(null);
               }}
+              disabled={!!isJobActive}
             />
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -609,6 +500,7 @@ export const ManifestUpload = () => {
             <Input
               type="file"
               accept=".pdf"
+              disabled={!!isJobActive}
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) {
@@ -625,13 +517,18 @@ export const ManifestUpload = () => {
 
         <Button 
           onClick={handleAnalyze} 
-          disabled={isAnalyzing}
+          disabled={isAnalyzing || !!isJobActive}
           className="w-full"
         >
-          {isAnalyzing ? (
+          {isJobActive ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Analyserar och laddar upp...
+              Analys pågår...
+            </>
+          ) : isAnalyzing ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Startar analys...
             </>
           ) : (
             <>
