@@ -14,19 +14,6 @@ export function Navbar() {
   const { user, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [pendingCount, setPendingCount] = useState(0);
-
-  useEffect(() => {
-    if (!isAdmin) return;
-    const fetchCount = async () => {
-      const { count } = await supabase
-        .from("status_suggestions")
-        .select("*", { count: "exact", head: true })
-        .gte("upvotes", 2);
-      setPendingCount(count ?? 0);
-    };
-    fetchCount();
-  }, [isAdmin]);
 
   const handleAuthClick = async () => {
     if (user) {
