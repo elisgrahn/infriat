@@ -1,5 +1,5 @@
 import { DisclaimerItem } from "@/components/DisclaimerItem";
-import { Disc } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export function Footer() {
   return (
