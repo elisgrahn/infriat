@@ -167,15 +167,16 @@ serve(async (req) => {
     const { data: govPeriods } = await userClient
       .from('government_periods')
       .select('*')
-      .lte('start_year', promise.election_year)
-      .order('start_year', { ascending: false })
+      .gte('start_year', promise.election_year)
+      .order('start_year', { ascending: true })
       .limit(1);
 
     if (govPeriods && govPeriods.length > 0) {
       const period = govPeriods[0];
-      if (period.governing_parties?.includes(partyAbbreviation)) {
+      const partyName = promise.parties.name;
+      if (period.governing_parties?.includes(partyName)) {
         mandateType = 'government';
-      } else if (period.support_parties?.includes(partyAbbreviation)) {
+      } else if (period.support_parties?.includes(partyName)) {
         mandateType = 'support';
       }
     }
