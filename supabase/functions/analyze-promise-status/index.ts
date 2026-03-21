@@ -2,11 +2,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { corsResponse, jsonResponse, errorResponse } from '../_shared/cors.ts';
 import { requireAdmin } from '../_shared/auth.ts';
-import { requireGoogleApiKey, geminiUrl } from '../_shared/gemini.ts';
+import { requireGoogleApiKey, geminiUrl, GEMINI_MODEL } from '../_shared/gemini.ts';
+import { logPrompt } from '../_shared/prompt-logger.ts';
 
-/**
- * Follows a redirect URL (like vertexaisearch.cloud.google.com) to get the real destination.
- */
 async function resolveRedirectUrl(url: string): Promise<string> {
   if (!url.includes('vertexaisearch.cloud.google.com')) {
     return url;
@@ -26,11 +24,6 @@ async function resolveRedirectUrl(url: string): Promise<string> {
   }
 }
 
-/**
- * Takes the raw explanation text and groundingSupports/groundingChunks from Gemini,
- * and returns an annotated explanation with inline [n] citation markers.
- * Resolves vertexaisearch redirect URLs to actual source URLs.
- */
 async function buildCitedExplanation(
   explanation: string,
   groundingSupports: any[] | undefined,
@@ -243,6 +236,7 @@ Ge din bedömning i detta format:
 
 **TL;DR:** [EXAKT en mening på svenska. Den ska vara ett komplement till statusbadge och den längre förklaringen, inte upprepa statusen eller partinamnet i onödan. Börja med partiförkortningen ${partyAbbreviation} och fokusera på den viktigaste konkreta åtgärden, effekten eller siffran. Skriv detta SIST av allt, först när du är helt färdig med analysen ovan, så att TL;DR bygger på din slutliga status och förklaring.]`;
 
+    const startTime = Date.now();
     const response = await fetch(geminiUrl(apiKey), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -252,10 +246,12 @@ Ge din bedömning i detta format:
         generationConfig: { temperature: 0.3, topK: 40, topP: 0.95 }
       }),
     });
+    const durationMs = Date.now() - startTime;
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Google AI API error:', response.status, errorText);
+      logPrompt({ edgeFunction: 'analyze-promise-status', promiseId, model: GEMINI_MODEL, prompt, responseRaw: errorText, groundingSearch: true, durationMs, success: false, errorMessage: `API ${response.status}` });
       throw new Error(`AI-analysen misslyckades (${response.status}). Försök igen.`);
     }
 
@@ -269,6 +265,7 @@ Ge din bedömning i detta format:
       .trim();
 
     if (!textContent) {
+      logPrompt({ edgeFunction: 'analyze-promise-status', promiseId, model: GEMINI_MODEL, prompt, responseRaw: JSON.stringify(aiData).slice(0, 500), groundingSearch: true, durationMs, success: false, errorMessage: 'Empty AI response' });
       throw new Error('AI-analysen gav inget svar. Försök igen.');
     }
 
@@ -307,6 +304,9 @@ Ge din bedömning i detta format:
       groundingSupports,
       groundingChunks
     );
+
+    // Log prompt with full response
+    logPrompt({ edgeFunction: 'analyze-promise-status', promiseId, model: GEMINI_MODEL, prompt, responseRaw: textContent, groundingSearch: true, durationMs, success: true });
 
     console.log(`Cited explanation preview: ${citedText.slice(0, 200)}`);
 

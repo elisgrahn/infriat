@@ -2,7 +2,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { corsResponse, jsonResponse, errorResponse } from '../_shared/cors.ts';
 import { requireAdmin } from '../_shared/auth.ts';
-import { requireGoogleApiKey, geminiUrl } from '../_shared/gemini.ts';
+import { requireGoogleApiKey, geminiUrl, GEMINI_MODEL } from '../_shared/gemini.ts';
+import { logPrompt } from '../_shared/prompt-logger.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return corsResponse();
@@ -11,7 +12,6 @@ serve(async (req) => {
     const { userClient, adminClient } = await requireAdmin(req);
     const apiKey = requireGoogleApiKey();
 
-    // Validate request body
     const requestSchema = z.object({
       promiseId: z.string().uuid(),
     });
@@ -24,7 +24,6 @@ serve(async (req) => {
 
     const { promiseId } = validation.data;
 
-    // Fetch promise (RLS-scoped read)
     const { data: promise, error: fetchError } = await userClient
       .from('promises')
       .select('id, promise_text, direct_quote')
@@ -35,13 +34,7 @@ serve(async (req) => {
       return errorResponse('Promise not found', 404);
     }
 
-    const response = await fetch(geminiUrl(apiKey), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: `Du bedömer mätbarheten av ett svenskt politiskt vallöfte.
+    const prompt = `Du bedömer mätbarheten av ett svenskt politiskt vallöfte.
 
 ## Skala
 - 5: Specifika numeriska mål OCH tidsram (t.ex. "1 000 nya poliser till 2026")
@@ -55,16 +48,23 @@ ${promise.promise_text}
 ${promise.direct_quote ? `\nDirektcitat: "${promise.direct_quote}"` : ''}
 
 Svara ENDAST med ett JSON-objekt utan markdown-formatering:
-{"score": <1-5>, "reason": "<en mening som motiverar poängen med direkt hänvisning till vad som finns eller saknas i löftet>"}`
-          }]
-        }],
+{"score": <1-5>, "reason": "<en mening som motiverar poängen med direkt hänvisning till vad som finns eller saknas i löftet>"}`;
+
+    const startTime = Date.now();
+    const response = await fetch(geminiUrl(apiKey), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
         generationConfig: { temperature: 0.2, topP: 0.8 },
       }),
     });
+    const durationMs = Date.now() - startTime;
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Google AI API error:', response.status, errorText);
+      logPrompt({ edgeFunction: 'analyze-single-measurability', promiseId, model: GEMINI_MODEL, prompt, responseRaw: errorText, groundingSearch: false, durationMs, success: false, errorMessage: `API ${response.status}` });
       return errorResponse(`AI-analysen misslyckades (${response.status}). Försök igen.`);
     }
 
@@ -73,6 +73,7 @@ Svara ENDAST med ett JSON-objekt utan markdown-formatering:
 
     if (!textContent) {
       console.error('No content in AI response:', JSON.stringify(aiData).slice(0, 500));
+      logPrompt({ edgeFunction: 'analyze-single-measurability', promiseId, model: GEMINI_MODEL, prompt, responseRaw: JSON.stringify(aiData).slice(0, 500), groundingSearch: false, durationMs, success: false, errorMessage: 'Empty AI response' });
       return errorResponse('AI-analysen gav inget resultat. Försök igen.');
     }
 
@@ -87,7 +88,6 @@ Svara ENDAST med ett JSON-objekt utan markdown-formatering:
     const result = JSON.parse(jsonStr);
     const score = Math.min(Math.max(result.score, 1), 5);
 
-    // Write via admin client (bypasses RLS)
     const { error: updateError } = await adminClient
       .from('promises')
       .update({
@@ -101,8 +101,9 @@ Svara ENDAST med ett JSON-objekt utan markdown-formatering:
       throw new Error('Kunde inte uppdatera vallöftet. Försök igen.');
     }
 
-    console.log(`Analyzed promise ${promiseId}: score ${score}`);
+    logPrompt({ edgeFunction: 'analyze-single-measurability', promiseId, model: GEMINI_MODEL, prompt, responseRaw: textContent, groundingSearch: false, durationMs, success: true });
 
+    console.log(`Analyzed promise ${promiseId}: score ${score}`);
     return jsonResponse({ score, reason: result.reason });
 
   } catch (error: any) {

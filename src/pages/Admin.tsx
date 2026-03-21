@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { ManifestUpload } from "@/components/ManifestUpload";
+import { AiPromptLogs } from "@/components/AiPromptLogs";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -319,6 +320,8 @@ const Admin = () => {
               </div>
             )}
           </div>
+
+          <AiPromptLogs />
         </div>
       </div>
     </div>
