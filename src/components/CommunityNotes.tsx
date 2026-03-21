@@ -137,12 +137,21 @@ export const CommunityNotes = ({ promiseId }: CommunityNotesProps) => {
     fetchUserVotes();
   };
 
+  const isValidUrl = (url: string): boolean => {
+    try {
+      const parsed = new URL(url);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  };
+
   const handleSubmit = async () => {
     if (!user || !formExplanation.trim()) return;
     setSubmitting(true);
 
     try {
-      const cleanSources = formSources.filter(s => s.trim());
+      const cleanSources = formSources.filter(s => s.trim()).filter(s => isValidUrl(s));
       const { error } = await supabase.from('status_suggestions').insert({
         promise_id: promiseId,
         user_id: user.id,
