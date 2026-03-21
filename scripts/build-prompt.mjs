@@ -139,7 +139,7 @@ Ge din bedömning i detta format:
 
 **Källor:** [lista med relevanta källor och URL:er]
 
-**TL;DR:** [EXAKT en mening på svenska. Den ska vara ett komplement till statusbadge och den längre förklaringen, inte upprepa statusen eller partinamnet i onödan. Börja med partiförkortningen ${partyAbbreviation} och fokusera på den viktigaste konkreta åtgärden, effekten eller siffran. Skriv detta SIST av allt, först när du är helt färdig med analysen ovan, så att TL;DR bygger på din slutliga status och förklaring.]`;
+**TL;DR:** [En kort mening på svenska som sammanfattar förklaringen. Den ska vara ett komplement till statusen och förklaringen, upprepa inte statusen. Använd partiförkortningen ${partyAbbreviation} om du nämner partiet och fokusera på den viktigaste konkreta åtgärden, effekten eller siffran. Skriv detta SIST av allt, först när du är helt färdig med analysen ovan, så att TL;DR bygger på din slutliga status och förklaring.]`;
 
 // ── Skriv ut ────────────────────────────────────────────────────────────────────
 const separator = "─".repeat(72);
