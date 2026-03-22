@@ -73,11 +73,13 @@ const Index = () => {
         </main>
       </div>
 
-      <PromiseDetailOverlay
-        promiseId={selectedPromiseId}
-        initialStatus={selectedPromiseStatus}
-        onClose={handleOverlayClose}
-      />
+      <Suspense fallback={null}>
+        <PromiseDetailOverlay
+          promiseId={selectedPromiseId}
+          initialStatus={selectedPromiseStatus}
+          onClose={handleOverlayClose}
+        />
+      </Suspense>
     </>
   );
 };
