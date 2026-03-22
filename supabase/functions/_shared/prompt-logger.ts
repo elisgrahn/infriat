@@ -12,7 +12,7 @@ interface LogPromptParams {
   errorMessage?: string;
 }
 
-const MAX_RESPONSE_LENGTH = 10000;
+const MAX_RESPONSE_LENGTH = 50000;
 
 /**
  * Fire-and-forget prompt logger. Never throws — logs errors silently.

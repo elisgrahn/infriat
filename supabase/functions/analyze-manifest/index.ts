@@ -507,16 +507,35 @@ serve(async (req) => {
     const jobId = job.id;
     console.log(`Created analysis job: ${jobId}`);
 
+    // Wrap in a safety net so the job is always marked failed on unexpected crashes
+    const safeRunJob = async () => {
+      try {
+        await runAnalysisJob(jobId, finalManifestText, party.id, electionYear, manifestPdfUrl, apiKey);
+      } catch (outerErr: any) {
+        console.error(`Job ${jobId} outer safety catch:`, outerErr);
+        try {
+          const rescueClient = createClient(
+            Deno.env.get('SUPABASE_URL')!,
+            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+          );
+          await rescueClient.from('analysis_jobs').update({
+            status: 'failed',
+            error_message: outerErr instanceof Error ? outerErr.message : 'Oväntat fel i bakgrundsjobb',
+            updated_at: new Date().toISOString(),
+          }).eq('id', jobId);
+        } catch (rescueErr) {
+          console.error(`Job ${jobId} rescue update also failed:`, rescueErr);
+        }
+      }
+    };
+
     // @ts-ignore - EdgeRuntime is available in Supabase Edge Functions
     if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime.waitUntil) {
       // @ts-ignore
-      EdgeRuntime.waitUntil(
-        runAnalysisJob(jobId, finalManifestText, party.id, electionYear, manifestPdfUrl, apiKey)
-      );
+      EdgeRuntime.waitUntil(safeRunJob());
     } else {
       console.log('EdgeRuntime.waitUntil not available, running inline');
-      runAnalysisJob(jobId, finalManifestText, party.id, electionYear, manifestPdfUrl, apiKey)
-        .catch(err => console.error('Background job error:', err));
+      safeRunJob().catch(err => console.error('Background job error:', err));
     }
 
     return jsonResponse({
