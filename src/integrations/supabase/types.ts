@@ -66,11 +66,15 @@ export type Database = {
       }
       analysis_jobs: {
         Row: {
+          accumulated_promises: Json | null
           completed_chunks: number | null
           created_at: string | null
+          current_chunk: number | null
           election_year: number
           error_message: string | null
           id: string
+          manifest_pdf_url: string | null
+          manifest_text: string | null
           party_id: string
           progress_pct: number | null
           result_count: number | null
@@ -79,11 +83,15 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          accumulated_promises?: Json | null
           completed_chunks?: number | null
           created_at?: string | null
+          current_chunk?: number | null
           election_year: number
           error_message?: string | null
           id?: string
+          manifest_pdf_url?: string | null
+          manifest_text?: string | null
           party_id: string
           progress_pct?: number | null
           result_count?: number | null
@@ -92,11 +100,15 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          accumulated_promises?: Json | null
           completed_chunks?: number | null
           created_at?: string | null
+          current_chunk?: number | null
           election_year?: number
           error_message?: string | null
           id?: string
+          manifest_pdf_url?: string | null
+          manifest_text?: string | null
           party_id?: string
           progress_pct?: number | null
           result_count?: number | null
