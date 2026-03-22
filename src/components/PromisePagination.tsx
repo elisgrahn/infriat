@@ -21,12 +21,18 @@ export const PromisePagination = ({
 }: PromisePaginationProps) => {
   if (totalPages <= 1) return null;
 
+  const pageHref = (page: number) => `?page=${page}`;
+
   return (
     <Pagination className="mt-8">
       <PaginationContent>
         <PaginationItem>
           <PaginationPrevious
-            onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+            href={pageHref(Math.max(1, currentPage - 1))}
+            onClick={(e) => {
+              e.preventDefault();
+              onPageChange(Math.max(1, currentPage - 1));
+            }}
             className={
               currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"
             }
@@ -35,7 +41,14 @@ export const PromisePagination = ({
 
         {currentPage > 2 && (
           <PaginationItem>
-            <PaginationLink onClick={() => onPageChange(1)} className="cursor-pointer">
+            <PaginationLink
+              href={pageHref(1)}
+              onClick={(e) => {
+                e.preventDefault();
+                onPageChange(1);
+              }}
+              className="cursor-pointer"
+            >
               1
             </PaginationLink>
           </PaginationItem>
@@ -50,7 +63,11 @@ export const PromisePagination = ({
         {currentPage > 1 && (
           <PaginationItem>
             <PaginationLink
-              onClick={() => onPageChange(currentPage - 1)}
+              href={pageHref(currentPage - 1)}
+              onClick={(e) => {
+                e.preventDefault();
+                onPageChange(currentPage - 1);
+              }}
               className="cursor-pointer"
             >
               {currentPage - 1}
@@ -59,7 +76,7 @@ export const PromisePagination = ({
         )}
 
         <PaginationItem>
-          <PaginationLink isActive className="cursor-pointer">
+          <PaginationLink isActive href={pageHref(currentPage)} className="cursor-pointer">
             {currentPage}
           </PaginationLink>
         </PaginationItem>
@@ -67,7 +84,11 @@ export const PromisePagination = ({
         {currentPage < totalPages && (
           <PaginationItem>
             <PaginationLink
-              onClick={() => onPageChange(currentPage + 1)}
+              href={pageHref(currentPage + 1)}
+              onClick={(e) => {
+                e.preventDefault();
+                onPageChange(currentPage + 1);
+              }}
               className="cursor-pointer"
             >
               {currentPage + 1}
@@ -84,7 +105,11 @@ export const PromisePagination = ({
         {currentPage < totalPages - 1 && (
           <PaginationItem>
             <PaginationLink
-              onClick={() => onPageChange(totalPages)}
+              href={pageHref(totalPages)}
+              onClick={(e) => {
+                e.preventDefault();
+                onPageChange(totalPages);
+              }}
               className="cursor-pointer"
             >
               {totalPages}
@@ -94,7 +119,11 @@ export const PromisePagination = ({
 
         <PaginationItem>
           <PaginationNext
-            onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+            href={pageHref(Math.min(totalPages, currentPage + 1))}
+            onClick={(e) => {
+              e.preventDefault();
+              onPageChange(Math.min(totalPages, currentPage + 1));
+            }}
             className={
               currentPage === totalPages
                 ? "pointer-events-none opacity-50"
