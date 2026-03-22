@@ -1,12 +1,14 @@
-import { useEffect, useCallback } from "react";
+import { lazy, Suspense, useEffect, useCallback } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { usePromises } from "@/hooks/usePromises";
 import { HeroSection } from "@/components/HeroSection";
 import { MobileFilterBar } from "@/components/MobileFilterBar";
 import { DesktopFilterSidebar } from "@/components/DesktopFilterSidebar";
 import { PromiseList } from "@/components/PromiseList";
-import { TimelineComparison } from "@/components/TimelineComparison";
-import { PromiseDetailOverlay } from "@/components/PromiseDetailOverlay";
+
+// Lazy-load below-the-fold components
+const TimelineComparison = lazy(() => import("@/components/TimelineComparison").then(m => ({ default: m.TimelineComparison })));
+const PromiseDetailOverlay = lazy(() => import("@/components/PromiseDetailOverlay").then(m => ({ default: m.PromiseDetailOverlay })));
 
 const Index = () => {
   const navigate = useNavigate();
@@ -46,10 +48,12 @@ const Index = () => {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
             {/* Party Comparison - Full Width Above Filters */}
             <div className="lg:col-span-4">
-              <TimelineComparison
-                promises={filteredPromises}
-                governmentPeriods={governmentPeriods}
-              />
+              <Suspense fallback={null}>
+                <TimelineComparison
+                  promises={filteredPromises}
+                  governmentPeriods={governmentPeriods}
+                />
+              </Suspense>
             </div>
 
             <DesktopFilterSidebar filteredCount={filteredPromises.length} />
@@ -69,11 +73,13 @@ const Index = () => {
         </main>
       </div>
 
-      <PromiseDetailOverlay
-        promiseId={selectedPromiseId}
-        initialStatus={selectedPromiseStatus}
-        onClose={handleOverlayClose}
-      />
+      <Suspense fallback={null}>
+        <PromiseDetailOverlay
+          promiseId={selectedPromiseId}
+          initialStatus={selectedPromiseStatus}
+          onClose={handleOverlayClose}
+        />
+      </Suspense>
     </>
   );
 };
