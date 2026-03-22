@@ -405,6 +405,13 @@ serve(async (req) => {
 
     // ─── Continuation path: process a single chunk (self-invoked) ───
     if (body.continueJobId && typeof body.chunkIndex === 'number') {
+      // Only allow continuation calls from the service-role (self-invocation)
+      const authHeader = req.headers.get('authorization') ?? '';
+      const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      if (authHeader !== `Bearer ${serviceKey}`) {
+        return jsonResponse({ error: 'Forbidden' }, 403);
+      }
+
       const jobId = body.continueJobId;
       const chunkIndex = body.chunkIndex;
       console.log(`Continuation call: job ${jobId}, chunk ${chunkIndex}`);
