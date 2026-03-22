@@ -54,6 +54,8 @@ const VALID_CATEGORIES = [
   'rattssakerhet', 'forsvar', 'klimat-miljo', 'bostad', 'demokrati', 'ovrigt'
 ];
 
+const CHUNK_SIZE = 18000;
+
 function buildSystemPrompt(chunkInfo?: { num: number; total: number }): string {
   const chunkNote = chunkInfo
     ? `\nOBS: Detta är chunk ${chunkInfo.num} av ${chunkInfo.total} från ett större manifest. Extrahera löften endast från denna del — undvik dubbletter med tidigare chunks.`
@@ -150,7 +152,8 @@ async function analyzeChunk(
   const aiData = await response.json();
   const parts = aiData.candidates?.[0]?.content?.parts || [];
   const functionCall = parts.find((p: any) => p.functionCall)?.functionCall;
-  const responseRaw = JSON.stringify(parts).slice(0, 10000);
+  // Full response — prompt-logger handles truncation at 50k
+  const responseRaw = JSON.stringify(parts);
 
   if (!functionCall || functionCall.name !== 'extract_promises') {
     const textPart = parts.find((p: any) => p.text)?.text;
@@ -196,89 +199,142 @@ function splitIntoChunks(text: string, chunkSize: number): string[] {
   return chunks;
 }
 
-async function runAnalysisJob(
-  jobId: string,
-  finalManifestText: string,
-  partyId: string,
-  electionYear: number,
-  manifestPdfUrl: string | null,
-  apiKey: string,
-) {
+// ─── Self-invocation: trigger next chunk in a new edge function call ───
+function selfInvokeNextChunk(jobId: string, chunkIndex: number) {
+  const selfUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/analyze-manifest`;
+  fetch(selfUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+    },
+    body: JSON.stringify({ continueJobId: jobId, chunkIndex }),
+  }).catch(err => console.error(`Self-invoke for chunk ${chunkIndex} failed:`, err));
+}
+
+// ─── Process a single chunk, update job state, trigger next or finalize ───
+async function processChunk(jobId: string, chunkIndex: number) {
   const adminClient = getAdminClient();
+  const apiKey = requireGoogleApiKey();
 
   try {
-    await adminClient.from('analysis_jobs').update({ status: 'processing', updated_at: new Date().toISOString() }).eq('id', jobId);
+    // Load job state
+    const { data: job, error: jobErr } = await adminClient
+      .from('analysis_jobs')
+      .select('*')
+      .eq('id', jobId)
+      .single();
 
-    const CHUNK_SIZE = 18000;
-    const chunks = splitIntoChunks(finalManifestText, CHUNK_SIZE);
-    const totalChunks = chunks.length;
-
-    console.log(`Job ${jobId}: ${totalChunks} chunks from ${finalManifestText.length} chars`);
-
-    await adminClient.from('analysis_jobs').update({ total_chunks: totalChunks, updated_at: new Date().toISOString() }).eq('id', jobId);
-
-    const allPromises: any[] = [];
-    for (let i = 0; i < chunks.length; i++) {
-      console.log(`Job ${jobId}: chunk ${i + 1}/${totalChunks} (${chunks[i].length} chars)...`);
-
-      let chunkResult: { promises: any[]; durationMs: number; prompt: string; responseRaw: string; success: boolean; errorMessage?: string } | null = null;
-      const MAX_RETRIES = 2;
-
-      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-        try {
-          chunkResult = await analyzeChunk(apiKey, chunks[i], i + 1, totalChunks);
-          if (chunkResult.success) break;
-          if (attempt >= MAX_RETRIES) break;
-          await new Promise(r => setTimeout(r, 2000 * Math.pow(2, attempt)));
-        } catch (err) {
-          console.error(`Job ${jobId}: chunk ${i + 1} attempt ${attempt + 1} failed:`, err);
-          if (attempt >= MAX_RETRIES) {
-            console.error(`Job ${jobId}: chunk ${i + 1} failed after ${MAX_RETRIES + 1} attempts, skipping`);
-            break;
-          }
-          await new Promise(r => setTimeout(r, 2000 * Math.pow(2, attempt)));
-        }
-      }
-
-      if (chunkResult) {
-        logPrompt({
-          edgeFunction: 'analyze-manifest',
-          model: GEMINI_MODEL,
-          prompt: chunkResult.prompt,
-          responseRaw: chunkResult.responseRaw,
-          groundingSearch: false,
-          durationMs: chunkResult.durationMs,
-          success: chunkResult.success,
-          errorMessage: chunkResult.errorMessage,
-        });
-        allPromises.push(...chunkResult.promises);
-      }
-
-      const completedChunks = i + 1;
-      const progressPct = Math.round((completedChunks / totalChunks) * 90);
-
-      await adminClient.from('analysis_jobs').update({
-        completed_chunks: completedChunks,
-        progress_pct: progressPct,
-        updated_at: new Date().toISOString(),
-      }).eq('id', jobId);
-
-      console.log(`Job ${jobId}: chunk ${completedChunks} complete, ${chunkResult?.promises.length || 0} promises, ${progressPct}%`);
+    if (jobErr || !job) {
+      console.error(`processChunk: job ${jobId} not found`, jobErr);
+      return;
     }
 
-    if (allPromises.length === 0) {
+    if (job.status === 'failed' || job.status === 'completed') {
+      console.log(`processChunk: job ${jobId} already ${job.status}, skipping`);
+      return;
+    }
+
+    const manifestText = job.manifest_text;
+    if (!manifestText) {
+      throw new Error('No manifest_text stored on job');
+    }
+
+    const chunks = splitIntoChunks(manifestText, CHUNK_SIZE);
+    const totalChunks = chunks.length;
+
+    if (chunkIndex >= totalChunks) {
+      console.error(`processChunk: chunkIndex ${chunkIndex} >= totalChunks ${totalChunks}`);
+      return;
+    }
+
+    // Update status to processing on first chunk
+    if (chunkIndex === 0) {
+      await adminClient.from('analysis_jobs').update({
+        status: 'processing',
+        total_chunks: totalChunks,
+        updated_at: new Date().toISOString(),
+      }).eq('id', jobId);
+    }
+
+    console.log(`Job ${jobId}: processing chunk ${chunkIndex + 1}/${totalChunks} (${chunks[chunkIndex].length} chars)`);
+
+    // Analyze with retries
+    let chunkResult: Awaited<ReturnType<typeof analyzeChunk>> | null = null;
+    const MAX_RETRIES = 2;
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        chunkResult = await analyzeChunk(apiKey, chunks[chunkIndex], chunkIndex + 1, totalChunks);
+        if (chunkResult.success) break;
+        if (attempt >= MAX_RETRIES) break;
+        await new Promise(r => setTimeout(r, 2000 * Math.pow(2, attempt)));
+      } catch (err) {
+        console.error(`Job ${jobId}: chunk ${chunkIndex + 1} attempt ${attempt + 1} failed:`, err);
+        if (attempt >= MAX_RETRIES) break;
+        await new Promise(r => setTimeout(r, 2000 * Math.pow(2, attempt)));
+      }
+    }
+
+    // Log prompt
+    if (chunkResult) {
+      logPrompt({
+        edgeFunction: 'analyze-manifest',
+        model: GEMINI_MODEL,
+        prompt: chunkResult.prompt,
+        responseRaw: chunkResult.responseRaw,
+        groundingSearch: false,
+        durationMs: chunkResult.durationMs,
+        success: chunkResult.success,
+        errorMessage: chunkResult.errorMessage,
+      });
+    }
+
+    // Accumulate promises
+    const existingPromises: any[] = job.accumulated_promises || [];
+    const newPromises = chunkResult?.promises || [];
+    const allAccumulated = [...existingPromises, ...newPromises];
+
+    const completedChunks = chunkIndex + 1;
+    const progressPct = Math.round((completedChunks / totalChunks) * 90);
+
+    // Update job state
+    await adminClient.from('analysis_jobs').update({
+      completed_chunks: completedChunks,
+      progress_pct: progressPct,
+      current_chunk: chunkIndex,
+      accumulated_promises: allAccumulated,
+      updated_at: new Date().toISOString(),
+    }).eq('id', jobId);
+
+    console.log(`Job ${jobId}: chunk ${completedChunks}/${totalChunks} done, ${newPromises.length} new promises, total ${allAccumulated.length}, ${progressPct}%`);
+
+    // If more chunks remain, self-invoke for the next one
+    if (completedChunks < totalChunks) {
+      selfInvokeNextChunk(jobId, chunkIndex + 1);
+      return;
+    }
+
+    // ─── Final chunk: dedup, delete old, insert new ───
+    console.log(`Job ${jobId}: all chunks complete, finalizing...`);
+
+    if (allAccumulated.length === 0) {
       throw new Error('Inga löften kunde extraheras från manifestet.');
     }
 
     const seen = new Set<string>();
-    const uniquePromises = allPromises.filter(p => {
+    const uniquePromises = allAccumulated.filter((p: any) => {
       const key = p.promise_text.toLowerCase().trim();
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
     });
 
-    console.log(`Job ${jobId}: dedup ${allPromises.length} -> ${uniquePromises.length}`);
+    console.log(`Job ${jobId}: dedup ${allAccumulated.length} -> ${uniquePromises.length}`);
+
+    const partyId = job.party_id;
+    const electionYear = job.election_year;
+    const manifestPdfUrl = job.manifest_pdf_url;
 
     const { data: deletedPromises } = await adminClient
       .from('promises')
@@ -320,15 +376,18 @@ async function runAnalysisJob(
     const resultCount = insertedPromises?.length || 0;
     console.log(`Job ${jobId}: inserted ${resultCount} promises`);
 
+    // Clear manifest_text to free storage, mark complete
     await adminClient.from('analysis_jobs').update({
       status: 'completed',
       progress_pct: 100,
       result_count: resultCount,
+      manifest_text: null,
+      accumulated_promises: null,
       updated_at: new Date().toISOString(),
     }).eq('id', jobId);
 
   } catch (error: any) {
-    console.error(`Job ${jobId} failed:`, error);
+    console.error(`Job ${jobId} chunk ${chunkIndex} failed:`, error);
     await adminClient.from('analysis_jobs').update({
       status: 'failed',
       error_message: error instanceof Error ? error.message : 'Ett okänt fel uppstod',
@@ -337,10 +396,34 @@ async function runAnalysisJob(
   }
 }
 
+// ─── HTTP handler ───
 serve(async (req) => {
   if (req.method === 'OPTIONS') return corsResponse();
 
   try {
+    const body = await req.json();
+
+    // ─── Continuation path: process a single chunk (self-invoked) ───
+    if (body.continueJobId && typeof body.chunkIndex === 'number') {
+      const jobId = body.continueJobId;
+      const chunkIndex = body.chunkIndex;
+      console.log(`Continuation call: job ${jobId}, chunk ${chunkIndex}`);
+
+      // Process chunk in background and return immediately
+      // @ts-ignore - EdgeRuntime is available in Supabase Edge Functions
+      if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime.waitUntil) {
+        // @ts-ignore
+        EdgeRuntime.waitUntil(processChunk(jobId, chunkIndex));
+      } else {
+        processChunk(jobId, chunkIndex).catch(err =>
+          console.error(`processChunk error:`, err)
+        );
+      }
+
+      return jsonResponse({ success: true, continuing: true, jobId, chunkIndex });
+    }
+
+    // ─── Initial analysis path: requires admin auth ───
     const { userClient, adminClient } = await requireAdmin(req);
     const apiKey = requireGoogleApiKey();
 
@@ -356,7 +439,6 @@ serve(async (req) => {
       { message: "At least one of manifestText, txtUrl, pdfBase64, or pdfUrl must be provided" }
     );
 
-    const body = await req.json();
     const validation = requestSchema.safeParse(body);
 
     if (!validation.success) {
@@ -488,6 +570,7 @@ serve(async (req) => {
 
     console.log(`Starting AI analysis, manifest length: ${finalManifestText.length} chars`);
 
+    // Create job with manifest_text stored for chunk-per-invocation processing
     const { data: job, error: jobError } = await adminClient
       .from('analysis_jobs')
       .insert({
@@ -495,6 +578,10 @@ serve(async (req) => {
         election_year: electionYear,
         status: 'pending',
         progress_pct: 0,
+        manifest_text: finalManifestText,
+        manifest_pdf_url: manifestPdfUrl,
+        accumulated_promises: [],
+        current_chunk: 0,
       })
       .select()
       .single();
@@ -507,36 +594,8 @@ serve(async (req) => {
     const jobId = job.id;
     console.log(`Created analysis job: ${jobId}`);
 
-    // Wrap in a safety net so the job is always marked failed on unexpected crashes
-    const safeRunJob = async () => {
-      try {
-        await runAnalysisJob(jobId, finalManifestText, party.id, electionYear, manifestPdfUrl, apiKey);
-      } catch (outerErr: any) {
-        console.error(`Job ${jobId} outer safety catch:`, outerErr);
-        try {
-          const rescueClient = createClient(
-            Deno.env.get('SUPABASE_URL')!,
-            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-          );
-          await rescueClient.from('analysis_jobs').update({
-            status: 'failed',
-            error_message: outerErr instanceof Error ? outerErr.message : 'Oväntat fel i bakgrundsjobb',
-            updated_at: new Date().toISOString(),
-          }).eq('id', jobId);
-        } catch (rescueErr) {
-          console.error(`Job ${jobId} rescue update also failed:`, rescueErr);
-        }
-      }
-    };
-
-    // @ts-ignore - EdgeRuntime is available in Supabase Edge Functions
-    if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime.waitUntil) {
-      // @ts-ignore
-      EdgeRuntime.waitUntil(safeRunJob());
-    } else {
-      console.log('EdgeRuntime.waitUntil not available, running inline');
-      safeRunJob().catch(err => console.error('Background job error:', err));
-    }
+    // Trigger chunk 0 via self-invocation (runs in its own edge function call)
+    selfInvokeNextChunk(jobId, 0);
 
     return jsonResponse({
       success: true,
