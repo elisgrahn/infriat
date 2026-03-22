@@ -48,10 +48,12 @@ const Index = () => {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
             {/* Party Comparison - Full Width Above Filters */}
             <div className="lg:col-span-4">
-              <TimelineComparison
-                promises={filteredPromises}
-                governmentPeriods={governmentPeriods}
-              />
+              <Suspense fallback={null}>
+                <TimelineComparison
+                  promises={filteredPromises}
+                  governmentPeriods={governmentPeriods}
+                />
+              </Suspense>
             </div>
 
             <DesktopFilterSidebar filteredCount={filteredPromises.length} />
