@@ -18,6 +18,14 @@ export default defineConfig(({ mode }) => ({
   build: {
     target: 'es2022',
     minify: 'esbuild',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          recharts: ['recharts'],
+          'pdf-worker': ['pdfjs-dist'],
+        },
+      },
+    },
     ...(mode === 'production' ? {
       esbuildOptions: {
         drop: ['console', 'debugger'],
