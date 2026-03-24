@@ -22,7 +22,7 @@ export function HeroSection({ stats }: HeroSectionProps) {
     stats.total > 0 ? Math.round((stats.fulfilled / stats.total) * 100) : 0;
 
   return (
-    <header className="relative overflow-hidden bg-gradient-to-br from-primary via-primary-light to-primary-dark text-primary-foreground">
+    <header className="relative overflow-hidden bg-gradient-to-br from-primary via-primary-light to-primary-dark text-primary-foreground h-[30rem] flex items-center">
       {/* Animated background elements */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-20 left-10 w-72 h-72 bg-primary-foreground rounded-full blur-3xl animate-pulse" />
@@ -32,22 +32,26 @@ export function HeroSection({ stats }: HeroSectionProps) {
         />
       </div>
 
-      <div className="container relative mx-auto px-4 py-20 md:py-32">
-        <div className="max-w-5xl mx-auto text-center space-y-6 sm:space-y-8">
+      <div className="container relative mx-auto px-4 sm:px-7 md:px-10 w-full">
+        <div className="max-w-5xl mx-auto text-center space-y-6">
           <div className="inline-flex items-center gap-2 bg-primary-foreground/10 backdrop-blur-md px-5 py-2.5 rounded-full border border-primary-foreground/20 shadow-lg">
             <Sparkles className="w-4 h-4 animate-pulse" />
             <span className="text-sm font-medium">Politisk transparens</span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary-foreground via-primary-foreground to-primary-foreground/80 drop-shadow-lg">
-            Infriat
-          </h1>
+          <div className="space-y-2">
 
-          <p className="text-xl md:text-2xl text-primary-foreground/95 max-w-3xl mx-auto leading-relaxed font-light">
-            Vi granskar svenska politiska partier och följer upp deras
-            vallöften. Transparens och ansvar är grunden för ett demokratiskt
-            samhälle.
-          </p>
+            <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary-foreground via-primary-foreground to-primary-foreground/80 drop-shadow-lg">
+              Infriat
+            </h1>
+
+            <p className="text-md sm:text-lg md:text-xl text-primary-foreground/95 max-w-lg sm:max-w-xl md:max-w-2xl mx-auto leading-relaxed font-light">
+              Granskar svenska politiska partier och följer upp deras
+              vallöften. 
+              Transparens och ansvar är grunden för ett demokratiskt
+              samhälle.
+            </p>
+          </div>
 
           <div className="grid grid-cols-3 gap-2 sm:gap-6 max-w-4xl mx-auto">
             <HeroStatCard

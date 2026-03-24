@@ -30,30 +30,23 @@
     <div id="root">
       <!-- Inline skeleton for instant paint before JS hydrates -->
       <style>
+        body { margin: 0; background: hsl(0,0%,98%); }
         .skeleton-hero {
           background: linear-gradient(135deg, hsl(207,100%,33%), hsl(207,100%,45%), hsl(207,100%,25%));
           color: #fff;
-          min-height: 50vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-direction: column;
-          gap: 1rem;
-          padding: 2rem;
-          text-align: center;
+          min-height: 30rem;
+          margin-top: 3.5rem;
         }
-        .skeleton-hero h1 { font-size: 3.5rem; font-weight: 700; margin: 0; }
-        .skeleton-hero p { font-size: 1.25rem; opacity: 0.9; max-width: 48rem; margin: 0 auto; }
         @media (prefers-color-scheme: dark) {
+          .skeleton-hero {
+            background: linear-gradient(135deg, hsl(207,100%,45%), hsl(207,100%,55%), hsl(207,100%,35%));
+          }
           body { background: hsl(210,20%,10%); }
-        }
-        @media (prefers-color-scheme: light) {
-          body { background: hsl(0,0%,98%); }
         }
       </style>
       <div class="skeleton-hero">
-        <h1>Infriat</h1>
-        <p>Vi granskar svenska politiska partier och följer upp deras vallöften.</p>
+        <!-- <h1>Infriat</h1>
+        <p>Vi granskar svenska politiska partier och följer upp deras vallöften.</p> -->
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
