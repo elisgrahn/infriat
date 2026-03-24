@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ComposedChart, Bar, XAxis, YAxis, CartesianGrid, Line } from "recharts";
 import {
   ChartContainer,
