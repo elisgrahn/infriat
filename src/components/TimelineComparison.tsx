@@ -198,6 +198,8 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
               <TabsTrigger value="bar">Antal</TabsTrigger>
               <TabsTrigger value="area">Andel</TabsTrigger>
             </TabsList>
+            <TabsContent value="bar" className="hidden" />
+            <TabsContent value="area" className="hidden" />
           </Tabs>
         </div>
         {chartType === "bar" ? (
