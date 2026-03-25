@@ -33,6 +33,7 @@ export function ThemeToggle({ variant = "navbar" }: ThemeToggleProps) {
       variant="ghost"
       size="sm"
       onClick={toggle}
+      aria-label="Växla tema"
       className={variant === "hero" ? heroClass : navbarClass}
     >
       <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />

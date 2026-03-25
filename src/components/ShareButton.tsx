@@ -34,6 +34,7 @@ export function ShareButton({ promiseId }: { promiseId: string }) {
             size="sm"
             className="ml-auto h-7 gap-1.5 text-xs rounded-full"
             onClick={handleShare}
+            aria-label={copied ? "Länk kopierad" : "Dela länk"}
           >
             {copied ? (
               <Check className="w-3.5 h-3.5" />
