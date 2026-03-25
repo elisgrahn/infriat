@@ -1,78 +1,49 @@
 
 
-## Plan: Nästa steg för Infriat
+## Plan: Rena URL:er med `/lofte/:id` + OG-metadata fix
 
-### 1. Footer: "Bidra"-sektion med Swish + GitHub
+### Koncept
 
-Byt ut den nuvarande "Stöd projektet"-kolumnen i footern mot en "Bidra"-sektion med två tydliga alternativ:
-- **Swish**: Visa Swish-nummer (eller placeholder tills det finns)
-- **GitHub**: Länk till GitHub-repot med AGPL-licens-notering, t.ex. "Projektet är öppen källkod (AGPL v3)"
+Byt från `/?promise=id` till `/lofte/:id` för löftesdetaljer. Routen finns redan i routern — den behöver bara kopplas till overlay-logiken. Detta ger:
+- **Snygg delningslänk**: `infriat.se/lofte/abc123`
+- **OG-metadata fungerar**: Edge function uppdateras att redirecta till `/lofte/:id`, och `og:url` pekar dit
+- **Samma UX**: Overlay öppnas ovanpå Index-sidan som idag
 
-**Fil:** `src/layouts/Footer.tsx`
+### Ändringar
 
----
+**1. `src/pages/Index.tsx`** — Använd `useParams` istället för `searchParams`
+- `const { id: promiseId } = useParams()` blir den primära källan
+- Ta bort `searchParams.get("promise")`-logiken
+- `handleOverlayClose` navigerar till `/` istället för att ta bort query param
 
-### 2. Byt namn på "Under analys" → "Kommande val"
+**2. `src/components/PromiseCard.tsx`** — Navigera till `/lofte/:id`
+- Byt `navigate(\`/?promise=\${promiseId}\`)` → `navigate(\`/lofte/\${promiseId}\`)`
 
-Statusen `pending-analysis` representerar löften från valmanifest där valet ännu inte hållts. Byt label, tooltip och ikon för att reflektera detta:
-- Label: "Kommande val" (eller "Inväntar val")
-- Tooltip: "Löftet kommer från ett valmanifest för ett val som ännu inte hållts"
-- Ikon: t.ex. `CalendarClock` istället för `Search`
-- StatusBadge ska inte visa status-färgkodning (behåll muted-stil)
+**3. `supabase/functions/og-metadata/index.ts`** — Uppdatera redirect + OG-URL
+- Byt `siteUrl` från `infriat.lovable.app` till `infriat.se`
+- Byt `redirectUrl` till `${siteUrl}/lofte/${promiseId}`
+- Lägg till `og:url` som pekar på `${siteUrl}/lofte/${promiseId}`
 
-**Fil:** `src/config/badgeConfig.ts` — uppdatera `pending-analysis`-posten
+**4. `src/components/ShareButton.tsx`** — Behåll edge function-URL för delning
+- Delningslänken pekar fortfarande på edge function (för crawlers), men redirecten landar nu på `/lofte/:id`
 
----
+**5. `index.html`** — Lägg till saknade meta-taggar
+- `<meta property="og:url" content="https://infriat.se/" />`
+- `<meta property="og:logo" content="https://infriat.se/infriat.svg" />`
 
-### 3. Visa TL;DR istället för sammanfattning i PromiseCard
+**6. `src/components/PromiseDetailContent.tsx`** — Uppdatera eventuella `?promise=`-referenser
 
-I `PromiseList.tsx` skickas `promise.summary` som `description` till `PromiseCard`. Ändra logiken:
-- Om löftet har `status_tldr` (dvs. analyserats): visa `status_tldr` som description
-- Annars: visa `summary` som idag
+### Filer
 
-Kräver att `status_tldr` finns i `PromiseData`-typen (den finns redan i DB och Supabase-typen, behöver läggas till i `fetchPromises` select och `PromiseData`-interfacet om det saknas).
+| Fil | Ändring |
+|---|---|
+| `src/pages/Index.tsx` | Läs `promiseId` från `useParams`, navigera till `/` vid stängning |
+| `src/components/PromiseCard.tsx` | Navigera till `/lofte/:id` |
+| `supabase/functions/og-metadata/index.ts` | Redirect till `/lofte/:id`, `siteUrl` → `infriat.se` |
+| `index.html` | Lägg till `og:url` och `og:logo` |
+| `src/components/ShareButton.tsx` | Ingen ändring behövs (pekar redan på edge function) |
 
-**Filer:** `src/types/promise.ts`, `src/services/promises.ts`, `src/components/PromiseList.tsx`
+### Notering om Outlet
 
----
-
-### 4. Bättre ordning i PromiseDetailContent
-
-Nuvarande ordning:
-1. Sammanfattning
-2. Citat ur valmanifest
-3. Mätbarhet
-4. Statusbedömning (TL;DR + förklaring)
-5. Källor
-
-Föreslagen ordning — flytta statusbedömningen uppåt direkt efter sammanfattningen, eftersom det är det mest relevanta:
-1. Sammanfattning
-2. **Statusbedömning** (TL;DR + förklaring med källor)
-3. **Källor**
-4. Citat ur valmanifest
-5. Mätbarhet
-
-**Fil:** `src/components/PromiseDetailContent.tsx` — flytta sektionernas JSX-block
-
----
-
-### 5. Ytterligare förslag
-
-Utöver dina idéer, här är några förslag:
-
-- **Delningslänk med OG-preview per löfte**: Dynamisk `og:title`/`og:description` per löfte-URL, så att delade länkar på sociala medier visar löftets text och status. Kräver en edge function som returnerar HTML med rätt meta-taggar.
-- **"Senast uppdaterade" som standardsortering**: Visa löften som nyligen fått en statusuppdatering överst, så återkommande besökare ser vad som ändrats.
-- **Notifieringar / RSS-flöde**: Ett RSS-flöde eller en enkel "prenumerera på uppdateringar"-funktion för användare som vill följa statusändringar.
-- **Filtrera per valår direkt i hero/navbar**: Snabbknappar för "Val 2022", "Val 2026" etc. istället för att behöva öppna filterpanelen.
-
----
-
-### Teknisk sammanfattning
-
-| Ändring | Filer |
-|---------|-------|
-| Footer "Bidra" | `src/layouts/Footer.tsx` |
-| Byt namn pending-analysis | `src/config/badgeConfig.ts` |
-| TL;DR i PromiseCard | `src/types/promise.ts`, `src/services/promises.ts`, `src/components/PromiseList.tsx` |
-| Omordna PromiseDetail | `src/components/PromiseDetailContent.tsx` |
+React Router's `<Outlet>` behövs inte här — `/lofte/:id` renderar redan `<Index />` som i sin tur renderar overlayen baserat på `useParams().id`. Samma komponentträd, bara att URL:en driver state istället för query params.
 
