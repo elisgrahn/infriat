@@ -61,13 +61,15 @@ const Index = () => {
         <main className="container mx-auto p-4">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
             {/* Party Comparison - Full Width Above Filters */}
-            <div className="lg:col-span-4 min-h-[420px]">
-              <Suspense fallback={<div className="h-[420px]" />}>
-                <TimelineComparison
-                  promises={filteredPromises}
-                  governmentPeriods={governmentPeriods}
-                />
-              </Suspense>
+            <div className="lg:col-span-4 min-h-[420px]" ref={chartRef}>
+              {chartVisible && (
+                <Suspense fallback={<div className="h-[420px]" />}>
+                  <TimelineComparison
+                    promises={filteredPromises}
+                    governmentPeriods={governmentPeriods}
+                  />
+                </Suspense>
+              )}
             </div>
 
             <DesktopFilterSidebar filteredCount={filteredPromises.length} />
