@@ -152,7 +152,7 @@ export const StatisticsCharts = ({ promises }: StatisticsChartsProps) => {
                 color: "hsl(var(--warning))",
               },
               "pending-analysis": {
-                label: "Under analys",
+                label: "Kommande val",
                 color: "hsl(var(--muted))",
               },
             }}

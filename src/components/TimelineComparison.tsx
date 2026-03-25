@@ -63,7 +63,7 @@ const baseChartConfig = {
     color: STATUS_CONFIG['brutet' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))',
   },
   underAnalys: {
-    label: 'Under analys',
+    label: 'Kommande val',
     color: STATUS_CONFIG['pending-analysis' as PromiseStatus]?.chartColor ?? 'hsl(var(--muted-foreground))',
   },
   avgMeasurability: {
