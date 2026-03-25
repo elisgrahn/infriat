@@ -1,0 +1,8 @@
+name = "infriat-og-worker"
+main = "index.js"
+compatibility_date = "2024-01-01"
+
+# After deploying with `npx wrangler deploy`, add a route in
+# Cloudflare dashboard: Workers Routes → Add Route
+#   Pattern: infriat.se/lofte/*
+#   Worker:  infriat-og-worker
