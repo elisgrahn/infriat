@@ -25,10 +25,9 @@ export default defineConfig(({ mode }) => ({
           'vendor-router': ['react-router-dom'],
           'vendor-query': ['@tanstack/react-query'],
           'vendor-supabase': ['@supabase/supabase-js'],
-          'vendor-radix': [
-            'radix-ui',
-            '@radix-ui/react-separator',
-          ],
+          // radix-ui is NOT manually chunked — Vite splits it by
+          // actual import graph so lazy-loaded routes don't force the
+          // entire Radix bundle into the initial load.
           'vendor-icons': ['lucide-react'],
           recharts: ['recharts'],
           'pdf-worker': ['pdfjs-dist'],
