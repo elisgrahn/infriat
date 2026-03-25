@@ -25,6 +25,11 @@ export default defineConfig(({ mode }) => ({
           'vendor-router': ['react-router-dom'],
           'vendor-query': ['@tanstack/react-query'],
           'vendor-supabase': ['@supabase/supabase-js'],
+          'vendor-radix': [
+            'radix-ui',
+            '@radix-ui/react-separator',
+          ],
+          'vendor-icons': ['lucide-react'],
           recharts: ['recharts'],
           'pdf-worker': ['pdfjs-dist'],
         },
