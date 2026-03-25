@@ -241,6 +241,7 @@ export type Database = {
           status_tldr: string | null
           summary: string | null
           updated_at: string
+          view_count: number
         }
         Insert: {
           category?: Database["public"]["Enums"]["policy_category"] | null
@@ -261,6 +262,7 @@ export type Database = {
           status_tldr?: string | null
           summary?: string | null
           updated_at?: string
+          view_count?: number
         }
         Update: {
           category?: Database["public"]["Enums"]["policy_category"] | null
@@ -281,6 +283,7 @@ export type Database = {
           status_tldr?: string | null
           summary?: string | null
           updated_at?: string
+          view_count?: number
         }
         Relationships: [
           {
@@ -400,6 +403,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_view_count: {
+        Args: { _promise_id: string }
+        Returns: undefined
       }
     }
     Enums: {

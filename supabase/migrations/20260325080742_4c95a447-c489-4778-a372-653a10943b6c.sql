@@ -1,0 +1,1 @@
+ALTER TABLE public.promises ADD COLUMN view_count integer NOT NULL DEFAULT 0;

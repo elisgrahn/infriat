@@ -150,6 +150,21 @@ export function PromiseDetailContent({
     }
   };
 
+  // Track view (skip for admins to avoid inflating counts)
+  useEffect(() => {
+    if (!promiseId || isAdmin) return;
+    const viewedKey = `viewed-${promiseId}`;
+    if (sessionStorage.getItem(viewedKey)) return;
+    sessionStorage.setItem(viewedKey, '1');
+
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    fetch(`https://${projectId}.supabase.co/functions/v1/increment-view`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ promise_id: promiseId }),
+    }).catch(() => { /* fire-and-forget */ });
+  }, [promiseId, isAdmin]);
+
   useEffect(() => {
     if (!promiseId) return;
     fetchPromise();
