@@ -104,12 +104,10 @@ export function PromiseList({
   return (
     <>
       {/* Hidden measurement container — single instance for the entire list */}
-      {/* @ts-ignore inert is valid HTML */}
       <div
         ref={measureContainerRef}
         aria-hidden="true"
-        // eslint-disable-next-line react/no-unknown-property
-        inert=""
+        {...{ inert: "" } as any}
         className="relative overflow-hidden pointer-events-none h-0"
       >
         <div
