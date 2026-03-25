@@ -226,9 +226,9 @@ export const PromiseFilters = memo(function PromiseFilters({
               <SelectValue placeholder="Sortera efter..." />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="popularity-desc">Popularitet</SelectItem>
               <SelectItem value="created-desc">Skapat datum (fallande)</SelectItem>
               <SelectItem value="created-asc">Skapat datum (stigande)</SelectItem>
-              <SelectItem value="popularity-desc">Populärast</SelectItem>
               <SelectItem value="year-desc">Valår (fallande)</SelectItem>
               <SelectItem value="year-asc">Valår (stigande)</SelectItem>
               <SelectItem value="measurability-desc">Mätbart (högst först)</SelectItem>

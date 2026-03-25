@@ -116,7 +116,7 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
       return sq ? sq.split(',') : [];
     })(),
     searchQuery: searchParams.get('search') || '',
-    sortBy: searchParams.get('sort') || 'created-desc',
+    sortBy: searchParams.get('sort') || 'popularity-desc',
     selectedPeriodId: searchParams.get('period') || null,
     governmentPeriods: [],
     // eslint-disable-next-line react-hooks/exhaustive-deps
