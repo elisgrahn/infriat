@@ -16,6 +16,20 @@ const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedPromiseId = searchParams.get("promise") ?? undefined;
 
+  // Defer chart rendering until its container enters viewport
+  const chartRef = useRef<HTMLDivElement>(null);
+  const [chartVisible, setChartVisible] = useState(false);
+  useEffect(() => {
+    const el = chartRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setChartVisible(true); io.disconnect(); } },
+      { rootMargin: "200px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   const {
     loading,
     filteredPromises,
