@@ -12,9 +12,10 @@ const PromiseDetailOverlay = lazy(() => import("@/components/PromiseDetailOverla
 
 const Index = () => {
   const navigate = useNavigate();
-  const { id: legacyPromiseId } = useParams<{ id?: string }>();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const selectedPromiseId = searchParams.get("promise") ?? undefined;
+  const { id: promiseIdFromPath } = useParams<{ id?: string }>();
+  const [searchParams] = useSearchParams();
+  // Support both /lofte/:id (primary) and legacy ?promise= query param
+  const selectedPromiseId = promiseIdFromPath ?? searchParams.get("promise") ?? undefined;
 
   // Defer chart rendering until its container enters viewport
   const chartRef = useRef<HTMLDivElement>(null);
@@ -46,12 +47,12 @@ const Index = () => {
   )?.status;
 
   const handleOverlayClose = useCallback(() => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      next.delete("promise");
-      return next;
-    }, { replace: true });
-  }, [setSearchParams]);
+    // Preserve any existing search params (sort, filters, page) when closing
+    const params = new URLSearchParams(searchParams);
+    params.delete("promise");
+    const qs = params.toString();
+    navigate(qs ? `/?${qs}` : "/", { replace: true });
+  }, [navigate, searchParams]);
 
   return (
     <>

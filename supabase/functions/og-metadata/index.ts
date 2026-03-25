@@ -43,9 +43,9 @@ Deno.serve(async (req) => {
 
     const ogTitle = `${partyAbbr}: ${data.promise_text.slice(0, 60)}${data.promise_text.length > 60 ? "…" : ""}`;
     const ogDescription = `${statusLabel} — ${description.slice(0, 150)}${description.length > 150 ? "…" : ""}`;
-    const siteUrl = "https://infriat.lovable.app";
-    const redirectUrl = `${siteUrl}/?promise=${promiseId}`;
-    const ogImage = `${siteUrl}/og-image.png`;
+    const siteUrl = "https://infriat.se";
+    const redirectUrl = `${siteUrl}/lofte/${promiseId}`;
+    const ogImage = "https://storage.googleapis.com/gpt-engineer-file-uploads/RHMvFjUts6blMqIY98ATujtbyS22/social-images/social-1774134111734-19858.webp";
 
     const html = `<!DOCTYPE html>
 <html lang="sv">
