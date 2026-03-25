@@ -25,6 +25,7 @@ export interface PromiseData {
     name: string;
     abbreviation: string;
   };
+  status_tldr: string | null;
   created_at: string;
   updated_at: string;
   view_count: number;

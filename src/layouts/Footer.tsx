@@ -37,14 +37,22 @@ export function Footer() {
             </p>
           </div>
 
-          {/* Support */}
+          {/* Contribute */}
           <div className="space-y-2">
-            <h3 className="font-semibold text-foreground">Stöd projektet</h3>
+            <h3 className="font-semibold text-foreground">Bidra</h3>
             <p>
-              Infriat drivs ideellt. Vill du hjälpa till att täcka
-              driftkostnader? Swisha valfritt belopp.
+              Infriat drivs ideellt. Stöd projektet ekonomiskt via Swish eller
+              bidra med kod på GitHub.
             </p>
             <p className="text-xs italic">Swish-nummer läggs till snart.</p>
+            <a
+              href="https://github.com/eliasforsblom/infriat"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-primary hover:underline text-sm"
+            >
+              GitHub — öppen källkod (AGPL v3)
+            </a>
           </div>
         </div>
 

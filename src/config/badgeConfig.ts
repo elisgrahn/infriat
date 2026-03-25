@@ -4,6 +4,7 @@ import {
   SearchCheck,
   Search,
   SearchX,
+  CalendarClock,
   X,
   ThumbsUp,
   ThumbsDown,
@@ -138,9 +139,9 @@ export const STATUS_CONFIG: Record<PromiseStatus, StatusConfigEntry> = {
     sortRank: 5,
   },
   "pending-analysis": {
-    label: "Under analys",
-    icon: Search,
-    tooltip: "Löftets status analyseras för närvarande",
+    label: "Kommande val",
+    icon: CalendarClock,
+    tooltip: "Löftet kommer från ett valmanifest för ett val som ännu inte hållts",
     badgeClassName: "bg-muted text-muted-foreground hover:bg-muted/90",
     borderColor: "border-l-muted",
     topBorderColor: "border-t-muted",
@@ -169,7 +170,7 @@ export const CHART_SERIES: Array<{
   { key: "utreds", label: "Utreds", chartLabel: "Utreds" },
   { key: "ej-infriat", label: "Ej infriat", chartLabel: "Ej infriade" },
   { key: "brutet", label: "Brutet", chartLabel: "Brutna" },
-  { key: "pending-analysis", label: "Under analys", chartLabel: "Under analys" },
+  { key: "pending-analysis", label: "Kommande val", chartLabel: "Kommande val" },
 ];
 
 // ─── Category ──────────────────────────────────────────────────────────────────
