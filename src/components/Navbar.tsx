@@ -44,6 +44,7 @@ export function Navbar() {
               variant="ghost"
               size="sm"
               onClick={() => navigate("/statistik")}
+              aria-label="Statistik"
               className={cn("text-xs px-2", location.pathname === "/statistik" && "text-primary")}
             >
               <BarChart3 data-icon="inline-start" />
@@ -54,6 +55,7 @@ export function Navbar() {
             variant="ghost"
             size="sm"
             onClick={() => navigate("/om")}
+            aria-label="Metod"
             className={cn("text-xs px-2", location.pathname === "/om" && "text-primary")}
           >
             <BookOpen data-icon="inline-start" />
