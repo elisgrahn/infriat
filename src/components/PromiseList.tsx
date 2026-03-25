@@ -153,7 +153,7 @@ export function PromiseList({
                 "sv-SE",
               )}
               status={promise.status}
-              description={promise.summary || undefined}
+              description={promise.status_tldr || promise.summary || undefined}
               directQuote={promise.direct_quote || undefined}
               pageNumber={promise.page_number || undefined}
               manifestPdfUrl={promise.manifest_pdf_url || undefined}

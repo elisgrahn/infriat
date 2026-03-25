@@ -249,47 +249,6 @@ export function PromiseDetailContent({
         </section>
       )}
 
-      {promise.direct_quote && (
-        <>
-          <Separator />
-          <section className="space-y-2">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
-              <Quote className="w-4 h-4" />
-              Citat ur valmanifest
-            </h2>
-            <blockquote className="border-l-2 border-muted pl-4 italic text-sm text-muted-foreground leading-relaxed">
-              "{promise.direct_quote}"
-            </blockquote>
-            {promise.manifest_pdf_url && promise.page_number && (
-              <a
-                href={`${promise.manifest_pdf_url}#page=${promise.page_number}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
-              >
-                <ExternalLink className="w-3 h-3" />
-                Öppna manifest, sida {promise.page_number}
-              </a>
-            )}
-          </section>
-        </>
-      )}
-
-      {promise.measurability_reason && (
-        <>
-          <Separator />
-          <section className="space-y-2">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
-              <Ruler className="w-4 h-4" />
-              Mätbarhet
-            </h2>
-            <p className="text-sm leading-relaxed text-foreground">
-              {promise.measurability_reason}
-            </p>
-          </section>
-        </>
-      )}
-
       {(promise.status_tldr || promise.status_explanation) && (
         <>
           <Separator />
@@ -329,6 +288,47 @@ export function PromiseDetailContent({
               sources={citationSources}
               className="border-border/50"
             />
+          </section>
+        </>
+      )}
+
+      {promise.direct_quote && (
+        <>
+          <Separator />
+          <section className="space-y-2">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+              <Quote className="w-4 h-4" />
+              Citat ur valmanifest
+            </h2>
+            <blockquote className="border-l-2 border-muted pl-4 italic text-sm text-muted-foreground leading-relaxed">
+              "{promise.direct_quote}"
+            </blockquote>
+            {promise.manifest_pdf_url && promise.page_number && (
+              <a
+                href={`${promise.manifest_pdf_url}#page=${promise.page_number}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+              >
+                <ExternalLink className="w-3 h-3" />
+                Öppna manifest, sida {promise.page_number}
+              </a>
+            )}
+          </section>
+        </>
+      )}
+
+      {promise.measurability_reason && (
+        <>
+          <Separator />
+          <section className="space-y-2">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+              <Ruler className="w-4 h-4" />
+              Mätbarhet
+            </h2>
+            <p className="text-sm leading-relaxed text-foreground">
+              {promise.measurability_reason}
+            </p>
           </section>
         </>
       )}
