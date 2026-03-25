@@ -107,6 +107,7 @@ export function PromiseList({
       <div
         ref={measureContainerRef}
         aria-hidden="true"
+        {...{ inert: "" } as any}
         className="relative overflow-hidden pointer-events-none h-0"
       >
         <div
