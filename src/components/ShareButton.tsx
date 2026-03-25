@@ -14,8 +14,7 @@ export function ShareButton({ promiseId }: { promiseId: string }) {
   const [copied, setCopied] = useState(false);
 
   const handleShare = async () => {
-    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-    const url = `https://${projectId}.supabase.co/functions/v1/og-metadata?id=${promiseId}`;
+    const url = `https://infriat.se/lofte/${promiseId}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
