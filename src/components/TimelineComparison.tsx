@@ -188,7 +188,7 @@ export function TimelineComparison({ promises, isAdmin = false }: TimelineCompar
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold">Jämförelse per parti</h3>
+            <h2 className="text-lg font-semibold">Jämförelse per parti</h2>
             <p className="text-sm text-muted-foreground">
               {chartType === "bar" ? "Antal vallöften per status för varje parti" : "Procentuell statusfördelning per parti"}
             </p>
