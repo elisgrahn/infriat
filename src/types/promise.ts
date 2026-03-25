@@ -27,6 +27,7 @@ export interface PromiseData {
   };
   created_at: string;
   updated_at: string;
+  view_count: number;
 }
 
 export interface GovernmentPeriod {
@@ -48,6 +49,7 @@ export type SortOption = {
 export const SORT_OPTIONS: SortOption[] = [
   { value: "created-desc", label: "Skapat datum (fallande)" },
   { value: "created-asc", label: "Skapat datum (stigande)" },
+  { value: "popularity-desc", label: "Populärast" },
   { value: "year-desc", label: "Valår (fallande)" },
   { value: "year-asc", label: "Valår (stigande)" },
   { value: "measurability-desc", label: "Mätbart (högst först)" },

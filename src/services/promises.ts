@@ -14,7 +14,7 @@ export async function fetchPromises(): Promise<PromiseData[]> {
   const { data, error } = await supabase
     .from("promises")
     .select(
-      "id, party_id, election_year, promise_text, summary, measurability_score, category, is_status_quo, status, page_number, manifest_pdf_url, direct_quote, created_at, updated_at, parties(name, abbreviation)",
+      "id, party_id, election_year, promise_text, summary, measurability_score, category, is_status_quo, status, page_number, manifest_pdf_url, direct_quote, created_at, updated_at, view_count, parties(name, abbreviation)",
     )
     .order("created_at", { ascending: false });
 

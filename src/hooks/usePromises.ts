@@ -172,6 +172,8 @@ export function usePromises() {
           return statusRank[a.status] - statusRank[b.status];
         case "status-desc":
           return statusRank[b.status] - statusRank[a.status];
+        case "popularity-desc":
+          return (b.view_count || 0) - (a.view_count || 0);
         default:
           return (
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
