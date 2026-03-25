@@ -74,6 +74,21 @@ export default function PromiseDetail() {
 
   const [copied, setCopied] = useState(false);
 
+  // Track view (skip for admins)
+  useEffect(() => {
+    if (!id || isAdmin) return;
+    const viewedKey = `viewed-${id}`;
+    if (sessionStorage.getItem(viewedKey)) return;
+    sessionStorage.setItem(viewedKey, '1');
+
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    fetch(`https://${projectId}.supabase.co/functions/v1/increment-view`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ promise_id: id }),
+    }).catch(() => {});
+  }, [id, isAdmin]);
+
   // Fetch single promise via useQuery
   const {
     data: promise,
