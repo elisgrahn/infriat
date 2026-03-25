@@ -66,11 +66,17 @@ export function PromiseList({
   // Single ResizeObserver for the entire list — measures whether the
   // "worst case" badge row fits the card width
   useEffect(() => {
+    let rafId: number | null = null;
+
     const measure = () => {
-      if (!measureContainerRef.current || !measureRowRef.current) return;
-      const available = measureContainerRef.current.clientWidth;
-      const needed = measureRowRef.current.scrollWidth;
-      setCompactBadges(needed > available + 1);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        if (!measureContainerRef.current || !measureRowRef.current) return;
+        const available = measureContainerRef.current.clientWidth;
+        const needed = measureRowRef.current.scrollWidth;
+        setCompactBadges(needed > available + 1);
+      });
     };
 
     measure();
@@ -78,7 +84,10 @@ export function PromiseList({
     const ro = new ResizeObserver(measure);
     if (measureContainerRef.current) ro.observe(measureContainerRef.current);
 
-    return () => ro.disconnect();
+    return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      ro.disconnect();
+    };
   }, [longestParty.name]);
 
   if (loading) {
