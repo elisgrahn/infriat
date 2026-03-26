@@ -46,7 +46,7 @@ export function Footer() {
             </p>
             <p className="text-xs italic">Swish-nummer läggs till snart.</p>
             <a
-              href="https://github.com/eliasforsblom/infriat"
+              href="https://github.com/elisgrahn/infriat"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-primary hover:underline text-sm"
