@@ -41,10 +41,15 @@ export function Footer() {
           <div className="space-y-2">
             <h3 className="font-semibold text-foreground">Bidra</h3>
             <p>
-              Infriat drivs ideellt. Stöd projektet ekonomiskt via Swish eller
+              Infriat drivs ideellt. Stöd projektet ekonomiskt via Ko-Fi eller
               bidra med kod på GitHub.
             </p>
-            <p className="text-xs italic">Swish-nummer läggs till snart.</p>
+            <p className="text-xs italic">Stöd via Ko-fi kommer att användas för att täcka serverkostnader och
+              vidareutveckling av plattformen.</p>
+<a href="https://ko-fi.com/elisgrahn/5" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-primary hover:underline text-sm">
+            <img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Ko-fi — stötta Infriat ekonomiskt" />
+            </a>
+            <p/>
             <a
               href="https://github.com/elisgrahn/infriat"
               target="_blank"
