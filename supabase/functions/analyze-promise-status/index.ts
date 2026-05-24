@@ -107,7 +107,6 @@ function normalizeTldr(rawTldr: string, partyName: string, partyAbbreviation: st
     return `${partyAbbreviation}.`;
   }
 
-  tldr = tldr.split(/(?<=[.!?])\s+/)[0]?.trim() || tldr;
   tldr = tldr.replace(/[.!?]+$/, '').trim();
 
   const escapedPartyName = partyName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

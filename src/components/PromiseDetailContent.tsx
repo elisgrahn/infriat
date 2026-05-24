@@ -276,22 +276,6 @@ export function PromiseDetailContent({
         </>
       )}
 
-      {citationSources.length > 0 && (
-        <>
-          <Separator />
-          <section className="space-y-2">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
-              <Link className="w-4 h-4" />
-              Källor
-            </h2>
-            <CitationFootnotes
-              sources={citationSources}
-              className="border-border/50"
-            />
-          </section>
-        </>
-      )}
-
       {promise.direct_quote && (
         <>
           <Separator />
@@ -329,6 +313,22 @@ export function PromiseDetailContent({
             <p className="text-sm leading-relaxed text-foreground">
               {promise.measurability_reason}
             </p>
+          </section>
+        </>
+      )}
+
+      {citationSources.length > 0 && (
+        <>
+          <Separator />
+          <section className="space-y-2">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+              <Link className="w-4 h-4" />
+              Källor
+            </h2>
+            <CitationFootnotes
+              sources={citationSources}
+              className="border-border/50"
+            />
           </section>
         </>
       )}
