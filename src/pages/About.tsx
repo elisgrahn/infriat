@@ -33,6 +33,11 @@ export default function About() {
 
   return (
     <main className="flex-1 w-full max-w-3xl mx-auto px-4 py-8 space-y-8">
+      <SeoHead
+        title="Om Infriat – Metod och AI-användning"
+        description="Så granskar Infriat svenska vallöften: metod, kategorier, AI-användning, källor och kontaktinformation."
+        path="/om"
+      />
       <div className="space-y-2">
         <Link
           to="/"
