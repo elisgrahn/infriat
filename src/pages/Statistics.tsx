@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { EnhancedStatisticsCharts } from "@/components/EnhancedStatisticsCharts";
 import { ExperimentalCharts } from "@/components/ExperimentalCharts";
 import { Separator } from "@/components/ui/separator";
+import { SeoHead } from "@/components/SeoHead";
 import { fetchPromises, promiseKeys } from "@/services/promises";
 import type { PromiseStatus } from "@/config/badgeConfig";
 import type { PolicyCategory } from "@/lib/promiseMetrics";
@@ -41,6 +42,11 @@ const Statistics = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SeoHead
+        title="Statistik över svenska vallöften | Infriat"
+        description="Aggregerad statistik över riksdagspartiernas vallöften: andel infriade, brutna och pågående löften per parti, kategori och mandatperiod."
+        path="/statistik"
+      />
       <header className="bg-gradient-to-br from-primary via-primary-light to-primary-dark text-primary-foreground py-12">
         <div className="container mx-auto px-4">
           <h1 className="text-4xl font-bold text-center">Statistik</h1>

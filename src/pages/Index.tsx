@@ -1,10 +1,12 @@
 import { lazy, Suspense, useEffect, useCallback, useState, useRef } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { usePromises } from "@/hooks/usePromises";
 import { HeroSection } from "@/components/HeroSection";
 import { MobileFilterBar } from "@/components/MobileFilterBar";
 import { DesktopFilterSidebar } from "@/components/DesktopFilterSidebar";
 import { PromiseList } from "@/components/PromiseList";
+import { SeoHead } from "@/components/SeoHead";
 
 // Lazy-load below-the-fold components
 const TimelineComparison = lazy(() => import("@/components/TimelineComparison").then(m => ({ default: m.TimelineComparison })));
@@ -56,6 +58,18 @@ const Index = () => {
 
   return (
     <>
+      {selectedPromiseId ? (
+        <Helmet>
+          <meta name="robots" content="index,follow" />
+          {/* Per-promise og/title is rendered server-side by the og-metadata edge function for crawlers. */}
+        </Helmet>
+      ) : (
+        <SeoHead
+          title="Infriat – Granskning av svenska vallöften"
+          description="Har politikerna infriat sina vallöften? Infriat granskar och följer upp riksdagspartiernas valmanifest med AI och öppna källor."
+          path="/"
+        />
+      )}
       <div className="bg-background">
         <HeroSection stats={stats} />
 

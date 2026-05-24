@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
+import { Helmet } from 'react-helmet-async';
 
 const authSchema = z.object({
   email: z.string().trim().email({ message: 'Ogiltig e-postadress' }).max(255, { message: 'E-post får vara max 255 tecken' }),
@@ -58,6 +59,12 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Helmet>
+        <title>Logga in | Infriat</title>
+        <meta name="description" content="Logga in för att administrera Infriats granskning av svenska vallöften." />
+        <meta name="robots" content="noindex,nofollow" />
+        <link rel="canonical" href="https://infriat.se/auth" />
+      </Helmet>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Vallöfteskollen</CardTitle>
