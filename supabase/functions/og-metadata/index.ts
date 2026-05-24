@@ -17,8 +17,9 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const promiseId = url.searchParams.get("id");
 
-    if (!promiseId) {
-      return new Response("Missing id", { status: 400, headers: corsHeaders });
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!promiseId || !UUID_RE.test(promiseId)) {
+      return new Response("Invalid id", { status: 400, headers: corsHeaders });
     }
 
     const supabase = createClient(
