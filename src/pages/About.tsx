@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, CheckCircle, Info, Maximize2 } from "lucide-react";
 import { ALL_BADGE_CATEGORIES } from "@/config/badgeConfig";
 import { cn } from "@/lib/utils";
+import { SeoHead } from "@/components/SeoHead";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertTriangleIcon } from "lucide-react"
