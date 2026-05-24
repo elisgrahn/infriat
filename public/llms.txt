@@ -1,0 +1,15 @@
+# Infriat
+
+> Granskning och uppföljning av svenska politiska vallöften. Infriat samlar löften från riksdagspartiernas valmanifest och följer upp om de infrias under mandatperioden.
+
+Infriat.se är ett oberoende projekt som med hjälp av AI och manuell granskning analyserar vallöften från svenska partier. Varje löfte kategoriseras (mätbarhet, politikområde, status quo) och får en status (infriat, brutet, pågående, etc.) baserat på källor från regeringen, riksdagen och nyhetsmedier.
+
+## Pages
+
+- [Startsida](/): Översikt och filtrerbar lista över alla granskade vallöften.
+- [Statistik](/statistik): Aggregerad statistik per parti, kategori och mandatperiod.
+- [Om Infriat](/om): Metod, källor, AI-användning och kontaktinformation.
+
+## Optional
+
+- [Exempel på löfte](/lofte/): Detaljvy för ett enskilt vallöfte med källor och statusanalys.
