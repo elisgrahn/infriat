@@ -1,5 +1,6 @@
 import * as React from "react";
-import { Label as LabelPrimitive, Slot as SlotPrimitive } from "radix-ui";
+import * as LabelPrimitive from "@radix-ui/react-label";
+import * as SlotPrimitive from "@radix-ui/react-slot";
 
 import { Controller, ControllerProps, FieldPath, FieldValues, FormProvider, useFormContext } from "react-hook-form";
 
