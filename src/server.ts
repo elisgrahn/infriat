@@ -4,8 +4,17 @@ import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 
 // Polyfill localStorage for SSR — supabase-js client.ts references it at module init.
+// Use a no-op Storage shape instead of `undefined`; some auth code reads methods
+// like getItem/removeItem during module evaluation or the first request.
 if (typeof (globalThis as any).localStorage === "undefined") {
-  (globalThis as any).localStorage = undefined;
+  (globalThis as any).localStorage = {
+    length: 0,
+    clear: () => undefined,
+    getItem: () => null,
+    key: () => null,
+    removeItem: () => undefined,
+    setItem: () => undefined,
+  } satisfies Storage;
 }
 
 type ServerEntry = {
