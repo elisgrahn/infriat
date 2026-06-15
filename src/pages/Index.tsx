@@ -61,7 +61,7 @@ const Index = () => {
   const promiseSeo = (() => {
     if (!selectedPromiseId) return null;
     const text = (selectedPromise?.promise_text ?? "").trim();
-    const party = selectedPromise?.party ?? "";
+    const party = selectedPromise?.parties?.abbreviation ?? "";
     const shortText = text.length > 70 ? `${text.slice(0, 67)}…` : text;
     const baseTitle = shortText
       ? `${shortText}${party ? ` – ${party}` : ""} | Infriat`
