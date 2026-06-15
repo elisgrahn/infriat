@@ -1,48 +1,18 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
-import path from "path";
-import { componentTagger } from "lovable-tagger";
+import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-// https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
-  server: {
-    host: "::",
-    port: 8080,
+// TanStack Start on Cloudflare Workers. The Lovable shared config composes
+// @tanstack/router-plugin, @vitejs/plugin-react-swc, Tailwind, and
+// @cloudflare/vite-plugin. We override the server entry so our error-wrapping
+// server.ts is actually invoked (otherwise the bundled
+// virtual:tanstack-start-server-entry is used directly and h3 swallows errors).
+export default defineConfig({
+  tanstackStart: {
+    server: { entry: "server" },
   },
-  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+  vite: {
+    server: {
+      host: "::",
+      port: 8080,
     },
   },
-  build: {
-    target: 'es2022',
-    minify: 'esbuild',
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom'],
-          'vendor-router': ['react-router-dom'],
-          'vendor-query': ['@tanstack/react-query'],
-          'vendor-supabase': ['@supabase/supabase-js'],
-          // radix-ui is NOT manually chunked — Vite splits it by
-          // actual import graph so lazy-loaded routes don't force the
-          // entire Radix bundle into the initial load.
-          'vendor-icons': ['lucide-react'],
-          recharts: ['recharts'],
-          'pdf-worker': ['pdfjs-dist'],
-        },
-      },
-    },
-    ...(mode === 'production' ? {
-      esbuildOptions: {
-        drop: ['console', 'debugger'],
-      },
-    } : {}),
-  },
-  optimizeDeps: {
-    esbuildOptions: {
-      target: 'es2022',
-    },
-  },
-}));
+});
