@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import { Loader2, Upload, Link as LinkIcon, CheckCircle2, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
-import * as pdfjsLib from "pdfjs-dist";
 
 const manifestSchema = z.object({
   partyAbbreviation: z.string().min(1).max(3),
@@ -128,6 +127,8 @@ export const ManifestUpload = () => {
   // Function to search PDF and update page numbers
   const searchPdfForPageNumbers = async (pdfSearchUrl: string, partyId: string, electionYear: number) => {
     try {
+      const pdfjsLib = await import("pdfjs-dist");
+      const pdfjsWorker = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
       const { data: promises, error: fetchError } = await supabase
         .from('promises')
         .select('id, direct_quote')
@@ -139,10 +140,7 @@ export const ManifestUpload = () => {
         return { updated: 0, total: 0 };
       }
 
-      pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-        'pdfjs-dist/build/pdf.worker.min.mjs',
-        import.meta.url
-      ).toString();
+      pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker.default;
 
       const loadingTask = pdfjsLib.getDocument(pdfSearchUrl);
       const pdf = await loadingTask.promise;
