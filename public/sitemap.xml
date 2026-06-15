@@ -2423,7 +2423,7 @@
   </url>
   <url>
     <loc>https://infriat.se/lofte/72b65d7c-b131-405e-86f7-b2a43478a7c0</loc>
-    <lastmod>2026-04-13</lastmod>
+    <lastmod>2026-05-24</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -2440,20 +2440,14 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://infriat.se/lofte/3acf44c0-875f-4092-99c6-e2d1ea0771d4</loc>
+    <lastmod>2026-05-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://infriat.se/lofte/d8edfc44-6826-4c04-ae2f-4100ce3b6015</loc>
     <lastmod>2026-03-30</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://infriat.se/lofte/3acf44c0-875f-4092-99c6-e2d1ea0771d4</loc>
-    <lastmod>2026-04-08</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://infriat.se/lofte/e5a4abc5-ac99-40be-9080-1bcd59ea4c2c</loc>
-    <lastmod>2026-05-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -2518,19 +2512,25 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://infriat.se/lofte/25bd9adb-12b3-47a7-903e-93a335400b94</loc>
-    <lastmod>2026-04-27</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
     <loc>https://infriat.se/lofte/fa858707-b1e8-4bf8-9dcd-68b9fdb79c06</loc>
     <lastmod>2026-04-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://infriat.se/lofte/25bd9adb-12b3-47a7-903e-93a335400b94</loc>
+    <lastmod>2026-05-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://infriat.se/lofte/6ea49f54-6f09-4106-af28-50d39747a6de</loc>
+    <lastmod>2026-05-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://infriat.se/lofte/e5a4abc5-ac99-40be-9080-1bcd59ea4c2c</loc>
     <lastmod>2026-05-24</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
