@@ -1,45 +1,72 @@
+**Problem found**
 
-
-## Plan: Cloudflare Worker på huvuddomänen + ShareButton-fix
-
-### Översikt
-
-Två ändringar: (1) Cloudflare Worker på `infriat.se/lofte/*` som proxar crawler-requests till Supabase edge function, (2) ShareButton kopierar snygg URL. Ingen subdomän behövs.
-
-### 1. Skapa `cloudflare-worker/index.js`
+The app is not actually stable after the migration. The latest dev-server logs show the real recurring failure:
 
 ```text
-Request till infriat.se/lofte/:id
-  ↓
-User-Agent = crawler?
-  ├─ JA → fetch Supabase edge function → returnera OG-HTML
-  └─ NEJ → fetch Lovable CDN → returnera SPA som vanligt
+Failed to run dependency scan
+radix-ui (imported by /src/components/ui/toggle.tsx)
+Cannot find module 'radix-ui' imported from '/src/components/ui/tooltip.tsx'
 ```
 
-- **Crawler-detektering**: `facebookexternalhit|Twitterbot|LinkedInBot|Googlebot|bingbot|Slackbot|WhatsApp|TelegramBot|GPTBot|ClaudeBot|PerplexityBot|Discordbot`
-- **Crawler-svar**: Fetch `https://turijymricwxtdrslcuz.supabase.co/functions/v1/og-metadata?id={promiseId}` och returnera svaret direkt
-- **Människa**: Fetch `https://infriat.lovable.app/lofte/:id` och returnera svaret — transparent proxy, ingen redirect, URL förblir `infriat.se/lofte/:id`
-- **Viktigt**: Bygg alltid färska headers (kopiera inte `request.headers`) för att undvika HTTP 421 mot Lovable CDN
+So the issue is not the previous TypeScript errors anymore. It is unresolved bare `radix-ui` imports in many shadcn UI files. This project already has the scoped Radix packages installed, and project memory explicitly says Radix primitives must be imported from scoped packages. The current code violates that rule in multiple files.
 
-### 2. Skapa `cloudflare-worker/wrangler.toml`
+**Why it seemed to pass, then failed later**
 
-```toml
-name = "infriat-og-worker"
-main = "index.js"
-compatibility_date = "2024-01-01"
-```
+Vite/TanStack Start can initially start or build parts of the app, then fail when dependency scanning or SSR module evaluation reaches a lazily imported UI file. Because the root route imports `TooltipProvider`, one missing bare `radix-ui` import can bring down SSR and produce the later 500/build failure.
 
-Route `infriat.se/lofte/*` läggs till manuellt i Cloudflare dashboard efter deploy.
+**Files implicated**
 
-### 3. Uppdatera `src/components/ShareButton.tsx`
+Bare `radix-ui` imports currently appear in UI primitives such as:
 
-Byt URL till `https://infriat.se/lofte/${promiseId}`. Ta bort `projectId`-variabeln och Supabase-URL-logiken.
+- `src/components/ui/tooltip.tsx`
+- `src/components/ui/toggle.tsx`
+- `src/components/ui/toggle-group.tsx`
+- `src/components/ui/sheet.tsx`
+- `src/components/ui/switch.tsx`
+- `src/components/ui/label.tsx`
+- `src/components/ui/slider.tsx`
+- `src/components/ui/aspect-ratio.tsx`
+- `src/components/ui/tabs.tsx`
+- `src/components/ui/sidebar.tsx`
+- `src/components/ui/popover.tsx`
+- `src/components/ui/item.tsx`
+- `src/components/ui/collapsible.tsx`
+- `src/components/ui/button.tsx`
+- `src/components/ui/select.tsx`
+- `src/components/ui/avatar.tsx`
+- `src/components/ui/radio-group.tsx`
+- `src/components/ui/dialog.tsx`
+- `src/components/ui/dropdown-menu.tsx`
+- `src/components/ui/context-menu.tsx`
+- `src/components/ui/hover-card.tsx`
+- `src/components/ui/form.tsx`
+- `src/components/ui/alert-dialog.tsx`
+- `src/components/ui/menubar.tsx`
+- `src/components/ui/breadcrumb.tsx`
+- `src/components/ui/navigation-menu.tsx`
+- `src/components/ui/checkbox.tsx`
+- `src/components/ui/accordion.tsx`
 
-### Filer
+**Fix plan**
 
-| Fil | Ändring |
-|---|---|
-| `cloudflare-worker/index.js` | Ny — Worker med crawler-detektering och transparent proxy |
-| `cloudflare-worker/wrangler.toml` | Ny — Worker-konfiguration |
-| `src/components/ShareButton.tsx` | Byt URL till `infriat.se/lofte/:id` |
+1. **Replace every bare `radix-ui` import with scoped Radix imports**
+   - Example: `import { Tooltip as TooltipPrimitive } from "radix-ui"` becomes `import * as TooltipPrimitive from "@radix-ui/react-tooltip"`.
+   - Example: `import { Slot as SlotPrimitive } from "radix-ui"` becomes `import { Slot as SlotPrimitive } from "@radix-ui/react-slot"`.
+   - Do this consistently across all affected `src/components/ui/*` files.
 
+2. **Verify no unresolved aggregate imports remain**
+   - Search the codebase for `from "radix-ui"` and `from 'radix-ui'`.
+   - The result must be empty except unrelated text/comments.
+
+3. **Fix the visible React 19 console warnings while touching the same area**
+   - `src/components/icons/LaneChange.tsx` uses SVG attributes like `stroke-width`; convert them to React attributes: `strokeWidth`, `strokeLinecap`, `strokeLinejoin`.
+   - Investigate the `inert=""` warning only if the source is in project code; otherwise leave dependency behavior alone.
+
+4. **Add a stricter validation pass after edits**
+   - Run the project’s normal build check once.
+   - Then inspect fresh dev-server logs after the server has restarted, specifically for unresolved imports and SSR 500s.
+   - Also re-run the `radix-ui` import search after build so the same issue cannot reappear unnoticed.
+
+5. **Only then report success**
+   - I will not call it “passing” based on a single short build output.
+   - Success criteria: no bare `radix-ui` imports, no unresolved-import errors in dev logs, and the build command exits cleanly.
