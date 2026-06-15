@@ -68,6 +68,7 @@ export function Navbar() {
               size="icon"
               onClick={handleAdminClick}
               title="Admin"
+              aria-label="Admin"
               className="relative"
             >
               <Settings className="w-5 h-5" />
@@ -79,6 +80,7 @@ export function Navbar() {
               size="sm"
               onClick={handleAuthClick}
               title="Logga ut"
+              aria-label="Logga ut"
             >
               <LogOut className="w-5 h-5" />
             </Button>

@@ -42,7 +42,8 @@ export function HeroSection({ stats }: HeroSectionProps) {
           <div className="space-y-2">
 
             <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary-foreground via-primary-foreground to-primary-foreground/80 drop-shadow-lg">
-              Infriat
+              <span aria-hidden="true">Infriat</span>
+              <span className="sr-only">Infriat — Granskning av svenska vallöften</span>
             </h1>
 
             <p className="text-md sm:text-lg md:text-xl text-primary-foreground/95 max-w-lg sm:max-w-xl md:max-w-2xl mx-auto leading-relaxed font-light">
