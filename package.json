@@ -13,10 +13,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@cloudflare/vite-plugin": "^1.40.2",
     "@hookform/resolvers": "^3.10.0",
+    "@lovable.dev/vite-tanstack-config": "^2.4.0",
     "@radix-ui/react-separator": "^1.1.8",
     "@supabase/supabase-js": "^2.75.0",
     "@tanstack/react-query": "^5.83.0",
+    "@tanstack/react-router": "^1.170.15",
+    "@tanstack/react-start": "^1.168.25",
+    "@tanstack/router-plugin": "^1.168.18",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -40,6 +45,7 @@
     "tailwindcss-animate": "^1.0.7",
     "usehooks-ts": "^3.1.1",
     "vaul": "^0.9.9",
+    "wrangler": "^4.100.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
