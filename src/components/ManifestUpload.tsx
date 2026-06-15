@@ -204,7 +204,7 @@ export const ManifestUpload = () => {
         let foundPage = null;
 
         for (const { pageNum, normalized } of pageTexts) {
-          if (fuzzyMatch(quote, normalized)) {
+          if (quote && fuzzyMatch(quote, normalized)) {
             foundPage = pageNum;
             break;
           }

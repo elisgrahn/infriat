@@ -33,7 +33,7 @@ export function MobileFilterBar({ filteredCount }: MobileFilterBarProps) {
   const { setSearchQuery, setSortBy } = useFilterDispatch();
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [localSearch, setLocalSearch] = useState(searchQuery);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Keep local state in sync when context changes externally (e.g. clear button)
   useEffect(() => {

@@ -19,7 +19,7 @@ export function DesktopFilterSidebar({ filteredCount }: DesktopFilterSidebarProp
   const { searchQuery } = useFilterState();
   const { setSearchQuery } = useFilterDispatch();
   const [localSearch, setLocalSearch] = useState(searchQuery);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Keep local state in sync when context changes externally
   useEffect(() => {
