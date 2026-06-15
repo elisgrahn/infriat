@@ -15,3 +15,6 @@ timeout = 180
 
 [functions.analyze-single-measurability]
 verify_jwt = true
+
+[functions.increment-view]
+verify_jwt = false
