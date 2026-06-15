@@ -44,9 +44,10 @@ const Index = () => {
     refetchPromises,
   } = usePromises();
 
-  const selectedPromiseStatus = sortedPromises.find(
+  const selectedPromise = sortedPromises.find(
     (promise) => promise.id === selectedPromiseId,
-  )?.status;
+  );
+  const selectedPromiseStatus = selectedPromise?.status;
 
   const handleOverlayClose = useCallback(() => {
     // Preserve any existing search params (sort, filters, page) when closing
@@ -56,12 +57,37 @@ const Index = () => {
     navigate(qs ? `/?${qs}` : "/", { replace: true });
   }, [navigate, searchParams]);
 
+  // Build unique per-promise metadata when a promise is selected
+  const promiseSeo = (() => {
+    if (!selectedPromiseId) return null;
+    const text = (selectedPromise?.promise_text ?? "").trim();
+    const party = selectedPromise?.parties?.abbreviation ?? "";
+    const shortText = text.length > 70 ? `${text.slice(0, 67)}…` : text;
+    const baseTitle = shortText
+      ? `${shortText}${party ? ` – ${party}` : ""} | Infriat`
+      : "Vallöfte | Infriat";
+    const title = baseTitle.length > 60 ? `${baseTitle.slice(0, 57)}…` : baseTitle;
+    const descBase = text
+      ? `${party ? `${party}: ` : ""}${text}`
+      : "Granskning och uppföljning av ett svenskt vallöfte på Infriat.";
+    const description =
+      descBase.length > 160 ? `${descBase.slice(0, 157)}…` : descBase.length < 50
+        ? `${descBase} Följ status och källor på Infriat.`.slice(0, 160)
+        : descBase;
+    return { title, description, url: `https://infriat.se/lofte/${selectedPromiseId}` };
+  })();
+
   return (
     <>
-      {selectedPromiseId ? (
+      {promiseSeo ? (
         <Helmet>
+          <title>{promiseSeo.title}</title>
+          <meta name="description" content={promiseSeo.description} />
+          <link rel="canonical" href={promiseSeo.url} />
+          <meta property="og:title" content={promiseSeo.title} />
+          <meta property="og:description" content={promiseSeo.description} />
+          <meta property="og:url" content={promiseSeo.url} />
           <meta name="robots" content="index,follow" />
-          {/* Per-promise og/title is rendered server-side by the og-metadata edge function for crawlers. */}
         </Helmet>
       ) : (
         <SeoHead
