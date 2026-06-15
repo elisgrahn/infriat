@@ -1,18 +1,44 @@
-import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
 
-// TanStack Start on Cloudflare Workers. The Lovable shared config composes
-// @tanstack/router-plugin, @vitejs/plugin-react-swc, Tailwind, and
-// @cloudflare/vite-plugin. We override the server entry so our error-wrapping
-// server.ts is actually invoked (otherwise the bundled
-// virtual:tanstack-start-server-entry is used directly and h3 swallows errors).
-export default defineConfig({
-  tanstackStart: {
-    server: { entry: "server" },
+// https://vitejs.dev/config/
+export default defineConfig(({ mode }) => ({
+  server: {
+    host: "::",
+    port: 8080,
   },
-  vite: {
-    server: {
-      host: "::",
-      port: 8080,
+  plugins: [react()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
     },
   },
-});
+  build: {
+    target: 'es2022',
+    minify: 'esbuild',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-router': ['react-router-dom'],
+          'vendor-query': ['@tanstack/react-query'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+          'vendor-icons': ['lucide-react'],
+          recharts: ['recharts'],
+          'pdf-worker': ['pdfjs-dist'],
+        },
+      },
+    },
+    ...(mode === 'production' ? {
+      esbuildOptions: {
+        drop: ['console', 'debugger'],
+      },
+    } : {}),
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      target: 'es2022',
+    },
+  },
+}));
