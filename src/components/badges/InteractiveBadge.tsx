@@ -119,7 +119,7 @@ export function InteractiveBadge({
               onClick={() => navigate(`/om#${sectionAnchor}`)}
             >
               <ItemMedia variant="icon">
-                <Icon />
+                {Icon ? <Icon /> : null}
               </ItemMedia>
               <ItemContent>
                 <ItemTitle>{current?.label}</ItemTitle>

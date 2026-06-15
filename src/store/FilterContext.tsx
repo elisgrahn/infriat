@@ -138,7 +138,7 @@ export const FilterProvider = ({ children }: { children: ReactNode }) => {
   }), []);
 
   // Debounced URL sync
-  const urlSyncTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const urlSyncTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     clearTimeout(urlSyncTimerRef.current);
