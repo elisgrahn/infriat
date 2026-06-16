@@ -122,11 +122,11 @@ export const PromiseCard = memo(function PromiseCard({
       )}
       role="button"
       tabIndex={0}
-      onClick={() => navigate(`/lofte/${promiseId}`)}
+      onClick={openPromise}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
-          navigate(`/lofte/${promiseId}`);
+          openPromise();
         }
       }}
     >
