@@ -90,7 +90,9 @@ export const PromiseCard = memo(function PromiseCard({
   onStatusUpdate,
 }: PromiseCardProps) {
   const config = STATUS_CONFIG[status];
-  const navigate = useNavigate();
+  const [, setSearchParams] = useSearchParams();
+  const openPromise = () =>
+    setSearchParams((p) => { p.set("promise", promiseId); return p; });
 
   const {
     isAnalyzing,
