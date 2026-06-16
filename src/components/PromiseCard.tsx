@@ -29,7 +29,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { usePromiseAdminActions } from "@/hooks/usePromiseAdminActions";
-import { useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { StatusBadge } from "@/components/badges/StatusBadge";
 import { PartyBadge } from "@/components/badges/PartyBadge";
 import { GovernmentBadge } from "@/components/badges/GovernmentBadge";
@@ -90,7 +90,9 @@ export const PromiseCard = memo(function PromiseCard({
   onStatusUpdate,
 }: PromiseCardProps) {
   const config = STATUS_CONFIG[status];
-  const navigate = useNavigate();
+  const [, setSearchParams] = useSearchParams();
+  const openPromise = () =>
+    setSearchParams((p) => { p.set("promise", promiseId); return p; });
 
   const {
     isAnalyzing,
@@ -120,11 +122,11 @@ export const PromiseCard = memo(function PromiseCard({
       )}
       role="button"
       tabIndex={0}
-      onClick={() => navigate(`/lofte/${promiseId}`)}
+      onClick={openPromise}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
-          navigate(`/lofte/${promiseId}`);
+          openPromise();
         }
       }}
     >

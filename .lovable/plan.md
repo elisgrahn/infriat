@@ -1,72 +1,50 @@
-**Problem found**
+# Fix: drawer-öppning ska inte ladda om sidan
 
-The app is not actually stable after the migration. The latest dev-server logs show the real recurring failure:
+## Orsak
 
-```text
-Failed to run dependency scan
-radix-ui (imported by /src/components/ui/toggle.tsx)
-Cannot find module 'radix-ui' imported from '/src/components/ui/tooltip.tsx'
-```
+Klick på ett löfte navigerar idag till en helt annan route: `/lofte/$id` (se `src/components/PromiseCard.tsx` rad 123/127 → `navigate(\`/lofte/${promiseId}\`)`).
 
-So the issue is not the previous TypeScript errors anymore. It is unresolved bare `radix-ui` imports in many shadcn UI files. This project already has the scoped Radix packages installed, and project memory explicitly says Radix primitives must be imported from scoped packages. The current code violates that rule in multiple files.
+`/lofte/$id` är en separat fil-route (`src/routes/lofte.$id.tsx`) som råkar rendera samma `Index`-komponent. TanStack Router betraktar dem dock som olika routes, så vid klick:
 
-**Why it seemed to pass, then failed later**
+1. Hela route-trädet byts → `Index` avmonteras och remonteras → all lokal state (chartVisible, filter-UI) nollställs och `usePromises` kan kort visa loading.
+2. TanStack Routers default scroll-restoration skrollar till toppen vid ny route.
+3. Under övergången hinner SSR-/ohydrerad markup synas en kort stund → "light mode flashar förbi" (innan `ThemeProvider`s effekt återapplicerar `dark`-klassen på `<html>` efter remount).
 
-Vite/TanStack Start can initially start or build parts of the app, then fail when dependency scanning or SSR module evaluation reaches a lazily imported UI file. Because the root route imports `TooltipProvider`, one missing bare `radix-ui` import can bring down SSR and produce the later 500/build failure.
+Samma sak händer när drawern stängs (`navigate('/?…')`) — route byts tillbaka.
 
-**Files implicated**
+## Lösning
 
-Bare `radix-ui` imports currently appear in UI primitives such as:
+Behåll valt löfte i URL via query-param `?promise=<id>` (vilket `Index` redan stöder, rad 20). Då sker inget route-byte → ingen remount, ingen scroll-reset, ingen flash.
 
-- `src/components/ui/tooltip.tsx`
-- `src/components/ui/toggle.tsx`
-- `src/components/ui/toggle-group.tsx`
-- `src/components/ui/sheet.tsx`
-- `src/components/ui/switch.tsx`
-- `src/components/ui/label.tsx`
-- `src/components/ui/slider.tsx`
-- `src/components/ui/aspect-ratio.tsx`
-- `src/components/ui/tabs.tsx`
-- `src/components/ui/sidebar.tsx`
-- `src/components/ui/popover.tsx`
-- `src/components/ui/item.tsx`
-- `src/components/ui/collapsible.tsx`
-- `src/components/ui/button.tsx`
-- `src/components/ui/select.tsx`
-- `src/components/ui/avatar.tsx`
-- `src/components/ui/radio-group.tsx`
-- `src/components/ui/dialog.tsx`
-- `src/components/ui/dropdown-menu.tsx`
-- `src/components/ui/context-menu.tsx`
-- `src/components/ui/hover-card.tsx`
-- `src/components/ui/form.tsx`
-- `src/components/ui/alert-dialog.tsx`
-- `src/components/ui/menubar.tsx`
-- `src/components/ui/breadcrumb.tsx`
-- `src/components/ui/navigation-menu.tsx`
-- `src/components/ui/checkbox.tsx`
-- `src/components/ui/accordion.tsx`
+`/lofte/:id` behålls bara som delbar deep-link (Cloudflare-workern serverar OG-metadata där). När en användare landar direkt på `/lofte/:id` redirectar vi klient-sidan till `/?promise=<id>` så fortsatt navigering sker inom samma route.
 
-**Fix plan**
+## Ändringar
 
-1. **Replace every bare `radix-ui` import with scoped Radix imports**
-   - Example: `import { Tooltip as TooltipPrimitive } from "radix-ui"` becomes `import * as TooltipPrimitive from "@radix-ui/react-tooltip"`.
-   - Example: `import { Slot as SlotPrimitive } from "radix-ui"` becomes `import { Slot as SlotPrimitive } from "@radix-ui/react-slot"`.
-   - Do this consistently across all affected `src/components/ui/*` files.
+1. **`src/components/PromiseCard.tsx`** – byt de två `navigate(\`/lofte/${promiseId}\`)`-anropen mot en same-route uppdatering av query-param. Använd `useSearchParams`-settern (redan exponerad via compat-shimet):
+   ```ts
+   const [, setSearchParams] = useSearchParams();
+   // i onClick / Enter:
+   setSearchParams((p) => { p.set("promise", promiseId); return p; }, { replace: false });
+   ```
+   Detta triggar `router.navigate({ to: '.', search, replace: false })` utan att byta route → ingen scroll-reset, ingen remount.
 
-2. **Verify no unresolved aggregate imports remain**
-   - Search the codebase for `from "radix-ui"` and `from 'radix-ui'`.
-   - The result must be empty except unrelated text/comments.
+2. **`src/routes/lofte.$id.tsx`** – istället för att rendera `Index` direkt, redirecta till `/?promise=<id>` så användaren hamnar på samma route som resten av appen:
+   ```tsx
+   export const Route = createFileRoute("/lofte/$id")({
+     beforeLoad: ({ params }) => {
+       throw redirect({ to: "/", search: { promise: params.id }, replace: true });
+     },
+   });
+   ```
+   (Workern fortsätter att returnera OG-HTML till crawlers innan SPA:n laddas, så delning påverkas inte.)
 
-3. **Fix the visible React 19 console warnings while touching the same area**
-   - `src/components/icons/LaneChange.tsx` uses SVG attributes like `stroke-width`; convert them to React attributes: `strokeWidth`, `strokeLinecap`, `strokeLinejoin`.
-   - Investigate the `inert=""` warning only if the source is in project code; otherwise leave dependency behavior alone.
+3. **`src/pages/Index.tsx`** – `handleOverlayClose` använder redan `navigate('/?…')`. Eftersom vi nu alltid är på `/`-routen byter vi det till en same-route `setSearchParams`-uppdatering med `replace: true`, så stängning inte heller orsakar remount:
+   ```ts
+   setSearchParams((p) => { p.delete("promise"); return p; }, { replace: true });
+   ```
 
-4. **Add a stricter validation pass after edits**
-   - Run the project’s normal build check once.
-   - Then inspect fresh dev-server logs after the server has restarted, specifically for unresolved imports and SSR 500s.
-   - Also re-run the `radix-ui` import search after build so the same issue cannot reappear unnoticed.
+4. **Verifiering** – `bun run build:dev`, sedan i previewen: öppna ett löfte → ingen scroll-jump, ingen ljus-flash; stäng → samma. Direktbesök på `/lofte/<id>` → redirectas till `/?promise=<id>` och drawern öppnas.
 
-5. **Only then report success**
-   - I will not call it “passing” based on a single short build output.
-   - Success criteria: no bare `radix-ui` imports, no unresolved-import errors in dev logs, and the build command exits cleanly.
+## Anmärkning om temat
+
+Själva "light flash" är en sekundäreffekt av route-bytet (ohydrerad markup syns innan `ThemeProvider`s `useEffect` hinner sätta klassen igen). När route-bytet försvinner försvinner även flashen. Om vi senare vill härda detta ytterligare kan vi inlina ett blockande theme-init-script i `__root.tsx`s `<head>` — men det är inte nödvändigt för denna fix.

@@ -1,6 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
-import Index from "@/pages/Index";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/lofte/$id")({
-  component: Index,
+  beforeLoad: ({ params }) => {
+    throw redirect({
+      to: "/",
+      search: { promise: params.id } as never,
+      replace: true,
+    });
+  },
 });

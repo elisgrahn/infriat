@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useCallback, useState, useRef } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { usePromises } from "@/hooks/usePromises";
 import { HeroSection } from "@/components/HeroSection";
@@ -13,9 +13,8 @@ const TimelineComparison = lazy(() => import("@/components/TimelineComparison").
 const PromiseDetailOverlay = lazy(() => import("@/components/PromiseDetailOverlay").then(m => ({ default: m.PromiseDetailOverlay })));
 
 const Index = () => {
-  const navigate = useNavigate();
   const { id: promiseIdFromPath } = useParams<{ id?: string }>();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   // Support both /lofte/:id (primary) and legacy ?promise= query param
   const selectedPromiseId = promiseIdFromPath ?? searchParams.get("promise") ?? undefined;
 
@@ -50,12 +49,11 @@ const Index = () => {
   const selectedPromiseStatus = selectedPromise?.status;
 
   const handleOverlayClose = useCallback(() => {
-    // Preserve any existing search params (sort, filters, page) when closing
-    const params = new URLSearchParams(searchParams);
-    params.delete("promise");
-    const qs = params.toString();
-    navigate(qs ? `/?${qs}` : "/", { replace: true });
-  }, [navigate, searchParams]);
+    setSearchParams(
+      (p) => { p.delete("promise"); return p; },
+      { replace: true },
+    );
+  }, [setSearchParams]);
 
   // Build unique per-promise metadata when a promise is selected
   const promiseSeo = (() => {
