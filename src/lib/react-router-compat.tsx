@@ -7,7 +7,6 @@
 import {
   Link as TLink,
   Outlet as TOutlet,
-  useNavigate as tUseNavigate,
   useParams as tUseParams,
   useRouterState,
   useRouter,
@@ -56,17 +55,37 @@ type NavigateOptions = { replace?: boolean; state?: unknown };
 type To = string | number | { pathname?: string; search?: string; hash?: string };
 
 export function useNavigate() {
-  const nav = tUseNavigate();
+  const router = useRouter();
   return (to: To, opts: NavigateOptions = {}) => {
     if (typeof to === "number") {
       if (typeof window !== "undefined") window.history.go(to);
       return;
     }
-    const href =
-      typeof to === "string"
-        ? to
-        : `${to.pathname ?? ""}${to.search ?? ""}${to.hash ?? ""}` || "/";
-    nav({ to: href as any, replace: opts.replace });
+    let pathname = "";
+    let searchStr = "";
+    let hash = "";
+    if (typeof to === "string") {
+      const hashIdx = to.indexOf("#");
+      const rest = hashIdx >= 0 ? to.slice(0, hashIdx) : to;
+      hash = hashIdx >= 0 ? to.slice(hashIdx + 1) : "";
+      const qIdx = rest.indexOf("?");
+      pathname = qIdx >= 0 ? rest.slice(0, qIdx) : rest;
+      searchStr = qIdx >= 0 ? rest.slice(qIdx + 1) : "";
+    } else {
+      pathname = to.pathname ?? "";
+      searchStr = (to.search ?? "").replace(/^\?/, "");
+      hash = (to.hash ?? "").replace(/^#/, "");
+    }
+    const search = searchStr
+      ? Object.fromEntries(new URLSearchParams(searchStr).entries())
+      : undefined;
+    router.navigate({
+      to: (pathname || ".") as any,
+      search: search as any,
+      hash: hash || undefined,
+      replace: opts.replace,
+      resetScroll: !hash,
+    });
   };
 }
 
@@ -112,6 +131,7 @@ export function useSearchParams(): [URLSearchParams, SearchParamsSetter] {
       to: ".",
       search: () => search as any,
       replace: opts?.replace ?? false,
+      resetScroll: false,
     });
   };
 
