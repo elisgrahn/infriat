@@ -49,12 +49,11 @@ const Index = () => {
   const selectedPromiseStatus = selectedPromise?.status;
 
   const handleOverlayClose = useCallback(() => {
-    // Preserve any existing search params (sort, filters, page) when closing
-    const params = new URLSearchParams(searchParams);
-    params.delete("promise");
-    const qs = params.toString();
-    navigate(qs ? `/?${qs}` : "/", { replace: true });
-  }, [navigate, searchParams]);
+    setSearchParams(
+      (p) => { p.delete("promise"); return p; },
+      { replace: true },
+    );
+  }, [setSearchParams]);
 
   // Build unique per-promise metadata when a promise is selected
   const promiseSeo = (() => {
