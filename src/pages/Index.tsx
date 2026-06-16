@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useCallback, useState, useRef } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { usePromises } from "@/hooks/usePromises";
 import { HeroSection } from "@/components/HeroSection";
