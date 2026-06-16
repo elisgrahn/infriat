@@ -13,9 +13,8 @@ const TimelineComparison = lazy(() => import("@/components/TimelineComparison").
 const PromiseDetailOverlay = lazy(() => import("@/components/PromiseDetailOverlay").then(m => ({ default: m.PromiseDetailOverlay })));
 
 const Index = () => {
-  const navigate = useNavigate();
   const { id: promiseIdFromPath } = useParams<{ id?: string }>();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   // Support both /lofte/:id (primary) and legacy ?promise= query param
   const selectedPromiseId = promiseIdFromPath ?? searchParams.get("promise") ?? undefined;
 
