@@ -29,7 +29,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { usePromiseAdminActions } from "@/hooks/usePromiseAdminActions";
-import { useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { StatusBadge } from "@/components/badges/StatusBadge";
 import { PartyBadge } from "@/components/badges/PartyBadge";
 import { GovernmentBadge } from "@/components/badges/GovernmentBadge";
