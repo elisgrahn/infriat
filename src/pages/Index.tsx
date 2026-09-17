@@ -92,7 +92,7 @@ const Index = () => {
         </Helmet>
       ) : (
         <SeoHead
-          title="Infriat – Granskning av svenska vallöften"
+          title="Infriat"
           description="Har politikerna infriat sina vallöften? Infriat granskar och följer upp riksdagspartiernas valmanifest med AI och öppna källor."
           path="/"
         />

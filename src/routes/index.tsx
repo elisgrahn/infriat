@@ -5,13 +5,13 @@ export const Route = createFileRoute("/")({
   staticData: { sitemap: true },
   head: () => ({
     meta: [
-      { title: "Infriat – Granskning av svenska vallöften" },
+      { title: "Infriat" },
       {
         name: "description",
         content:
           "Har politikerna infriat sina vallöften? Infriat granskar och följer upp riksdagspartiernas valmanifest med AI och öppna källor.",
       },
-      { property: "og:title", content: "Infriat – Granskning av svenska vallöften" },
+      { property: "og:title", content: "Infriat" },
       {
         property: "og:description",
         content:
@@ -21,7 +21,7 @@ export const Route = createFileRoute("/")({
       { property: "og:url", content: "https://infriat.se/" },
       { property: "og:image", content: "https://infriat.se/og-image.png" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "Infriat – Granskning av svenska vallöften" },
+      { name: "twitter:title", content: "Infriat" },
       {
         name: "twitter:description",
         content:
