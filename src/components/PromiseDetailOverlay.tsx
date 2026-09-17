@@ -15,6 +15,7 @@ import { STATUS_CONFIG, type PromiseStatus } from "@/config/badgeConfig";
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/badges/StatusBadge";
 import { PartyBadge } from "@/components/badges/PartyBadge";
+import { getPartyAbbreviation } from "@/utils/partyAbbreviations";
 import { GovernmentBadge } from "@/components/badges/GovernmentBadge";
 import { MeasurabilityBadge } from "@/components/badges/MeasurabilityBadge";
 import { CategoryBadge } from "@/components/badges/CategoryBadge";
