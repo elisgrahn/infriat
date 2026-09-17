@@ -3,10 +3,10 @@ import {
   Scale,
   TrendingUp,
   Sparkles,
-  TriangleAlert,
 } from "lucide-react";
 import { HeroStatCard } from "@/components/HeroStatCard";
 import { DisclaimerItem } from "./DisclaimerItem";
+import { STATUS_CONFIG } from "@/config/badgeConfig";
 
 interface HeroStats {
   total: number;
@@ -21,8 +21,16 @@ export function HeroSection({ stats }: HeroSectionProps) {
   const fulfillmentRate =
     stats.total > 0 ? Math.round((stats.fulfilled / stats.total) * 100) : 0;
 
+  const statusGradient = `linear-gradient(to bottom right, ${STATUS_CONFIG["infriat"].chartColor}, ${STATUS_CONFIG["delvis-infriat"].chartColor}, ${STATUS_CONFIG["utreds"].chartColor}, ${STATUS_CONFIG["ej-infriat"].chartColor}, ${STATUS_CONFIG["brutet"].chartColor})`;
+
   return (
-    <header className="relative overflow-hidden bg-gradient-to-br from-primary via-primary-light to-primary-dark text-primary-foreground h-[30rem] flex items-center">
+    <header
+      className="relative overflow-hidden text-primary-foreground h-[30rem] flex items-center"
+      style={{ background: statusGradient }}
+    >
+      {/* Dark overlay so white text stays readable over the bright middle stops */}
+      <div className="absolute inset-0 bg-black/25" />
+
       {/* Animated background elements */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-20 left-10 w-72 h-72 bg-primary-foreground rounded-full blur-3xl animate-pulse" />
