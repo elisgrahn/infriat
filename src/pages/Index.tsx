@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { usePromises } from "@/hooks/usePromises";
 import { HeroSection } from "@/components/HeroSection";
+import { PartyQuickLinks } from "@/components/PartyQuickLinks";
 import { MobileFilterBar } from "@/components/MobileFilterBar";
 import { DesktopFilterSidebar } from "@/components/DesktopFilterSidebar";
 import { PromiseList } from "@/components/PromiseList";
@@ -98,6 +99,9 @@ const Index = () => {
       )}
       <div className="bg-background">
         <HeroSection stats={stats} />
+        <div className="container mx-auto pt-6">
+          <PartyQuickLinks />
+        </div>
 
         <main className="container mx-auto p-4">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">

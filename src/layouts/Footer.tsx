@@ -14,7 +14,8 @@ export function Footer() {
               transparens i svensk politik.
             </p>
             <DisclaimerItem />
-            <div className="flex gap-4 pt-1">
+            <div className="flex flex-wrap gap-4 pt-1">
+              <Link to="/parti" className="text-primary hover:underline">Partier</Link>
               <Link to="/statistik" className="text-primary hover:underline">Statistik</Link>
               <Link to="/om" className="text-primary hover:underline">Metod & förklaringar</Link>
             </div>
