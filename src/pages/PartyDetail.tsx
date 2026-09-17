@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Eye } from "lucide-react";
 import {
@@ -6,11 +6,17 @@ import {
   BarChart,
   CartesianGrid,
   Legend,
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  Radar,
+  RadarChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { fetchGovernmentPeriods, fetchPromises, promiseKeys } from "@/services/promises";
 import { computePartyStats, fulfilledShare, type AnalysedStatus } from "@/lib/partyStats";
 import type { GovernmentPeriod, PromiseData } from "@/types/promise";
