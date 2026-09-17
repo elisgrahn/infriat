@@ -10,3 +10,4 @@
 ## Navigation & användbarhet
 - [x] Partimeny i navbar (dropdown med alla 8 partier) + partiknappar i footern
 - [x] Snabblänks-chips till partierna direkt under hero:n på startsidan
+- [ ] One-liner för projektet (submission)
