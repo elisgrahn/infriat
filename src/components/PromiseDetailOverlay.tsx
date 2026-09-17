@@ -15,6 +15,7 @@ import { STATUS_CONFIG, type PromiseStatus } from "@/config/badgeConfig";
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/badges/StatusBadge";
 import { PartyBadge } from "@/components/badges/PartyBadge";
+import { getPartyAbbreviation } from "@/utils/partyAbbreviations";
 import { GovernmentBadge } from "@/components/badges/GovernmentBadge";
 import { MeasurabilityBadge } from "@/components/badges/MeasurabilityBadge";
 import { CategoryBadge } from "@/components/badges/CategoryBadge";
@@ -176,7 +177,15 @@ export function PromiseDetailOverlay({
             >
               <div className="flex w-max min-w-full flex-nowrap items-center gap-2">
                 <StatusBadge status={headerData.status} className="shrink-0" />
-                <PartyBadge party={headerData.partyName} compact={false} className="shrink-0" />
+                <PartyBadge
+                  party={headerData.partyName}
+                  compact={false}
+                  className="shrink-0"
+                  linkToPartyPage={
+                    getPartyAbbreviation(headerData.partyName) ??
+                    headerData.partyName
+                  }
+                />
                 <GovernmentBadge
                   governmentStatus={headerData.governmentStatus}
                   compact={false}
