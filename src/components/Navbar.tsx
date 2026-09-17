@@ -1,21 +1,11 @@
-import { Settings, LogOut, BarChart3, BookOpen, Users, ChevronDown } from "lucide-react";
+import { Settings, LogOut, BarChart3, BookOpen, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, useLocation } from "react-router-dom";
 import { InfriatLogo } from "@/components/icons/InfriatLogo";
 import { useStickyBar } from "@/store/StickyBarContext";
 import { cn } from "@/lib/utils";
-import { PARTY_ORDER } from "@/lib/partyStats";
-import { PARTY_ABBREVIATION_TO_NAME } from "@/utils/partyAbbreviations";
-import { getBadgeColor } from "@/utils/partyColors";
 
 export function Navbar() {
   const { isMobileBarStuck } = useStickyBar();
