@@ -104,23 +104,7 @@ export default function PartyDetail({
 
   const [categoryChart, setCategoryChart] = useState<"bar" | "radar">("bar");
 
-  const radarData = useMemo(
-    () =>
-      categoryData.map((row) => {
-        const total = STATUS_BAR_ORDER.reduce(
-          (sum, status) => sum + (row[status] as number),
-          0,
-        );
-        const fulfilled =
-          (row["infriat"] as number) + 0.5 * (row["delvis-infriat"] as number);
-        return {
-          name: row.name as string,
-          total,
-          share: total > 0 ? Math.round((fulfilled / total) * 100) : 0,
-        };
-      }),
-    [categoryData],
-  );
+  const radarData = categoryData;
 
 
   const yearData = useMemo(() => {
@@ -242,7 +226,7 @@ export default function PartyDetail({
                 <p className="mt-1 text-sm text-muted-foreground">
                   {categoryChart === "bar"
                     ? "Antal vallöften per status i varje politikområde"
-                    : "Andel infriade löften per politikområde"}
+                    : "Antal vallöften per status, som radar"}
                 </p>
               </div>
               <Tabs
@@ -288,7 +272,7 @@ export default function PartyDetail({
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <ResponsiveContainer width="100%" height={340}>
+                <ResponsiveContainer width="100%" height={360}>
                   <RadarChart data={radarData} outerRadius="70%">
                     <PolarGrid stroke="hsl(var(--border))" />
                     <PolarAngleAxis
@@ -297,26 +281,34 @@ export default function PartyDetail({
                     />
                     <PolarRadiusAxis
                       angle={90}
-                      domain={[0, 100]}
-                      tickCount={5}
+                      domain={[0, "dataMax"]}
+                      allowDecimals={false}
+                      tickCount={4}
                       tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
-                      tickFormatter={(value: number) => `${value} %`}
                     />
                     <Tooltip
                       contentStyle={tooltipStyle}
-                      formatter={(value: number, _name, payload) => [
-                        `${value} % infriat`,
-                        `${payload?.payload?.total ?? 0} granskade löften`,
+                      formatter={(value: number, name) => [
+                        value,
+                        STATUS_CONFIG[name as AnalysedStatus]?.label ?? name,
                       ]}
                     />
-                    <Radar
-                      name="Andel infriade"
-                      dataKey="share"
-                      stroke="hsl(var(--primary))"
-                      fill="hsl(var(--primary))"
-                      fillOpacity={0.25}
-                      strokeWidth={2}
+                    <Legend
+                      formatter={(value) =>
+                        STATUS_CONFIG[value as AnalysedStatus]?.label ?? value
+                      }
                     />
+                    {STATUS_BAR_ORDER.map((status) => (
+                      <Radar
+                        key={status}
+                        name={status}
+                        dataKey={status}
+                        stroke={STATUS_CONFIG[status].chartColor}
+                        fill={STATUS_CONFIG[status].chartColor}
+                        fillOpacity={0.35}
+                        strokeWidth={2}
+                      />
+                    ))}
                   </RadarChart>
                 </ResponsiveContainer>
               )}
