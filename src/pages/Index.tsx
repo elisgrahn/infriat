@@ -98,6 +98,9 @@ const Index = () => {
       )}
       <div className="bg-background">
         <HeroSection stats={stats} />
+        <div className="container mx-auto pt-6">
+          <PartyQuickLinks />
+        </div>
 
         <main className="container mx-auto p-4">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
