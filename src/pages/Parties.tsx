@@ -54,7 +54,9 @@ export default function PartiesPage({
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {summaries.map(({ abbreviation, name, stats }) => {
+            {[...summaries]
+              .sort((a, b) => Number(b.stats.total > 0) - Number(a.stats.total > 0))
+              .map(({ abbreviation, name, stats }) => {
               const share = fulfilledShare(stats);
               return (
                 <Link
