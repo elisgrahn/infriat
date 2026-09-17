@@ -39,43 +39,16 @@ export function Navbar() {
 
         {/* Nav links + actions */}
         <div className="flex items-center gap-1">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                aria-label="Partier"
-                className={cn(
-                  "text-xs px-2",
-                  location.pathname.startsWith("/parti") && "text-primary",
-                )}
-              >
-                <Users data-icon="inline-start" />
-                <span className="hidden sm:inline">Partier</span>
-                <ChevronDown className="size-3 opacity-60" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
-              <DropdownMenuItem onClick={() => navigate("/parti")} className="font-medium">
-                Alla partier
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              {PARTY_ORDER.map((abbr) => (
-                <DropdownMenuItem
-                  key={abbr}
-                  onClick={() => navigate(`/parti/${abbr}`)}
-                  className="flex items-center gap-2"
-                >
-                  <span
-                    className={`inline-flex size-5 items-center justify-center rounded text-[10px] font-semibold ${getBadgeColor(PARTY_ABBREVIATION_TO_NAME[abbr])}`}
-                  >
-                    {abbr}
-                  </span>
-                  {PARTY_ABBREVIATION_TO_NAME[abbr]}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/parti")}
+            aria-label="Partier"
+            className={cn("text-xs px-2", location.pathname.startsWith("/parti") && "text-primary")}
+          >
+            <Users data-icon="inline-start" />
+            <span className="hidden sm:inline">Partier</span>
+          </Button>
           {isAdmin && (
             <Button
               variant="ghost"
