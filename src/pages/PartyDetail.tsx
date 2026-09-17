@@ -207,40 +207,92 @@ export default function PartyDetail({
         {/* Category chart */}
         {categoryData.length > 0 && (
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold">
-                Löften per politikområde
-              </CardTitle>
+            <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
+              <div>
+                <CardTitle className="text-lg font-semibold">
+                  Löften per politikområde
+                </CardTitle>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {categoryChart === "bar"
+                    ? "Antal vallöften per status i varje politikområde"
+                    : "Andel infriade löften per politikområde"}
+                </p>
+              </div>
+              <Tabs
+                value={categoryChart}
+                onValueChange={(value) => setCategoryChart(value as "bar" | "radar")}
+              >
+                <TabsList>
+                  <TabsTrigger value="bar">Staplar</TabsTrigger>
+                  <TabsTrigger value="radar">Radar</TabsTrigger>
+                </TabsList>
+                <TabsContent value="bar" className="hidden" />
+                <TabsContent value="radar" className="hidden" />
+              </Tabs>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={Math.max(240, categoryData.length * 44)}>
-                <BarChart data={categoryData} layout="vertical" margin={{ left: 0, right: 30 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-                  <XAxis
-                    type="number"
-                    allowDecimals={false}
-                    stroke="hsl(var(--foreground))"
-                    tick={{ fill: "hsl(var(--foreground))", fontSize: 12 }}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    width={140}
-                    stroke="hsl(var(--foreground))"
-                    tick={{ fill: "hsl(var(--foreground))", fontSize: 12 }}
-                  />
-                  <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "hsl(var(--muted))" }} />
-                  <Legend formatter={(value) => STATUS_CONFIG[value as AnalysedStatus]?.label ?? value} />
-                  {STATUS_BAR_ORDER.map((status) => (
-                    <Bar
-                      key={status}
-                      dataKey={status}
-                      stackId="a"
-                      fill={STATUS_CONFIG[status].chartColor}
+              {categoryChart === "bar" ? (
+                <ResponsiveContainer width="100%" height={Math.max(240, categoryData.length * 44)}>
+                  <BarChart data={categoryData} layout="vertical" margin={{ left: 0, right: 30 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
+                    <XAxis
+                      type="number"
+                      allowDecimals={false}
+                      stroke="hsl(var(--foreground))"
+                      tick={{ fill: "hsl(var(--foreground))", fontSize: 12 }}
                     />
-                  ))}
-                </BarChart>
-              </ResponsiveContainer>
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      width={140}
+                      stroke="hsl(var(--foreground))"
+                      tick={{ fill: "hsl(var(--foreground))", fontSize: 12 }}
+                    />
+                    <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "hsl(var(--muted))" }} />
+                    <Legend formatter={(value) => STATUS_CONFIG[value as AnalysedStatus]?.label ?? value} />
+                    {STATUS_BAR_ORDER.map((status) => (
+                      <Bar
+                        key={status}
+                        dataKey={status}
+                        stackId="a"
+                        fill={STATUS_CONFIG[status].chartColor}
+                      />
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <ResponsiveContainer width="100%" height={340}>
+                  <RadarChart data={radarData} outerRadius="70%">
+                    <PolarGrid stroke="hsl(var(--border))" />
+                    <PolarAngleAxis
+                      dataKey="name"
+                      tick={{ fill: "hsl(var(--foreground))", fontSize: 11 }}
+                    />
+                    <PolarRadiusAxis
+                      angle={90}
+                      domain={[0, 100]}
+                      tickCount={5}
+                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                      tickFormatter={(value: number) => `${value} %`}
+                    />
+                    <Tooltip
+                      contentStyle={tooltipStyle}
+                      formatter={(value: number, _name, payload) => [
+                        `${value} % infriat`,
+                        `${payload?.payload?.total ?? 0} granskade löften`,
+                      ]}
+                    />
+                    <Radar
+                      name="Andel infriade"
+                      dataKey="share"
+                      stroke="hsl(var(--primary))"
+                      fill="hsl(var(--primary))"
+                      fillOpacity={0.25}
+                      strokeWidth={2}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
         )}
