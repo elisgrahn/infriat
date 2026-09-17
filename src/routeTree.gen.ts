@@ -16,6 +16,7 @@ import { Route as OmRouteImport } from './routes/om'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PartiIndexRouteImport } from './routes/parti.index'
 import { Route as StatistikLabbRouteImport } from './routes/statistik.labb'
 import { Route as PartiKortRouteImport } from './routes/parti.$kort'
 import { Route as LofteIdRouteImport } from './routes/lofte.$id'
@@ -55,6 +56,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PartiIndexRoute = PartiIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PartiRoute,
+} as any)
 const StatistikLabbRoute = StatistikLabbRouteImport.update({
   id: '/labb',
   path: '/labb',
@@ -82,18 +88,19 @@ export interface FileRoutesByFullPath {
   '/lofte/$id': typeof LofteIdRoute
   '/parti/$kort': typeof PartiKortRoute
   '/statistik/labb': typeof StatistikLabbRoute
+  '/parti/': typeof PartiIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/om': typeof OmRoute
-  '/parti': typeof PartiRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/statistik': typeof StatistikRouteWithChildren
   '/lofte/$id': typeof LofteIdRoute
   '/parti/$kort': typeof PartiKortRoute
   '/statistik/labb': typeof StatistikLabbRoute
+  '/parti': typeof PartiIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +114,7 @@ export interface FileRoutesById {
   '/lofte/$id': typeof LofteIdRoute
   '/parti/$kort': typeof PartiKortRoute
   '/statistik/labb': typeof StatistikLabbRoute
+  '/parti/': typeof PartiIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,18 +129,19 @@ export interface FileRouteTypes {
     | '/lofte/$id'
     | '/parti/$kort'
     | '/statistik/labb'
+    | '/parti/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/admin'
     | '/auth'
     | '/om'
-    | '/parti'
     | '/sitemap.xml'
     | '/statistik'
     | '/lofte/$id'
     | '/parti/$kort'
     | '/statistik/labb'
+    | '/parti'
   id:
     | '__root__'
     | '/'
@@ -145,6 +154,7 @@ export interface FileRouteTypes {
     | '/lofte/$id'
     | '/parti/$kort'
     | '/statistik/labb'
+    | '/parti/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -209,6 +219,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/parti/': {
+      id: '/parti/'
+      path: '/'
+      fullPath: '/parti/'
+      preLoaderRoute: typeof PartiIndexRouteImport
+      parentRoute: typeof PartiRoute
+    }
     '/statistik/labb': {
       id: '/statistik/labb'
       path: '/labb'
@@ -235,10 +252,12 @@ declare module '@tanstack/react-router' {
 
 interface PartiRouteChildren {
   PartiKortRoute: typeof PartiKortRoute
+  PartiIndexRoute: typeof PartiIndexRoute
 }
 
 const PartiRouteChildren: PartiRouteChildren = {
   PartiKortRoute: PartiKortRoute,
+  PartiIndexRoute: PartiIndexRoute,
 }
 
 const PartiRouteWithChildren = PartiRoute._addFileChildren(PartiRouteChildren)
