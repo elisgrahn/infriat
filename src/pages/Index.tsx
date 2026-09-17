@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { usePromises } from "@/hooks/usePromises";
 import { HeroSection } from "@/components/HeroSection";
+import { PartyQuickLinks } from "@/components/PartyQuickLinks";
 import { MobileFilterBar } from "@/components/MobileFilterBar";
 import { DesktopFilterSidebar } from "@/components/DesktopFilterSidebar";
 import { PromiseList } from "@/components/PromiseList";
