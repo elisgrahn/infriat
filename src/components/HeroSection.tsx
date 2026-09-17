@@ -21,24 +21,28 @@ export function HeroSection({ stats }: HeroSectionProps) {
   const fulfillmentRate =
     stats.total > 0 ? Math.round((stats.fulfilled / stats.total) * 100) : 0;
 
-  const statusGradient = `linear-gradient(to bottom right, ${STATUS_CONFIG["infriat"].chartColor}, ${STATUS_CONFIG["delvis-infriat"].chartColor}, ${STATUS_CONFIG["utreds"].chartColor}, ${STATUS_CONFIG["ej-infriat"].chartColor}, ${STATUS_CONFIG["brutet"].chartColor})`;
+  const statusGradient = `linear-gradient(135deg, ${STATUS_CONFIG["infriat"].chartColor} 0%, ${STATUS_CONFIG["delvis-infriat"].chartColor} 27%, ${STATUS_CONFIG["utreds"].chartColor} 50%, ${STATUS_CONFIG["ej-infriat"].chartColor} 73%, ${STATUS_CONFIG["brutet"].chartColor} 100%)`;
 
   return (
-    <header
-      className="relative overflow-hidden text-primary-foreground h-[30rem] flex items-center"
-      style={{ background: statusGradient }}
-    >
-      {/* Dark overlay so white text stays readable over the bright middle stops */}
+    <header className="relative overflow-hidden text-primary-foreground h-[30rem] flex items-center bg-muted">
+      {/* Faded, slowly drifting status gradient: green (infriat) to red (brutet) */}
+      <div
+        className="absolute inset-0 animate-status-drift opacity-70 saturate-[0.7] blur-[2px]"
+        style={{ backgroundImage: statusGradient }}
+      />
+
+      {/* Soft overlay keeps white text readable over the lighter stops */}
       <div className="absolute inset-0 bg-black/25" />
 
       {/* Animated background elements */}
-      <div className="absolute inset-0 opacity-20">
+      <div className="absolute inset-0 opacity-15">
         <div className="absolute top-20 left-10 w-72 h-72 bg-primary-foreground rounded-full blur-3xl animate-pulse" />
         <div
           className="absolute bottom-10 right-20 w-96 h-96 bg-secondary rounded-full blur-3xl animate-pulse"
           style={{ animationDelay: "1s" }}
         />
       </div>
+
 
       <div className="container relative mx-auto px-4 sm:px-7 md:px-10 w-full">
         <div className="max-w-5xl mx-auto text-center space-y-6">

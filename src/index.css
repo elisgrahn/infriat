@@ -112,3 +112,26 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Slowly drifting status gradient used by the hero background */
+@layer utilities {
+  @keyframes status-drift {
+    0% {
+      background-position: 0% 0%;
+      background-size: 180% 180%;
+    }
+    50% {
+      background-position: 100% 100%;
+      background-size: 240% 240%;
+    }
+    100% {
+      background-position: 0% 0%;
+      background-size: 180% 180%;
+    }
+  }
+
+  .animate-status-drift {
+    background-size: 180% 180%;
+    animation: status-drift 26s ease-in-out infinite;
+  }
+}
