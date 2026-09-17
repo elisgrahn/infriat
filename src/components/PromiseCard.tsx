@@ -29,7 +29,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { usePromiseAdminActions } from "@/hooks/usePromiseAdminActions";
-import { useSearchParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { StatusBadge } from "@/components/badges/StatusBadge";
 import { PartyBadge } from "@/components/badges/PartyBadge";
 import { GovernmentBadge } from "@/components/badges/GovernmentBadge";
@@ -39,6 +39,8 @@ import { StatusQuoBadge } from "@/components/badges/StatusQuoBadge";
 import { STATUS_CONFIG, type PromiseStatus } from "@/config/badgeConfig";
 import type { Category } from "@/config/badgeConfig";
 import { ShareButton } from "./ShareButton";
+import { useSearchParams } from "react-router-dom";
+import { getPartyAbbreviation } from "@/utils/partyAbbreviations";
 import { cn } from "@/lib/utils";
 
 interface PromiseCardProps {
@@ -91,6 +93,8 @@ export const PromiseCard = memo(function PromiseCard({
 }: PromiseCardProps) {
   const config = STATUS_CONFIG[status];
   const [, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const partyAbbr = partyAbbreviation ?? getPartyAbbreviation(party);
   const openPromise = () =>
     setSearchParams((p) => { p.set("promise", promiseId); return p; });
 
@@ -236,12 +240,24 @@ export const PromiseCard = memo(function PromiseCard({
         <div className="min-w-0 flex-1 flex flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <StatusBadge status={status} className="shrink-0" />
-            <PartyBadge
-              party={party}
-              abbreviation={partyAbbreviation}
-              compact={compactBadges}
-              className="shrink-0"
-            />
+            {partyAbbr ? (
+              <Link
+                to={`/parti/${partyAbbr}`}
+                onClick={(event) => event.stopPropagation()}
+                onKeyDown={(event) => event.stopPropagation()}
+                className="shrink-0"
+                aria-label={`Alla löften från ${party}`}
+              >
+                <PartyBadge party={party} abbreviation={partyAbbr} compact={compactBadges} />
+              </Link>
+            ) : (
+              <PartyBadge
+                party={party}
+                abbreviation={partyAbbr}
+                compact={compactBadges}
+                className="shrink-0"
+              />
+            )}
             <GovernmentBadge
               governmentStatus={governmentStatus}
               compact={false}
