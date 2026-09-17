@@ -176,7 +176,15 @@ export function PromiseDetailOverlay({
             >
               <div className="flex w-max min-w-full flex-nowrap items-center gap-2">
                 <StatusBadge status={headerData.status} className="shrink-0" />
-                <PartyBadge party={headerData.partyName} compact={false} className="shrink-0" />
+                <PartyBadge
+                  party={headerData.partyName}
+                  compact={false}
+                  className="shrink-0"
+                  linkToPartyPage={
+                    getPartyAbbreviation(headerData.partyName) ??
+                    headerData.partyName
+                  }
+                />
                 <GovernmentBadge
                   governmentStatus={headerData.governmentStatus}
                   compact={false}
