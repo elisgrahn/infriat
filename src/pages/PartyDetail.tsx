@@ -102,6 +102,27 @@ export default function PartyDetail({
       .filter((row) => STATUS_BAR_ORDER.some((status) => (row[status] as number) > 0));
   }, [partyPromises]);
 
+  const [categoryChart, setCategoryChart] = useState<"bar" | "radar">("bar");
+
+  const radarData = useMemo(
+    () =>
+      categoryData.map((row) => {
+        const total = STATUS_BAR_ORDER.reduce(
+          (sum, status) => sum + (row[status] as number),
+          0,
+        );
+        const fulfilled =
+          (row["infriat"] as number) + 0.5 * (row["delvis-infriat"] as number);
+        return {
+          name: row.name as string,
+          total,
+          share: total > 0 ? Math.round((fulfilled / total) * 100) : 0,
+        };
+      }),
+    [categoryData],
+  );
+
+
   const yearData = useMemo(() => {
     const years = [...new Set(partyPromises.map((p) => p.election_year))].sort(
       (a, b) => a - b,
