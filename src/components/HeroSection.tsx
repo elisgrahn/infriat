@@ -24,10 +24,10 @@ export function HeroSection({ stats }: HeroSectionProps) {
   const statusGradient = `linear-gradient(135deg, ${STATUS_CONFIG["infriat"].chartColor} 0%, ${STATUS_CONFIG["delvis-infriat"].chartColor} 27%, ${STATUS_CONFIG["utreds"].chartColor} 50%, ${STATUS_CONFIG["ej-infriat"].chartColor} 73%, ${STATUS_CONFIG["brutet"].chartColor} 100%)`;
 
   return (
-    <header className="relative overflow-hidden text-primary-foreground h-[30rem] flex items-center bg-primary">
+    <header className="relative overflow-hidden text-primary-foreground h-[30rem] flex items-center bg-muted">
       {/* Faded, slowly drifting status gradient: green (infriat) to red (brutet) */}
       <div
-        className="absolute inset-0 animate-status-drift opacity-45 saturate-[0.65] blur-[2px]"
+        className="absolute inset-0 animate-status-drift opacity-70 saturate-[0.7] blur-[2px]"
         style={{ backgroundImage: statusGradient }}
       />
 
