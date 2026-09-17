@@ -1,4 +1,4 @@
-import { Settings, LogOut, BarChart3, BookOpen } from "lucide-react";
+import { Settings, LogOut, BarChart3, BookOpen, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
@@ -39,6 +39,16 @@ export function Navbar() {
 
         {/* Nav links + actions */}
         <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/parti")}
+            aria-label="Partier"
+            className={cn("text-xs px-2", location.pathname.startsWith("/parti") && "text-primary")}
+          >
+            <Users data-icon="inline-start" />
+            <span className="hidden sm:inline">Partier</span>
+          </Button>
           {isAdmin && (
             <Button
               variant="ghost"

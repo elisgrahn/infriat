@@ -85,6 +85,8 @@ const Index = () => {
           <meta property="og:title" content={promiseSeo.title} />
           <meta property="og:description" content={promiseSeo.description} />
           <meta property="og:url" content={promiseSeo.url} />
+          <meta property="og:image" content="https://infriat.se/og-image.png" />
+          <meta name="twitter:card" content="summary_large_image" />
           <meta name="robots" content="index,follow" />
         </Helmet>
       ) : (
